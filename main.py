@@ -122,8 +122,11 @@ app.add_middleware(
 )
 
 # SECURITY: Trusted Host Middleware
+# Erlaubt auch Railway interne Health Checks
 allowed_hosts = os.environ.get(
     "PITCHINSIGHTS_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+# Füge Wildcard für Railway Health Checks hinzu
+allowed_hosts.append("*")  # Railway Health Checks kommen von internen IPs
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=allowed_hosts
