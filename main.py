@@ -143,6 +143,10 @@ async def https_redirect_middleware(request: Request, call_next):
     Erzwingt HTTPS in Produktion.
     SECURITY: Verhindert unverschlüsselte Verbindungen.
     """
+    # Skip für Healthcheck Endpoints (Railway macht HTTP intern)
+    if request.url.path in ["/", "/health"]:
+        return await call_next(request)
+    
     if SecurityConfig.IS_PRODUCTION:
         # Prüfe ob Request über HTTPS kam (via Proxy-Header)
         forwarded_proto = request.headers.get("X-Forwarded-Proto", "http")
