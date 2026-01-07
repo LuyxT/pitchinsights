@@ -1,0 +1,42 @@
+# Security & Sensitive Data
+.env
+*.env
+.env.*
+!.env.example
+
+# Database
+data/*.db
+data/*.db-journal
+data/*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Uploads (if sensitive)
+# data/uploads/
+
+# Temporary
+tmp/
+temp/
+*.tmp

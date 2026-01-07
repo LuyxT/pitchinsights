@@ -1,0 +1,61 @@
+# Caddyfile - Automatisches HTTPS für PitchInsights
+# ==================================================
+# Caddy generiert und erneuert SSL-Zertifikate automatisch!
+#
+# Installation: https://caddyserver.com/docs/install
+# macOS:   brew install caddy
+# Ubuntu:  sudo apt install caddy
+# Docker:  caddy:latest
+
+# Ersetze {$DOMAIN} mit deiner echten Domain
+{$DOMAIN:localhost} {
+    # Automatisches HTTPS (Let's Encrypt)
+    # Für localhost wird ein selbstsigniertes Zertifikat verwendet
+    
+    # Reverse Proxy zu Python App
+    reverse_proxy app:8000 {
+        # Health Check
+        health_uri /health
+        health_interval 30s
+        
+        # Headers für korrektes IP-Forwarding
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+    
+    # Security Headers
+    header {
+        # XSS Schutz
+        X-XSS-Protection "1; mode=block"
+        # Clickjacking Schutz
+        X-Frame-Options "SAMEORIGIN"
+        # MIME-Type Sniffing verhindern
+        X-Content-Type-Options "nosniff"
+        # Referrer Policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Content Security Policy
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'self';"
+        # HSTS - Nur HTTPS erlauben (nach 1 Jahr Cache)
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Server-Header entfernen
+        -Server
+    }
+    
+    # Kompression
+    encode gzip zstd
+    
+    # Logging
+    log {
+        output file data/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+        format json
+    }
+}
+
+# Optional: www auf non-www umleiten
+www.{$DOMAIN:localhost} {
+    redir https://{$DOMAIN}{uri} permanent
+}

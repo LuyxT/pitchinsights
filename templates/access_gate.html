@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zugang – PitchInsights</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f7;
+            color: #1d1d1f;
+        }
+
+        .container {
+            text-align: center;
+            padding: 24px;
+            max-width: 400px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 48px;
+            color: #1d1d1f;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+        }
+
+        p {
+            font-size: 17px;
+            color: #86868b;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        input {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 17px;
+            font-family: inherit;
+            text-align: center;
+            letter-spacing: 0.1em;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            outline: none;
+            background: #fff;
+            transition: border-color 220ms ease, box-shadow 220ms ease;
+        }
+
+        input:focus {
+            border-color: #0071e3;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+        }
+
+        input::placeholder {
+            color: #86868b;
+            letter-spacing: 0;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px 32px;
+            font-size: 17px;
+            font-weight: 500;
+            font-family: inherit;
+            color: #fff;
+            background: #0071e3;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 220ms ease, transform 120ms ease;
+        }
+
+        button:hover {
+            background: #0077ed;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .error {
+            color: #ff3b30;
+            font-size: 14px;
+            margin-top: -8px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 32px;
+            font-size: 14px;
+            color: #0071e3;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">PitchInsights</div>
+
+        <h1>Geschlossene Beta</h1>
+        <p>PitchInsights ist aktuell nur für ausgewählte Tester verfügbar. Gib deinen Zugangscode ein.</p>
+
+        <form id="accessForm">
+            <input type="text" id="accessCode" placeholder="Zugangscode" autocomplete="off" autofocus>
+            {% if error %}
+            <p class="error">{{ error }}</p>
+            {% endif %}
+            <button type="submit">Weiter</button>
+        </form>
+
+        <a href="/" class="back-link">Zurück zur Startseite</a>
+    </div>
+
+    <script>
+        document.getElementById('accessForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const code = document.getElementById('accessCode').value.trim();
+            if (code) {
+                window.location.href = '/login?code=' + encodeURIComponent(code);
+            }
+        });
+    </script>
+</body>
+
+</html>

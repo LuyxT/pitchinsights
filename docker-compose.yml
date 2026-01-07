@@ -1,0 +1,79 @@
+# PitchInsights - Docker Compose Production Setup
+# ================================================
+# Startet App + Caddy (HTTPS) in Containern
+#
+# Verwendung:
+#   1. .env erstellen (siehe .env.example)
+#   2. docker-compose up -d
+#   3. Fertig! HTTPS läuft automatisch
+
+version: "3.8"
+
+services:
+  # ============================================
+  # PitchInsights App
+  # ============================================
+  app:
+    build:
+      context: .
+      target: production
+    container_name: pitchinsights-app
+    restart: unless-stopped
+    environment:
+      - PITCHINSIGHTS_SECRET_KEY=${PITCHINSIGHTS_SECRET_KEY}
+      - PITCHINSIGHTS_ENV=production
+      - PITCHINSIGHTS_COOKIE_SECURE=true
+      - PITCHINSIGHTS_BEHIND_PROXY=true
+      - PITCHINSIGHTS_ALLOWED_ORIGINS=https://${PITCHINSIGHTS_DOMAIN:-localhost}
+      - PITCHINSIGHTS_ALLOWED_HOSTS=${PITCHINSIGHTS_DOMAIN:-localhost}
+    volumes:
+      # Persistente Daten
+      - pitchinsights-data:/app/data
+    networks:
+      - pitchinsights-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # Caddy - Automatisches HTTPS
+  # ============================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: pitchinsights-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${PITCHINSIGHTS_DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - pitchinsights-network
+    depends_on:
+      app:
+        condition: service_healthy
+
+# ============================================
+# Volumes für persistente Daten
+# ============================================
+volumes:
+  pitchinsights-data:
+    driver: local
+  caddy-data:
+    driver: local
+  caddy-config:
+    driver: local
+
+# ============================================
+# Netzwerk
+# ============================================
+networks:
+  pitchinsights-network:
+    driver: bridge

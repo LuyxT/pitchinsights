@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zahlung ausstehend - PitchInsights</title>
+    <link rel="icon" type="image/png" href="/static/images/favicon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+
+        .logo-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+
+        .success-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 32px;
+        }
+
+        .price-box {
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .price {
+            font-size: 48px;
+            font-weight: 700;
+            color: #f59e0b;
+        }
+
+        .price-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .payment-methods {
+            text-align: left;
+            margin-bottom: 32px;
+        }
+
+        .payment-method {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .payment-method h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .payment-method p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .payment-method code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 8px;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .important-note {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .important-note h4 {
+            color: #ef4444;
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .important-note p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .info-text {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .back-link {
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .price {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo-icon">⚽</div>
+        <h1>Fast geschafft!</h1>
+        <p class="subtitle">Dein Account wurde erstellt</p>
+
+        <div class="success-badge">
+            <span>✓</span>
+            <span>Registrierung erfolgreich</span>
+        </div>
+
+        <div class="price-box">
+            <div class="price">20€</div>
+            <div class="price-label">Einmaliger Pilotzugang</div>
+        </div>
+
+        <div class="payment-methods">
+            <div class="payment-method">
+                <h3>💳 PayPal</h3>
+                <p>
+                    Sende 20€ an:<br>
+                    <code>pitchinsights@example.de</code>
+                    <button class="copy-btn" onclick="copyToClipboard('pitchinsights@example.de')">Kopieren</button>
+                </p>
+            </div>
+
+            <div class="payment-method">
+                <h3>🏦 Überweisung</h3>
+                <p>
+                    <strong>IBAN:</strong> <code>DE89 3704 0044 0532 0130 00</code>
+                    <button class="copy-btn" onclick="copyToClipboard('DE89370400440532013000')">Kopieren</button><br>
+                    <strong>Empfänger:</strong> PitchInsights<br>
+                    <strong>Verwendungszweck:</strong> <code>Pilot + Deine Email</code>
+                </p>
+            </div>
+        </div>
+
+        <div class="important-note">
+            <h4>⚠️ Wichtig</h4>
+            <p>
+                Gib bei der Zahlung unbedingt deine <strong>E-Mail-Adresse</strong> an,
+                damit wir deinen Account zuordnen können. Die Freischaltung erfolgt
+                in der Regel innerhalb von 24 Stunden.
+            </p>
+        </div>
+
+        <p class="info-text">
+            Nach Zahlungseingang schalten wir deinen Account frei und du erhältst
+            eine Bestätigungs-E-Mail. Bei Fragen: <a href="mailto:support@pitchinsights.de"
+                style="color: #10b981;">support@pitchinsights.de</a>
+        </p>
+
+        <a href="/login" class="back-link">← Zurück zum Login</a>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Kurze visuelle Bestätigung
+                event.target.textContent = '✓';
+                setTimeout(() => {
+                    event.target.textContent = 'Kopieren';
+                }, 1500);
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,63 @@
+{
+    "name": "PitchInsights OS",
+    "short_name": "PitchInsights",
+    "description": "Apple-Style Fußball Analyse OS",
+    "start_url": "/os",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "background_color": "#ffffff",
+    "theme_color": "#10b981",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%2310b981' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='white' opacity='0.9'/></svg>",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%2310b981' width='512' height='512'/><circle cx='256' cy='256' r='160' fill='white' opacity='0.9'/></svg>",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23f5f5f7' width='540' height='720'/></svg>",
+            "sizes": "540x720",
+            "type": "image/svg+xml",
+            "form_factor": "narrow"
+        }
+    ],
+    "categories": [
+        "sports",
+        "productivity"
+    ],
+    "shortcuts": [
+        {
+            "name": "Analyse",
+            "short_name": "Analyse",
+            "description": "Schnell ein Video analysieren",
+            "url": "/os?app=analyse",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%2310b981' rx='24' width='96' height='96'/><text x='48' y='60' text-anchor='middle' font-size='48'>📊</text></svg>",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "description": "Statistiken anschauen",
+            "url": "/os?app=dashboard",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%2310b981' rx='24' width='96' height='96'/><text x='48' y='60' text-anchor='middle' font-size='48'>📈</text></svg>",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ]
+}

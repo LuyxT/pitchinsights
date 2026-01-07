@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Lokale Daten (werden auf Server neu erstellt)
+data/pitchinsights.db
+data/uploads/*
+data/videos/*
+!data/uploads/.gitkeep
+!data/videos/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+tests/
+*.test.py
+
+# Docs
+*.md
+!README.md

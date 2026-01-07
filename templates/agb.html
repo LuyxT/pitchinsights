@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Allgemeine Geschäftsbedingungen (AGB) | PitchInsights</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-primary: rgba(255, 255, 255, 0.95);
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --accent-color: #10b981;
+            --accent-hover: #059669;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        .legal-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        .legal-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .legal-header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .legal-header .subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-color);
+            text-decoration: none;
+            margin-bottom: 30px;
+            padding: 10px 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .toc {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px 30px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toc ol {
+            columns: 2;
+            column-gap: 40px;
+            padding-left: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .toc ol {
+                columns: 1;
+            }
+        }
+
+        .toc li {
+            margin-bottom: 10px;
+            break-inside: avoid;
+        }
+
+        .toc a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px 32px;
+            margin-bottom: 24px;
+        }
+
+        section h2 {
+            font-size: 1.3rem;
+            margin-bottom: 18px;
+            color: var(--accent-color);
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        section h3 {
+            font-size: 1.1rem;
+            margin: 20px 0 12px;
+            color: var(--text-primary);
+        }
+
+        p {
+            margin-bottom: 14px;
+            color: var(--text-secondary);
+        }
+
+        ul,
+        ol {
+            margin: 14px 0;
+            padding-left: 24px;
+            color: var(--text-secondary);
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .highlight-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 18px 22px;
+            margin: 18px 0;
+        }
+
+        .highlight-box.warning {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .highlight-box.info {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .footer-nav {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            padding: 24px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+        }
+
+        .footer-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .footer-nav a:hover {
+            color: var(--accent-color);
+        }
+
+        .version-info {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="legal-container">
+        <a href="/register" class="back-link">← Zurück zur Registrierung</a>
+
+        <header class="legal-header">
+            <h1>📋 Allgemeine Geschäftsbedingungen (AGB)</h1>
+            <p class="subtitle">Gültig für die Nutzung der PitchInsights-Plattform</p>
+        </header>
+
+        <!-- Inhaltsverzeichnis -->
+        <nav class="toc">
+            <h2>📑 Inhaltsverzeichnis</h2>
+            <ol>
+                <li><a href="#geltungsbereich">Geltungsbereich und Vertragsschluss</a></li>
+                <li><a href="#leistungsbeschreibung">Leistungsbeschreibung</a></li>
+                <li><a href="#registrierung">Registrierung und Nutzerkonto</a></li>
+                <li><a href="#zahlungsbedingungen">Zahlungsbedingungen und Preise</a></li>
+                <li><a href="#promocodes">Promo-Codes und Rabatte</a></li>
+                <li><a href="#testphase">Pilotphase und Early Access</a></li>
+                <li><a href="#nutzungspflichten">Nutzungspflichten und -rechte</a></li>
+                <li><a href="#verbotene-nutzung">Verbotene Nutzung</a></li>
+                <li><a href="#datenschutz">Datenschutz und Datensicherheit</a></li>
+                <li><a href="#verfuegbarkeit">Verfügbarkeit und Support</a></li>
+                <li><a href="#haftung">Haftungsbeschränkung</a></li>
+                <li><a href="#gewaehrleistung">Gewährleistung</a></li>
+                <li><a href="#kuendigung">Kündigung und Beendigung</a></li>
+                <li><a href="#aenderungen">Änderungen der AGB</a></li>
+                <li><a href="#widerrufsrecht">Widerrufsrecht</a></li>
+                <li><a href="#urheberrecht">Urheberrecht und geistiges Eigentum</a></li>
+                <li><a href="#streitbeilegung">Streitbeilegung</a></li>
+                <li><a href="#salvatorische">Salvatorische Klausel</a></li>
+                <li><a href="#schlussbestimmungen">Schlussbestimmungen</a></li>
+            </ol>
+        </nav>
+
+        <!-- § 1 Geltungsbereich -->
+        <section id="geltungsbereich">
+            <h2>§ 1 Geltungsbereich und Vertragsschluss</h2>
+
+            <h3>1.1 Geltungsbereich</h3>
+            <p>Diese Allgemeinen Geschäftsbedingungen (nachfolgend "AGB") gelten für alle Verträge, die zwischen dem
+                Anbieter der PitchInsights-Plattform (nachfolgend "Anbieter", "wir" oder "uns") und dem Nutzer
+                (nachfolgend "Kunde", "Nutzer" oder "Sie") über die Nutzung der PitchInsights-Webplattform und aller
+                damit verbundenen Dienste geschlossen werden.</p>
+
+            <p>Die AGB gelten ausschließlich. Abweichende, entgegenstehende oder ergänzende Allgemeine
+                Geschäftsbedingungen des Kunden werden nur dann und insoweit Vertragsbestandteil, als wir ihrer Geltung
+                ausdrücklich schriftlich zugestimmt haben. Dieses Zustimmungserfordernis gilt in jedem Fall,
+                beispielsweise auch dann, wenn wir in Kenntnis der AGB des Kunden die Leistung an den Kunden
+                vorbehaltlos erbringen.</p>
+
+            <h3>1.2 Vertragsschluss</h3>
+            <p>Der Vertrag über die Nutzung von PitchInsights kommt durch folgende Schritte zustande:</p>
+            <ol>
+                <li>Der Kunde füllt das Registrierungsformular auf unserer Website vollständig und wahrheitsgemäß aus.
+                </li>
+                <li>Der Kunde bestätigt durch Setzen des entsprechenden Häkchens, dass er diese AGB sowie die
+                    Datenschutzerklärung gelesen hat und ihnen zustimmt.</li>
+                <li>Der Kunde übermittelt seine Registrierung durch Klicken auf den Button "Account erstellen".</li>
+                <li>Der Vertrag kommt mit erfolgreicher Erstellung des Kundenkontos zustande.</li>
+            </ol>
+
+            <p>Der Vertragstext wird vom Anbieter gespeichert und kann vom Kunden nach dem Login in seinem Kundenkonto
+                abgerufen werden. Die AGB sind zudem jederzeit unter dem Link /agb abrufbar.</p>
+
+            <h3>1.3 Vertragssprache</h3>
+            <p>Die Vertragssprache ist ausschließlich Deutsch. Sämtliche Kommunikation und Dokumentation erfolgt in
+                deutscher Sprache.</p>
+
+            <h3>1.4 Verbraucher und Unternehmer</h3>
+            <p>Verbraucher im Sinne dieser AGB ist jede natürliche Person, die ein Rechtsgeschäft zu Zwecken abschließt,
+                die überwiegend weder ihrer gewerblichen noch ihrer selbständigen beruflichen Tätigkeit zugerechnet
+                werden können (§ 13 BGB). Unternehmer ist eine natürliche oder juristische Person oder eine rechtsfähige
+                Personengesellschaft, die bei Abschluss eines Rechtsgeschäfts in Ausübung ihrer gewerblichen oder
+                selbständigen beruflichen Tätigkeit handelt (§ 14 BGB).</p>
+        </section>
+
+        <!-- § 2 Leistungsbeschreibung -->
+        <section id="leistungsbeschreibung">
+            <h2>§ 2 Leistungsbeschreibung</h2>
+
+            <h3>2.1 Allgemeine Beschreibung</h3>
+            <p>PitchInsights ist eine webbasierte Plattform zur Verwaltung und Organisation von Fußballmannschaften und
+                deren Aktivitäten. Die Plattform ermöglicht es Trainern, Betreuern und Mannschaftsleitern, ihre Teams
+                effizient zu verwalten.</p>
+
+            <h3>2.2 Funktionsumfang</h3>
+            <p>Der Leistungsumfang von PitchInsights umfasst je nach gebuchtem Tarif und aktueller Entwicklungsphase
+                insbesondere:</p>
+            <ul>
+                <li>Erstellung und Verwaltung von Teams und Mannschaften</li>
+                <li>Spielerverwaltung mit Stammdaten und Statistiken</li>
+                <li>Trainingsplanung und -dokumentation</li>
+                <li>Spielplanung und Ergebniserfassung</li>
+                <li>Kommunikationsfunktionen innerhalb des Teams</li>
+                <li>Datenvisualisierung und Statistik-Auswertungen</li>
+                <li>Integration externer Datenquellen (sofern verfügbar und freigeschaltet)</li>
+                <li>Export-Funktionen für Berichte und Statistiken</li>
+                <li>Anpassbare Widgets und Dashboard-Funktionen</li>
+                <li>Rollenverwaltung mit unterschiedlichen Berechtigungsstufen</li>
+            </ul>
+
+            <h3>2.3 Entwicklungsstand</h3>
+            <div class="highlight-box info">
+                <p><strong>Hinweis:</strong> PitchInsights befindet sich derzeit in einer aktiven Entwicklungsphase
+                    (Pilotphase). Funktionen können hinzugefügt, verändert oder entfernt werden. Wir bemühen uns, Nutzer
+                    über wesentliche Änderungen rechtzeitig zu informieren. Der Funktionsumfang kann von der
+                    Beschreibung in Werbematerialien abweichen.</p>
+            </div>
+
+            <h3>2.4 Technische Anforderungen</h3>
+            <p>Zur Nutzung von PitchInsights benötigen Sie:</p>
+            <ul>
+                <li>Einen internetfähigen Computer, Tablet oder Smartphone</li>
+                <li>Einen aktuellen Webbrowser (Chrome, Firefox, Safari, Edge in jeweils aktueller Version)</li>
+                <li>Eine stabile Internetverbindung</li>
+                <li>Eine gültige E-Mail-Adresse</li>
+                <li>JavaScript muss aktiviert sein</li>
+            </ul>
+
+            <p>Die Kosten für die Internetverbindung und die technische Ausstattung trägt der Nutzer selbst.</p>
+        </section>
+
+        <!-- § 3 Registrierung -->
+        <section id="registrierung">
+            <h2>§ 3 Registrierung und Nutzerkonto</h2>
+
+            <h3>3.1 Registrierungsvoraussetzungen</h3>
+            <p>Die Nutzung von PitchInsights erfordert eine vorherige Registrierung. Zur Registrierung berechtigt sind:
+            </p>
+            <ul>
+                <li>Natürliche Personen, die das 18. Lebensjahr vollendet haben</li>
+                <li>Minderjährige ab 16 Jahren mit Einwilligung eines Erziehungsberechtigten</li>
+                <li>Juristische Personen und Personengesellschaften, vertreten durch eine vertretungsberechtigte
+                    natürliche Person</li>
+            </ul>
+
+            <h3>3.2 Registrierungspflichten</h3>
+            <p>Bei der Registrierung verpflichtet sich der Nutzer:</p>
+            <ol>
+                <li>Ausschließlich wahrheitsgemäße und vollständige Angaben zu machen</li>
+                <li>Seine Daten stets aktuell zu halten</li>
+                <li>Ein sicheres Passwort zu wählen (mindestens 12 Zeichen, Kombination aus Groß-/Kleinbuchstaben,
+                    Zahlen und Sonderzeichen)</li>
+                <li>Seine Zugangsdaten geheim zu halten und vor unbefugtem Zugriff durch Dritte zu schützen</li>
+                <li>Uns unverzüglich zu informieren, wenn er Kenntnis davon erlangt, dass ein unbefugter Dritter sein
+                    Passwort kennt oder sein Konto missbraucht wird</li>
+            </ol>
+
+            <h3>3.3 Kontosicherheit</h3>
+            <p>Der Nutzer ist für alle Aktivitäten verantwortlich, die unter Verwendung seines Nutzerkontos erfolgen,
+                sofern er diese nicht zu vertreten hat. Wir empfehlen dringend die Aktivierung der
+                Zwei-Faktor-Authentifizierung (2FA), sofern verfügbar, um die Kontosicherheit zu erhöhen.</p>
+
+            <h3>3.4 Ein Konto pro Person</h3>
+            <p>Jede natürliche Person darf nur ein Nutzerkonto bei PitchInsights führen. Die Erstellung mehrerer Konten
+                durch dieselbe Person ist untersagt und kann zur Sperrung aller betroffenen Konten führen.</p>
+
+            <h3>3.5 Einladungscodes</h3>
+            <p>Nutzer können über Einladungslinks/-codes direkt einem bestehenden Team beitreten. Durch die Nutzung
+                eines Einladungscodes erkennt der Nutzer diese AGB ebenso an wie bei einer regulären Registrierung.</p>
+        </section>
+
+        <!-- § 4 Zahlungsbedingungen -->
+        <section id="zahlungsbedingungen">
+            <h2>§ 4 Zahlungsbedingungen und Preise</h2>
+
+            <h3>4.1 Preise</h3>
+            <p>Die aktuellen Preise für die Nutzung von PitchInsights sind auf der Registrierungsseite sowie in der
+                Preisübersicht ersichtlich. Alle angegebenen Preise verstehen sich als Endpreise inklusive der jeweils
+                gültigen gesetzlichen Mehrwertsteuer.</p>
+
+            <h3>4.2 Abo-Preis</h3>
+            <p>Der monatliche Abo-Preis beträgt 20,00 EUR (inkl. MwSt.). Das Abonnement ist monatlich kündbar.
+                Die Kündigung ist jederzeit zum Ende des laufenden Abrechnungszeitraums möglich.
+                Bei fristgerechter Ausübung des Widerrufsrechts werden bereits gezahlte Beträge anteilig erstattet.</p>
+
+            <h3>4.3 Zahlungsmethoden</h3>
+            <p>Wir bieten folgende Zahlungsmethoden an:</p>
+            <ul>
+                <li>Kreditkarte (Visa, Mastercard)</li>
+                <li>Überweisung (SEPA)</li>
+                <li>PayPal (sofern verfügbar)</li>
+                <li>Weitere Zahlungsmethoden können je nach Region angeboten werden</li>
+            </ul>
+
+            <h3>4.4 Fälligkeit</h3>
+            <p>Der Kaufpreis ist mit Abschluss der Registrierung sofort fällig. Der Zugang zur Plattform wird nach
+                Zahlungseingang freigeschaltet. Bei Nutzung eines gültigen Promo-Codes entfällt die Zahlungspflicht
+                entsprechend der Promo-Code-Bedingungen.</p>
+
+            <h3>4.5 Zahlungsverzug</h3>
+            <p>Bei Zahlungsverzug sind wir berechtigt, den Zugang zur Plattform bis zur vollständigen Begleichung der
+                ausstehenden Forderungen zu sperren. Weitere gesetzliche Ansprüche bleiben hiervon unberührt.</p>
+
+            <h3>4.6 Preisänderungen</h3>
+            <p>Wir behalten uns das Recht vor, die Preise für zukünftige Abrechnungszeiträume zu ändern. Preisänderungen
+                werden den Nutzern mindestens 30 Tage im Voraus per E-Mail mitgeteilt. Bei Preiserhöhungen haben Nutzer
+                ein Sonderkündigungsrecht zum Zeitpunkt des Inkrafttretens der Preiserhöhung.</p>
+        </section>
+
+        <!-- § 5 Promo-Codes -->
+        <section id="promocodes">
+            <h2>§ 5 Promo-Codes und Rabatte</h2>
+
+            <h3>5.1 Verwendung von Promo-Codes</h3>
+            <p>Promo-Codes können während der Registrierung oder an anderer vorgesehener Stelle eingegeben werden, um
+                Rabatte oder kostenfreien Zugang zu erhalten. Jeder Promo-Code unterliegt spezifischen Bedingungen
+                bezüglich:</p>
+            <ul>
+                <li>Gültigkeitsdauer</li>
+                <li>Anzahl der maximalen Verwendungen</li>
+                <li>Art des gewährten Rabatts oder Vorteils</li>
+                <li>Ggf. weiteren Einschränkungen</li>
+            </ul>
+
+            <h3>5.2 Einschränkungen</h3>
+            <p>Promo-Codes sind:</p>
+            <ul>
+                <li>Nicht mit anderen Aktionen oder Rabatten kombinierbar, sofern nicht ausdrücklich anders angegeben
+                </li>
+                <li>Nicht übertragbar und nicht bar auszahlbar</li>
+                <li>Pro Nutzerkonto nur einmal einlösbar</li>
+                <li>An eventuelle Mindestbestellwerte oder andere Bedingungen gebunden</li>
+            </ul>
+
+            <h3>5.3 Missbrauch</h3>
+            <p>Der Missbrauch von Promo-Codes ist untersagt. Als Missbrauch gilt insbesondere:</p>
+            <ul>
+                <li>Die Erstellung mehrerer Konten zur mehrfachen Nutzung eines Promo-Codes</li>
+                <li>Der Handel oder Verkauf von Promo-Codes</li>
+                <li>Die Nutzung automatisierter Methoden zur Ermittlung gültiger Promo-Codes</li>
+            </ul>
+            <p>Bei Missbrauch sind wir berechtigt, den Zugang zu sperren und bereits gewährte Rabatte zurückzufordern.
+            </p>
+        </section>
+
+        <!-- § 6 Testphase -->
+        <section id="testphase">
+            <h2>§ 6 Pilotphase und Early Access</h2>
+
+            <h3>6.1 Pilotprogramm</h3>
+            <p>PitchInsights befindet sich derzeit in der Pilotphase. Nutzer, die während dieser Phase beitreten, nehmen
+                am Early-Access-Programm teil. Die Pilotphase dient der Erprobung und Weiterentwicklung der Plattform.
+            </p>
+
+            <h3>6.2 Besonderheiten der Pilotphase</h3>
+            <p>Während der Pilotphase gilt:</p>
+            <ul>
+                <li>Funktionen können jederzeit hinzugefügt, geändert oder entfernt werden</li>
+                <li>Es kann zu unvorhergesehenen Ausfällen oder Fehlern kommen</li>
+                <li>Feedback der Nutzer ist ausdrücklich erwünscht und wird bei der Weiterentwicklung berücksichtigt
+                </li>
+                <li>Nutzer erhalten vergünstigten oder kostenfreien Zugang</li>
+                <li>Der Support kann eingeschränkt sein</li>
+            </ul>
+
+            <h3>6.3 Übergang zum Vollbetrieb</h3>
+            <p>Nach Abschluss der Pilotphase gelten die dann gültigen Preise und Bedingungen. Pilotnutzer werden über
+                den Übergang mindestens 30 Tage im Voraus informiert und können ggf. von Sonderkonditionen profitieren.
+            </p>
+        </section>
+
+        <!-- § 7 Nutzungspflichten -->
+        <section id="nutzungspflichten">
+            <h2>§ 7 Nutzungspflichten und -rechte</h2>
+
+            <h3>7.1 Nutzungsrecht</h3>
+            <p>Mit Vertragsschluss räumt der Anbieter dem Nutzer ein einfaches, nicht übertragbares, nicht
+                unterlizenzierbares Recht zur Nutzung der PitchInsights-Plattform im Rahmen dieser AGB ein. Das
+                Nutzungsrecht ist auf die Vertragslaufzeit beschränkt.</p>
+
+            <h3>7.2 Bestimmungsgemäße Nutzung</h3>
+            <p>Der Nutzer verpflichtet sich, die Plattform nur zu den vorgesehenen Zwecken zu nutzen:</p>
+            <ul>
+                <li>Verwaltung von Sportmannschaften und deren Aktivitäten</li>
+                <li>Kommunikation innerhalb des Teams</li>
+                <li>Analyse und Auswertung von Teamdaten</li>
+                <li>Persönliche, nicht-kommerzielle Nutzung, sofern nicht anders vereinbart</li>
+            </ul>
+
+            <h3>7.3 Verantwortung für Inhalte</h3>
+            <p>Der Nutzer ist für alle Inhalte verantwortlich, die er auf der Plattform einstellt oder über diese
+                verbreitet. Der Nutzer garantiert, dass seine Inhalte:</p>
+            <ul>
+                <li>Nicht gegen geltendes Recht verstoßen</li>
+                <li>Keine Rechte Dritter verletzen</li>
+                <li>Keine schädliche Software enthalten</li>
+                <li>Der Wahrheit entsprechen, soweit es sich um Tatsachenbehauptungen handelt</li>
+            </ul>
+
+            <h3>7.4 Einwilligung Dritter</h3>
+            <p>Soweit der Nutzer personenbezogene Daten Dritter (z.B. von Spielern, Eltern) auf der Plattform speichert,
+                versichert er, dass er hierzu berechtigt ist und die erforderlichen Einwilligungen der betroffenen
+                Personen vorliegen.</p>
+        </section>
+
+        <!-- § 8 Verbotene Nutzung -->
+        <section id="verbotene-nutzung">
+            <h2>§ 8 Verbotene Nutzung</h2>
+
+            <h3>8.1 Untersagte Handlungen</h3>
+            <p>Dem Nutzer ist es ausdrücklich untersagt:</p>
+            <ul>
+                <li>Die Plattform für rechtswidrige Zwecke zu nutzen</li>
+                <li>Inhalte zu verbreiten, die beleidigend, verleumderisch, rassistisch, sexistisch,
+                    gewaltverherrlichend, pornografisch oder anderweitig rechtswidrig sind</li>
+                <li>Die Sicherheit der Plattform zu gefährden oder zu beeinträchtigen</li>
+                <li>Versuche zu unternehmen, unberechtigt auf Daten anderer Nutzer zuzugreifen</li>
+                <li>Die Plattform durch automatisierte Zugriffe, Bots oder Skripte übermäßig zu belasten</li>
+                <li>Die Plattform für Werbezwecke, Spam oder unerwünschte Nachrichten zu nutzen</li>
+                <li>Den Quellcode der Plattform zu dekompilieren, zurückzuentwickeln oder anderweitig zu analysieren
+                </li>
+                <li>Sicherheitsmaßnahmen zu umgehen oder dies zu versuchen</li>
+                <li>Gefälschte oder irreführende Identitäten zu verwenden</li>
+                <li>Andere Nutzer zu belästigen oder zu bedrohen</li>
+            </ul>
+
+            <h3>8.2 Konsequenzen bei Verstoß</h3>
+            <p>Bei Verstößen gegen diese Nutzungsregeln sind wir berechtigt:</p>
+            <ul>
+                <li>Den Nutzer zu verwarnen</li>
+                <li>Inhalte zu entfernen oder zu sperren</li>
+                <li>Das Nutzerkonto vorübergehend zu sperren</li>
+                <li>Das Nutzerkonto dauerhaft zu sperren und den Vertrag fristlos zu kündigen</li>
+                <li>Schadensersatz geltend zu machen</li>
+                <li>Strafanzeige zu erstatten</li>
+            </ul>
+
+            <div class="highlight-box warning">
+                <p><strong>Sicherheitshinweis:</strong> Jeder Versuch, die Sicherheit der Plattform zu kompromittieren,
+                    wird protokolliert und kann zur sofortigen Sperrung sowie zur Anzeige bei den zuständigen Behörden
+                    führen. Wir setzen umfangreiche Sicherheitsmaßnahmen ein, um solche Versuche zu erkennen und zu
+                    verhindern.</p>
+            </div>
+        </section>
+
+        <!-- § 9 Datenschutz -->
+        <section id="datenschutz">
+            <h2>§ 9 Datenschutz und Datensicherheit</h2>
+
+            <h3>9.1 Datenschutz</h3>
+            <p>Der Schutz personenbezogener Daten hat für uns höchste Priorität. Die Verarbeitung personenbezogener
+                Daten erfolgt ausschließlich im Einklang mit der Datenschutz-Grundverordnung (DSGVO) und dem
+                Bundesdatenschutzgesetz (BDSG). Einzelheiten zur Datenverarbeitung entnehmen Sie bitte unserer separaten
+                <a href="/datenschutz">Datenschutzerklärung</a>.
+            </p>
+
+            <h3>9.2 Technische Sicherheitsmaßnahmen</h3>
+            <p>Wir setzen umfangreiche technische und organisatorische Maßnahmen zum Schutz Ihrer Daten ein, darunter:
+            </p>
+            <ul>
+                <li>Verschlüsselte Datenübertragung (TLS/SSL)</li>
+                <li>Sichere Passwort-Speicherung mit modernen Hashing-Algorithmen</li>
+                <li>Regelmäßige Sicherheitsaudits und Penetrationstests</li>
+                <li>Firewalls und Intrusion Detection Systeme</li>
+                <li>Rate Limiting zum Schutz vor Brute-Force-Angriffen</li>
+                <li>Zwei-Faktor-Authentifizierung</li>
+                <li>Regelmäßige Backups</li>
+            </ul>
+
+            <h3>9.3 Datensicherung</h3>
+            <p>Wir führen regelmäßige Backups der Nutzerdaten durch. Der Nutzer ist jedoch selbst dafür verantwortlich,
+                wichtige Daten zusätzlich zu sichern. Wir empfehlen die Nutzung der Export-Funktionen der Plattform.</p>
+        </section>
+
+        <!-- § 10 Verfügbarkeit -->
+        <section id="verfuegbarkeit">
+            <h2>§ 10 Verfügbarkeit und Support</h2>
+
+            <h3>10.1 Verfügbarkeit</h3>
+            <p>Wir bemühen uns, eine möglichst hohe Verfügbarkeit der Plattform zu gewährleisten. Eine Verfügbarkeit von
+                100% kann jedoch nicht garantiert werden. Insbesondere können folgende Ereignisse zu einer
+                vorübergehenden Nichterreichbarkeit führen:</p>
+            <ul>
+                <li>Geplante Wartungsarbeiten (werden nach Möglichkeit vorab angekündigt)</li>
+                <li>Technische Störungen bei Drittanbietern (z.B. Hosting-Provider)</li>
+                <li>Höhere Gewalt</li>
+                <li>DDoS-Attacken oder andere Cyberangriffe</li>
+                <li>Notwendige Sicherheitsupdates</li>
+            </ul>
+
+            <h3>10.2 Support</h3>
+            <p>Support ist primär per E-Mail erreichbar. Während der Pilotphase kann der Support eingeschränkt sein. Wir
+                bemühen uns, Anfragen innerhalb von 48 Stunden an Werktagen zu beantworten.</p>
+
+            <h3>10.3 Keine Garantie</h3>
+            <p>Die Plattform wird "wie besehen" (as is) zur Verfügung gestellt. Wir garantieren nicht, dass die
+                Plattform frei von Fehlern ist oder alle Anforderungen des Nutzers erfüllt.</p>
+        </section>
+
+        <!-- § 11 Haftung -->
+        <section id="haftung">
+            <h2>§ 11 Haftungsbeschränkung</h2>
+
+            <h3>11.1 Unbeschränkte Haftung</h3>
+            <p>Wir haften unbeschränkt für Schäden:</p>
+            <ul>
+                <li>Die durch vorsätzliches oder grob fahrlässiges Verhalten verursacht wurden</li>
+                <li>Aus der Verletzung von Leben, Körper oder Gesundheit</li>
+                <li>Nach dem Produkthaftungsgesetz</li>
+                <li>Soweit eine Garantie übernommen wurde</li>
+            </ul>
+
+            <h3>11.2 Beschränkte Haftung</h3>
+            <p>Bei leichter Fahrlässigkeit haften wir nur bei Verletzung wesentlicher Vertragspflichten
+                (Kardinalpflichten), deren Erfüllung die ordnungsgemäße Durchführung des Vertrages überhaupt erst
+                ermöglicht und auf deren Einhaltung der Kunde regelmäßig vertrauen darf. Die Haftung ist in diesem Fall
+                auf den vorhersehbaren, vertragstypischen Schaden begrenzt.</p>
+
+            <h3>11.3 Haftung für Inhalte Dritter</h3>
+            <p>Wir haften nicht für Inhalte, die von Nutzern auf der Plattform eingestellt werden. Für externe Links
+                übernehmen wir keine Haftung für deren Inhalte.</p>
+
+            <h3>11.4 Datenverlust</h3>
+            <p>Die Haftung für Datenverlust wird auf den typischen Wiederherstellungsaufwand beschränkt, der bei
+                regelmäßiger und gefahrentsprechender Anfertigung von Sicherungskopien entstanden wäre. Der Nutzer ist
+                verpflichtet, regelmäßig Sicherungskopien seiner Daten anzufertigen.</p>
+        </section>
+
+        <!-- § 12 Gewährleistung -->
+        <section id="gewaehrleistung">
+            <h2>§ 12 Gewährleistung</h2>
+
+            <h3>12.1 Mängelansprüche</h3>
+            <p>Es gelten die gesetzlichen Gewährleistungsrechte. Für Verbraucher beträgt die Gewährleistungsfrist zwei
+                Jahre. Für Unternehmer beträgt die Gewährleistungsfrist ein Jahr.</p>
+
+            <h3>12.2 Softwaremängel</h3>
+            <p>Bei Vorliegen eines Mangels sind wir berechtigt, zunächst Nacherfüllung zu leisten. Die Nacherfüllung
+                erfolgt nach unserer Wahl durch Beseitigung des Mangels (Nachbesserung) oder Zurverfügungstellung einer
+                mangelfreien Leistung (Ersatzlieferung).</p>
+
+            <h3>12.3 Mitwirkungspflichten</h3>
+            <p>Der Nutzer ist verpflichtet, Mängel unverzüglich anzuzeigen und bei der Fehleranalyse mitzuwirken. Dazu
+                gehört insbesondere die Beschreibung des Fehlers, die Angabe der Schritte zur Reproduktion und die
+                Bereitstellung relevanter Informationen.</p>
+        </section>
+
+        <!-- § 13 Kündigung -->
+        <section id="kuendigung">
+            <h2>§ 13 Kündigung und Beendigung</h2>
+
+            <h3>13.1 Ordentliche Kündigung</h3>
+            <p>Bei zeitlich befristeten Zugängen (z.B. Pilotphase) endet der Vertrag automatisch mit Ablauf der
+                Laufzeit. Bei unbefristeten Zugängen kann der Vertrag von beiden Seiten mit einer Frist von 30 Tagen zum
+                Monatsende gekündigt werden.</p>
+
+            <h3>13.2 Außerordentliche Kündigung</h3>
+            <p>Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt. Ein wichtiger Grund liegt
+                insbesondere vor, wenn:</p>
+            <ul>
+                <li>Der Nutzer wiederholt oder schwerwiegend gegen diese AGB verstößt</li>
+                <li>Der Nutzer mit der Zahlung in Verzug gerät</li>
+                <li>Umstände eintreten, die die Fortsetzung des Vertragsverhältnisses unzumutbar machen</li>
+            </ul>
+
+            <h3>13.3 Folgen der Beendigung</h3>
+            <p>Mit Beendigung des Vertrages:</p>
+            <ul>
+                <li>Erlischt das Nutzungsrecht sofort</li>
+                <li>Wird das Nutzerkonto deaktiviert</li>
+                <li>Hat der Nutzer 30 Tage Zeit, seine Daten zu exportieren</li>
+                <li>Werden die Daten nach Ablauf der Aufbewahrungspflichten gelöscht</li>
+            </ul>
+        </section>
+
+        <!-- § 14 Änderungen der AGB -->
+        <section id="aenderungen">
+            <h2>§ 14 Änderungen der AGB</h2>
+
+            <h3>14.1 Änderungsrecht</h3>
+            <p>Wir behalten uns das Recht vor, diese AGB jederzeit mit Wirkung für die Zukunft zu ändern. Änderungen
+                können insbesondere erfolgen:</p>
+            <ul>
+                <li>Zur Anpassung an geänderte Rechtslage</li>
+                <li>Zur Anpassung an höchstrichterliche Rechtsprechung</li>
+                <li>Bei Einführung neuer Funktionen oder Dienste</li>
+                <li>Zur Schließung von Regelungslücken</li>
+                <li>Zur Verbesserung der Verständlichkeit</li>
+            </ul>
+
+            <h3>14.2 Information über Änderungen</h3>
+            <p>Über Änderungen der AGB werden Nutzer mindestens 30 Tage vor Inkrafttreten per E-Mail informiert. Die
+                geänderten AGB werden zudem auf der Website veröffentlicht.</p>
+
+            <h3>14.3 Zustimmung zu Änderungen</h3>
+            <p>Wenn der Nutzer den geänderten AGB nicht innerhalb von 30 Tagen nach Zugang der Änderungsmitteilung
+                widerspricht, gelten die geänderten AGB als genehmigt. Auf diese Rechtsfolge werden wir in der
+                Änderungsmitteilung gesondert hinweisen. Bei Widerspruch besteht ein Sonderkündigungsrecht zum Zeitpunkt
+                des Inkrafttretens der geänderten AGB.</p>
+        </section>
+
+        <!-- § 15 Widerrufsrecht -->
+        <section id="widerrufsrecht">
+            <h2>§ 15 Widerrufsrecht</h2>
+
+            <div class="highlight-box">
+                <h3>Widerrufsbelehrung</h3>
+
+                <h4>Widerrufsrecht</h4>
+                <p>Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die
+                    Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.</p>
+
+                <p>Um Ihr Widerrufsrecht auszuüben, müssen Sie uns mittels einer eindeutigen Erklärung (z.B. ein mit der
+                    Post versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen,
+                    informieren. Sie können dafür das unten stehende Muster-Widerrufsformular verwenden, das jedoch
+                    nicht vorgeschrieben ist.</p>
+
+                <p>Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des
+                    Widerrufsrechts vor Ablauf der Widerrufsfrist absenden.</p>
+
+                <h4>Folgen des Widerrufs</h4>
+                <p>Wenn Sie diesen Vertrag widerrufen, haben wir Ihnen alle Zahlungen, die wir von Ihnen erhalten haben,
+                    unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag zurückzuzahlen, an dem die Mitteilung
+                    über Ihren Widerruf dieses Vertrags bei uns eingegangen ist. Für diese Rückzahlung verwenden wir
+                    dasselbe Zahlungsmittel, das Sie bei der ursprünglichen Transaktion eingesetzt haben, es sei denn,
+                    mit Ihnen wurde ausdrücklich etwas anderes vereinbart; in keinem Fall werden Ihnen wegen dieser
+                    Rückzahlung Entgelte berechnet.</p>
+
+                <p>Haben Sie verlangt, dass die Dienstleistung während der Widerrufsfrist beginnen soll, so haben Sie
+                    uns einen angemessenen Betrag zu zahlen, der dem Anteil der bis zu dem Zeitpunkt, zu dem Sie uns von
+                    der Ausübung des Widerrufsrechts hinsichtlich dieses Vertrags unterrichten, bereits erbrachten
+                    Dienstleistungen im Vergleich zum Gesamtumfang der im Vertrag vorgesehenen Dienstleistungen
+                    entspricht.</p>
+            </div>
+
+            <h3>Muster-Widerrufsformular</h3>
+            <p>Wenn Sie den Vertrag widerrufen wollen, füllen Sie bitte dieses Formular aus und senden Sie es zurück:
+            </p>
+            <div class="highlight-box info">
+                <p>An: [Anbieter-Adresse gemäß Impressum]</p>
+                <p>Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über die Erbringung der
+                    folgenden Dienstleistung:</p>
+                <p>– PitchInsights Plattformzugang</p>
+                <p>Bestellt am: _______________</p>
+                <p>Name des/der Verbraucher(s): _______________</p>
+                <p>Anschrift des/der Verbraucher(s): _______________</p>
+                <p>Datum: _______________</p>
+                <p>Unterschrift des/der Verbraucher(s) (nur bei Mitteilung auf Papier): _______________</p>
+                <p><small>(*) Unzutreffendes streichen</small></p>
+            </div>
+        </section>
+
+        <!-- § 16 Urheberrecht -->
+        <section id="urheberrecht">
+            <h2>§ 16 Urheberrecht und geistiges Eigentum</h2>
+
+            <h3>16.1 Eigentumsrechte des Anbieters</h3>
+            <p>Alle Rechte an der PitchInsights-Plattform, einschließlich des Quellcodes, der Grafiken, des Designs, der
+                Marken und der Dokumentation, verbleiben beim Anbieter. Der Nutzer erwirbt mit Vertragsschluss lediglich
+                ein einfaches Nutzungsrecht gemäß diesen AGB.</p>
+
+            <h3>16.2 Nutzerdaten</h3>
+            <p>Die Eigentumsrechte an den vom Nutzer eingestellten Inhalten verbleiben beim Nutzer. Der Nutzer räumt dem
+                Anbieter jedoch ein einfaches, unentgeltliches Nutzungsrecht an diesen Inhalten ein, soweit dies für die
+                Erbringung der vertraglich geschuldeten Leistungen erforderlich ist.</p>
+
+            <h3>16.3 Feedback</h3>
+            <p>Soweit der Nutzer uns Feedback, Vorschläge oder Verbesserungsvorschläge mitteilt, räumt er uns das Recht
+                ein, diese unentgeltlich für die Weiterentwicklung der Plattform zu nutzen.</p>
+        </section>
+
+        <!-- § 17 Streitbeilegung -->
+        <section id="streitbeilegung">
+            <h2>§ 17 Streitbeilegung</h2>
+
+            <h3>17.1 Online-Streitbeilegung</h3>
+            <p>Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit, die Sie unter <a
+                    href="https://ec.europa.eu/consumers/odr" target="_blank"
+                    rel="noopener">https://ec.europa.eu/consumers/odr</a> finden.</p>
+
+            <h3>17.2 Verbraucherschlichtungsstellen</h3>
+            <p>Wir sind nicht bereit und nicht verpflichtet, an einem Streitbeilegungsverfahren vor einer
+                Verbraucherschlichtungsstelle teilzunehmen.</p>
+
+            <h3>17.3 Anwendbares Recht</h3>
+            <p>Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Bei Verbrauchern
+                gilt diese Rechtswahl nur insoweit, als nicht der gewährte Schutz durch zwingende Bestimmungen des
+                Rechts des Staates, in dem der Verbraucher seinen gewöhnlichen Aufenthalt hat, entzogen wird.</p>
+
+            <h3>17.4 Gerichtsstand</h3>
+            <p>Ist der Kunde Kaufmann, juristische Person des öffentlichen Rechts oder öffentlich-rechtliches
+                Sondervermögen, ist Gerichtsstand für alle Streitigkeiten aus diesem Vertrag der Geschäftssitz des
+                Anbieters.</p>
+        </section>
+
+        <!-- § 18 Salvatorische Klausel -->
+        <section id="salvatorische">
+            <h2>§ 18 Salvatorische Klausel</h2>
+
+            <p>Sollten einzelne Bestimmungen dieser AGB ganz oder teilweise unwirksam sein oder werden, so wird
+                hierdurch die Gültigkeit der übrigen Bestimmungen nicht berührt. An die Stelle der unwirksamen oder
+                fehlenden Bestimmungen treten die jeweiligen gesetzlichen Regelungen.</p>
+
+            <p>Gleiches gilt für etwaige Regelungslücken in diesen AGB. Diese sind durch eine dem Sinn und Zweck der AGB
+                sowie den Interessen der Parteien entsprechende Regelung zu schließen.</p>
+        </section>
+
+        <!-- § 19 Schlussbestimmungen -->
+        <section id="schlussbestimmungen">
+            <h2>§ 19 Schlussbestimmungen</h2>
+
+            <h3>19.1 Schriftformerfordernis</h3>
+            <p>Änderungen und Ergänzungen dieser AGB bedürfen zu ihrer Wirksamkeit der Schriftform. Dies gilt auch für
+                die Aufhebung dieses Schriftformerfordernisses. Die elektronische Form (E-Mail) ist ausreichend.</p>
+
+            <h3>19.2 Abtretung</h3>
+            <p>Der Nutzer darf Rechte und Pflichten aus diesem Vertrag nur mit vorheriger schriftlicher Zustimmung des
+                Anbieters auf Dritte übertragen.</p>
+
+            <h3>19.3 Vollständigkeit</h3>
+            <p>Diese AGB bilden zusammen mit der Datenschutzerklärung die vollständige Vereinbarung zwischen den
+                Parteien hinsichtlich der Nutzung der PitchInsights-Plattform. Mündliche oder schriftliche Nebenabreden
+                bestehen nicht.</p>
+
+            <h3>19.4 Überschriften</h3>
+            <p>Die Überschriften in diesen AGB dienen lediglich der Übersichtlichkeit und haben keinen Einfluss auf die
+                Auslegung der einzelnen Bestimmungen.</p>
+        </section>
+
+        <!-- Version Info -->
+        <div class="version-info">
+            <p>Version 1.0 | Stand: Januar 2025</p>
+            <p>Diese AGB wurden sorgfältig erstellt und geprüft.</p>
+        </div>
+
+        <!-- Footer Navigation -->
+        <nav class="footer-nav">
+            <a href="/register">Registrierung</a>
+            <a href="/login">Login</a>
+            <a href="/datenschutz">Datenschutz</a>
+            <a href="/impressum">Impressum</a>
+        </nav>
+    </div>
+</body>
+
+</html>

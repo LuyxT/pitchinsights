@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PitchInsights – Teammanagement für Fußballvereine</title>
+    <meta name="description"
+        content="Die zentrale Plattform für Kader, Kalender, Kommunikation und Taktik. Entwickelt für ambitionierte Fußballvereine.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/static/images/favicon.png">
+
+    <!-- Scroll to top immediately -->
+    <script>
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, 0);
+        if (document.documentElement) document.documentElement.scrollTop = 0;
+
+        // Also on load
+        window.addEventListener('load', function () {
+            window.scrollTo(0, 0);
+            if (document.documentElement) document.documentElement.scrollTop = 0;
+            if (document.body) document.body.scrollTop = 0;
+        });
+
+        // And on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function () {
+            window.scrollTo(0, 0);
+            if (document.body) document.body.scrollTop = 0;
+        });
+    </script>
+
+    <style>
+        /* ========================
+           RESET & BASE
+           ======================== */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 17px;
+            line-height: 1.5;
+            color: #1d1d1f;
+            background: #fff;
+        }
+
+        /* ========================
+           TYPOGRAPHY
+           ======================== */
+        h1,
+        h2,
+        h3 {
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        h1 {
+            font-size: clamp(40px, 6vw, 64px);
+            letter-spacing: -0.03em;
+        }
+
+        h2 {
+            font-size: clamp(32px, 4vw, 48px);
+        }
+
+        h3 {
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        p {
+            color: #86868b;
+        }
+
+        /* ========================
+           LAYOUT
+           ======================== */
+        .container {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        section {
+            padding: 120px 0;
+        }
+
+        /* ========================
+           HEADER / NAV
+           ======================== */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .logo {
+            font-size: 21px;
+            font-weight: 600;
+            color: #1d1d1f;
+            text-decoration: none;
+            letter-spacing: -0.01em;
+        }
+
+        .nav-link {
+            font-size: 14px;
+            font-weight: 400;
+            color: #1d1d1f;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background 220ms ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .nav-link.primary {
+            background: #0071e3;
+            color: #fff;
+        }
+
+        .nav-link.primary:hover {
+            background: #0077ed;
+        }
+
+        /* ========================
+           HERO SECTION
+           ======================== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 64px;
+        }
+
+        .hero-content {
+            max-width: 720px;
+        }
+
+        .hero h1 {
+            margin-bottom: 24px;
+        }
+
+        .hero p {
+            font-size: 21px;
+            max-width: 540px;
+            margin: 0 auto 40px;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 17px;
+            font-weight: 400;
+            color: #0071e3;
+            text-decoration: none;
+            transition: opacity 220ms ease;
+        }
+
+        .hero-cta:hover {
+            opacity: 0.7;
+        }
+
+        .hero-cta::after {
+            content: '→';
+            transition: transform 220ms ease;
+        }
+
+        .hero-cta:hover::after {
+            transform: translateX(4px);
+        }
+
+        /* ========================
+           PROBLEM SECTION
+           ======================== */
+        .problem {
+            background: #f5f5f7;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 64px;
+        }
+
+        .problem-item h3 {
+            margin-bottom: 12px;
+            color: #1d1d1f;
+        }
+
+        .problem-item p {
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* ========================
+           SOLUTION SECTION
+           ======================== */
+        .solution-intro {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 80px;
+        }
+
+        .solution-intro h2 {
+            margin-bottom: 20px;
+        }
+
+        .solution-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .solution-card {
+            background: #f5f5f7;
+            border-radius: 20px;
+            padding: 48px;
+            transition: transform 220ms ease, box-shadow 220ms ease;
+        }
+
+        .solution-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .solution-card h3 {
+            margin-bottom: 12px;
+            color: #1d1d1f;
+        }
+
+        .solution-card p {
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* Feature card spanning full width */
+        .solution-card.wide {
+            grid-column: span 2;
+        }
+
+        /* ========================
+           PILOT SECTION
+           ======================== */
+        .pilot {
+            background: #1d1d1f;
+            color: #fff;
+        }
+
+        .pilot h2 {
+            color: #fff;
+        }
+
+        .pilot p {
+            color: #a1a1a6;
+        }
+
+        .pilot-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .pilot-text h2 {
+            margin-bottom: 24px;
+        }
+
+        .pilot-text p {
+            font-size: 17px;
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .pilot-features {
+            list-style: none;
+        }
+
+        .pilot-features li {
+            font-size: 17px;
+            color: #f5f5f7;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .pilot-features li:last-child {
+            border-bottom: none;
+        }
+
+        /* ========================
+           WAITLIST SECTION
+           ======================== */
+        .waitlist {
+            text-align: center;
+            padding: 160px 0;
+        }
+
+        .waitlist h2 {
+            margin-bottom: 20px;
+        }
+
+        .waitlist>.container>p {
+            font-size: 19px;
+            max-width: 480px;
+            margin: 0 auto 48px;
+        }
+
+        .waitlist-form {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .waitlist-form input {
+            flex: 1;
+            padding: 16px 20px;
+            font-size: 17px;
+            font-family: inherit;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 220ms ease, box-shadow 220ms ease;
+        }
+
+        .waitlist-form input:focus {
+            border-color: #0071e3;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+        }
+
+        .waitlist-form input::placeholder {
+            color: #86868b;
+        }
+
+        .waitlist-form button {
+            padding: 16px 32px;
+            font-size: 17px;
+            font-weight: 500;
+            font-family: inherit;
+            color: #fff;
+            background: #0071e3;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 220ms ease, transform 120ms ease;
+        }
+
+        .waitlist-form button:hover {
+            background: #0077ed;
+        }
+
+        .waitlist-form button:active {
+            transform: scale(0.98);
+        }
+
+        .waitlist-note {
+            font-size: 13px;
+            color: #86868b;
+            margin-top: 16px;
+        }
+
+        /* Success message */
+        .waitlist-success {
+            display: none;
+            padding: 20px;
+            background: rgba(0, 113, 227, 0.08);
+            border-radius: 12px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .waitlist-success p {
+            color: #1d1d1f;
+            font-size: 17px;
+        }
+
+        /* ========================
+           FOOTER
+           ======================== */
+        footer {
+            padding: 40px 0;
+            border-top: 1px solid #d2d2d7;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .footer-links a {
+            font-size: 13px;
+            color: #86868b;
+            text-decoration: none;
+            transition: color 220ms ease;
+        }
+
+        .footer-links a:hover {
+            color: #1d1d1f;
+        }
+
+        .footer-copy {
+            font-size: 13px;
+            color: #86868b;
+        }
+
+        /* ========================
+           ANIMATIONS
+           ======================== */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 280ms ease-out, transform 280ms ease-out;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Stagger animation for grid items */
+        .stagger>* {
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity 240ms ease-out, transform 240ms ease-out;
+        }
+
+        .stagger.visible>*:nth-child(1) {
+            transition-delay: 0ms;
+        }
+
+        .stagger.visible>*:nth-child(2) {
+            transition-delay: 60ms;
+        }
+
+        .stagger.visible>*:nth-child(3) {
+            transition-delay: 120ms;
+        }
+
+        .stagger.visible>*:nth-child(4) {
+            transition-delay: 180ms;
+        }
+
+        .stagger.visible>*:nth-child(5) {
+            transition-delay: 240ms;
+        }
+
+        .stagger.visible>* {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ========================
+           RESPONSIVE
+           ======================== */
+        @media (max-width: 768px) {
+            section {
+                padding: 80px 0;
+            }
+
+            .problem-grid {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+
+            .solution-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .solution-card.wide {
+                grid-column: span 1;
+            }
+
+            .pilot-content {
+                grid-template-columns: 1fr;
+                gap: 48px;
+            }
+
+            .waitlist-form {
+                flex-direction: column;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 24px;
+                text-align: center;
+            }
+
+            .footer-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 16px 32px;
+            }
+        }
+
+        /* Reduced motion preference */
+        @media (prefers-reduced-motion: reduce) {
+
+            .fade-in,
+            .stagger>* {
+                transition: none;
+                opacity: 1;
+                transform: none;
+            }
+
+            .hero-cta::after,
+            .solution-card,
+            .nav-link,
+            .waitlist-form input,
+            .waitlist-form button {
+                transition: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <header>
+        <nav>
+            <a href="/" class="logo">PitchInsights</a>
+            <div>
+                <a href="/login?code=pitch2026"
+                    style="padding: 10px 20px; background: #1d1d1f; color: white; border-radius: 20px; text-decoration: none; font-size: 14px; font-weight: 500; transition: opacity 0.2s;">Anmelden</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content fade-in">
+                <p style="font-size: 15px; color: #86868b; margin-bottom: 16px; letter-spacing: 0.02em;">Das erste
+                    Betriebssystem für Fußball.</p>
+                <h1>Alles für dein Team.<br>An einem Ort.</h1>
+                <p>Die zentrale Plattform für Kader, Kalender, Kommunikation und Taktik. Entwickelt für ambitionierte
+                    Fußballvereine.</p>
+                <a href="#waitlist" class="hero-cta">Zur Warteliste</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="problem">
+        <div class="container">
+            <h2 class="fade-in">Das Problem kennt jeder Trainer.</h2>
+            <div class="problem-grid stagger">
+                <div class="problem-item">
+                    <h3>Verstreute Informationen</h3>
+                    <p>Kaderlisten in Excel, Termine in WhatsApp, Taktiknotizen auf Papier. Nichts ist dort, wo man es
+                        braucht.</p>
+                </div>
+                <div class="problem-item">
+                    <h3>Fehlende Übersicht</h3>
+                    <p>Wer fehlt beim Training? Wann ist das nächste Spiel? Welcher Spieler braucht Feedback? Zu viele
+                        offene Fragen.</p>
+                </div>
+                <div class="problem-item">
+                    <h3>Zeitverlust</h3>
+                    <p>Stunden gehen verloren für Organisation statt Trainingsarbeit. Aufgaben, die automatisiert sein
+                        könnten.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section class="solution">
+        <div class="container">
+            <div class="solution-intro fade-in">
+                <h2>Eine Lösung für alles.</h2>
+                <p>PitchInsights vereint die wichtigsten Werkzeuge für Trainer und Vereinsverantwortliche in einer
+                    durchdachten Anwendung.</p>
+            </div>
+            <div class="solution-grid stagger">
+                <div class="solution-card">
+                    <h3>Kader</h3>
+                    <p>Spielerprofile, Positionen, Kontaktdaten und individuelle Notizen. Alles auf einen Blick, immer
+                        aktuell.</p>
+                </div>
+                <div class="solution-card">
+                    <h3>Kalender</h3>
+                    <p>Trainingseinheiten, Spiele und Termine zentral verwalten. Automatische Erinnerungen für das
+                        gesamte Team.</p>
+                </div>
+                <div class="solution-card">
+                    <h3>Kommunikation</h3>
+                    <p>Direkte Nachrichten an Spieler, Eltern oder das Trainerteam. Ohne private Nummern, ohne Chaos.
+                    </p>
+                </div>
+                <div class="solution-card">
+                    <h3>Taktik</h3>
+                    <p>Formationen visualisieren, Spielzüge planen und mit dem Team teilen. Professionelle Vorbereitung.
+                    </p>
+                </div>
+                <div class="solution-card wide">
+                    <h3>Videoanalyse</h3>
+                    <p>Spielszenen markieren, kommentieren und gezielt besprechen. Entwicklung sichtbar machen,
+                        Fortschritte dokumentieren.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pilot Section -->
+    <section class="pilot" id="pilot">
+        <div class="container">
+            <div class="pilot-content">
+                <div class="pilot-text fade-in">
+                    <h2>Pilotphase</h2>
+                    <p>PitchInsights befindet sich aktuell in der Entwicklung. Ausgewählte Vereine haben die
+                        Möglichkeit, die Plattform frühzeitig zu nutzen und mitzugestalten.</p>
+                    <p>Ich suche Partner, die Feedback geben und die Zukunft des digitalen Vereinsmanagements mitprägen
+                        wollen.</p>
+                </div>
+                <ul class="pilot-features fade-in">
+                    <li>Frühzeitiger Zugang zu allen Funktionen</li>
+                    <li>Direkter Draht zum Entwickler</li>
+                    <li>Einfluss auf kommende Features</li>
+                    <li>Reduzierter Preis für Early Adopters</li>
+                </ul>
+            </div>
+
+            <!-- Pilot Anmeldung -->
+            <div class="pilot-signup fade-in" style="margin-top: 64px; text-align: center;">
+                <h3 style="color: #fff; font-size: 24px; margin-bottom: 16px;">Teil der Pilotphase werden</h3>
+                <p style="color: #a1a1a6; margin-bottom: 32px;">Melde deinen Verein an und ich kontaktiere dich
+                    persönlich.</p>
+
+                <form class="pilot-form" id="pilotForm"
+                    style="display: flex; flex-direction: column; gap: 16px; max-width: 480px; margin: 0 auto;">
+                    <input type="text" name="vereinsname" placeholder="Vereinsname" required
+                        style="padding: 16px 20px; font-size: 17px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; background: rgba(255,255,255,0.1); color: #fff; outline: none;">
+                    <input type="text" name="ansprechpartner" placeholder="Dein Name" required
+                        style="padding: 16px 20px; font-size: 17px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; background: rgba(255,255,255,0.1); color: #fff; outline: none;">
+                    <input type="email" name="email" placeholder="E-Mail-Adresse" required
+                        style="padding: 16px 20px; font-size: 17px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; background: rgba(255,255,255,0.1); color: #fff; outline: none;">
+                    <button type="submit"
+                        style="padding: 16px 32px; font-size: 17px; font-weight: 500; color: #1d1d1f; background: #fff; border: none; border-radius: 12px; cursor: pointer; transition: opacity 220ms ease;">
+                        Für Pilotphase anmelden
+                    </button>
+                </form>
+
+                <div id="pilotSuccess"
+                    style="display: none; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 12px; max-width: 480px; margin: 0 auto;">
+                    <p style="color: #fff;">Vielen Dank für dein Interesse. Ich melde mich in Kürze bei dir.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Waitlist Section -->
+    <section class="waitlist" id="waitlist">
+        <div class="container">
+            <h2 class="fade-in">Interesse geweckt?</h2>
+            <p class="fade-in">Trag dich ein und ich melde mich, sobald ein Platz frei wird.</p>
+
+            <form class="waitlist-form fade-in" id="waitlistForm">
+                <input type="email" name="email" placeholder="E-Mail-Adresse" required>
+                <button type="submit">Eintragen</button>
+            </form>
+            <p class="waitlist-note fade-in">Keine Werbung. Keine Weitergabe. Nur Updates zu PitchInsights.</p>
+
+            <div class="waitlist-success" id="waitlistSuccess">
+                <p>Vielen Dank. Ich melde mich bei dir.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="/impressum">Impressum</a>
+                    <a href="/datenschutz">Datenschutz</a>
+                    <a href="/agb">AGB</a>
+                </div>
+                <p class="footer-copy">© 2026 PitchInsights</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ========================
+        // INTERSECTION OBSERVER FOR ANIMATIONS
+        // Aktiviert Fade-In Animationen beim Scrollen
+        // ========================
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        // Observe all animated elements
+        document.querySelectorAll('.fade-in, .stagger').forEach(el => {
+            observer.observe(el);
+        });
+
+        // ========================
+        // WAITLIST FORM
+        // ========================
+        const waitlistForm = document.getElementById('waitlistForm');
+        const waitlistSuccess = document.getElementById('waitlistSuccess');
+
+        waitlistForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = waitlistForm.querySelector('input[name="email"]').value;
+
+            try {
+                const response = await fetch('/api/waitlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                if (response.ok) {
+                    waitlistForm.style.display = 'none';
+                    waitlistSuccess.style.display = 'block';
+                } else {
+                    // Silently handle - could add error UI later
+                    console.log('Waitlist submission failed');
+                }
+            } catch (error) {
+                console.log('Network error');
+            }
+        });
+
+        // ========================
+        // PILOT FORM
+        // ========================
+        const pilotForm = document.getElementById('pilotForm');
+        const pilotSuccess = document.getElementById('pilotSuccess');
+
+        pilotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const vereinsname = pilotForm.querySelector('input[name="vereinsname"]').value;
+            const ansprechpartner = pilotForm.querySelector('input[name="ansprechpartner"]').value;
+            const email = pilotForm.querySelector('input[name="email"]').value;
+
+            try {
+                const response = await fetch('/api/pilot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ vereinsname, ansprechpartner, email })
+                });
+
+                if (response.ok) {
+                    pilotForm.style.display = 'none';
+                    pilotSuccess.style.display = 'block';
+                } else {
+                    console.log('Pilot submission failed');
+                }
+            } catch (error) {
+                console.log('Network error');
+            }
+        });
+
+        // ========================
+        // SCROLL TO TOP ON LOAD
+        // Verhindert, dass die Seite unten startet
+        // ========================
+        if (window.location.hash === '') {
+            window.scrollTo(0, 0);
+        }
+    </script>
+
+</body>
+
+</html>
