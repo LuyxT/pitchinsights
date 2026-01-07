@@ -395,6 +395,7 @@ async def serve_taktik():
 # Health Check (für Monitoring)
 # ============================================
 
+@app.get("/")
 @app.get("/health")
 async def health_check():
     """
