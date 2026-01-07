@@ -5555,6 +5555,22 @@
                     </div>
                 </div>
 
+                <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;">🔐 Sicherheit</h2>
+                <div class="list-container">
+                    <div class="list-item" onclick="openTwoFactorSetup()" style="cursor: pointer;">
+                        <span>🛡️ Zwei-Faktor-Authentifizierung</span>
+                        <span id="2faStatus" style="opacity: 0.7;">Laden...</span>
+                    </div>
+                    <div class="list-item" onclick="showChangePassword()" style="cursor: pointer;">
+                        <span>🔑 Passwort ändern</span>
+                        <span style="opacity: 0.5;">→</span>
+                    </div>
+                    <div class="list-item" onclick="showActiveSessions()" style="cursor: pointer;">
+                        <span>📱 Aktive Sitzungen</span>
+                        <span style="opacity: 0.5;">→</span>
+                    </div>
+                </div>
+
                 <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;">Konto</h2>
                 <div class="list-container">
                     <div class="list-item" onclick="logout()" style="cursor: pointer;">
@@ -6724,6 +6740,106 @@
                 alert('Fehler beim Speichern');
             }
         }
+
+        // ========================
+        // SECURITY FUNCTIONS
+        // ========================
+        
+        async function load2FAStatus() {
+            try {
+                const response = await fetch('/auth/2fa/status');
+                const data = await response.json();
+                const statusEl = document.getElementById('2faStatus');
+                if (statusEl) {
+                    statusEl.textContent = data.enabled ? '✅ Aktiviert' : '❌ Deaktiviert';
+                    statusEl.style.color = data.enabled ? '#10b981' : '#ef4444';
+                }
+            } catch (e) {
+                console.error('2FA status error:', e);
+            }
+        }
+        
+        function openTwoFactorSetup() {
+            window.location.href = '/auth/2fa/setup';
+        }
+        
+        function showChangePassword() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5); display: flex; align-items: center;
+                justify-content: center; z-index: 10000; backdrop-filter: blur(5px);
+            `;
+            modal.innerHTML = `
+                <div style="background: var(--card-bg); border-radius: 16px; padding: 24px; max-width: 400px; width: 90%;">
+                    <h3 style="margin-bottom: 20px;">🔑 Passwort ändern</h3>
+                    <div style="display: grid; gap: 15px;">
+                        <input type="password" id="currentPassword" placeholder="Aktuelles Passwort"
+                            style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color);">
+                        <input type="password" id="newPassword" placeholder="Neues Passwort"
+                            style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color);">
+                        <input type="password" id="confirmPassword" placeholder="Passwort wiederholen"
+                            style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color);">
+                        <p style="font-size: 12px; opacity: 0.7;">Min. 8 Zeichen, Groß-/Kleinbuchstaben, Zahlen & Sonderzeichen</p>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="this.closest('.modal-overlay').remove()"
+                                style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); cursor: pointer;">
+                                Abbrechen
+                            </button>
+                            <button onclick="changePassword()"
+                                style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; cursor: pointer; font-weight: 600;">
+                                Ändern
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        }
+        
+        async function changePassword() {
+            const current = document.getElementById('currentPassword').value;
+            const newPw = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            
+            if (newPw !== confirm) {
+                alert('Passwörter stimmen nicht überein!');
+                return;
+            }
+            if (newPw.length < 8) {
+                alert('Passwort muss mindestens 8 Zeichen haben!');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/auth/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ current_password: current, new_password: newPw })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('Passwort erfolgreich geändert!', 'success');
+                    document.querySelector('.modal-overlay').remove();
+                } else {
+                    alert(data.error || 'Fehler beim Ändern des Passworts');
+                }
+            } catch (e) {
+                alert('Netzwerkfehler');
+            }
+        }
+        
+        function showActiveSessions() {
+            showToast('Aktive Sitzungen: Diese Funktion wird bald verfügbar sein.', 'info');
+        }
+        
+        // 2FA-Status beim Laden der Settings prüfen
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(load2FAStatus, 500);
+        });
 
         function logout() {
             if (confirm('Möchtest du dich wirklich ausloggen?')) {

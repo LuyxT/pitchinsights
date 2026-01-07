@@ -11,7 +11,7 @@ import shutil
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Request, Form, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, Request, Form, HTTPException, Depends, UploadFile, File, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
@@ -43,6 +43,10 @@ from database import (
     # 2FA Database Functions
     setup_2fa, enable_2fa, disable_2fa, get_user_2fa, is_2fa_enabled,
     update_2fa_last_used, check_replay_attack, use_backup_code, log_security_event
+)
+from email_service import (
+    send_login_notification, send_password_changed_notification,
+    send_2fa_enabled_notification, EmailConfig
 )
 
 router = APIRouter()
@@ -559,11 +563,13 @@ async def login(
         logger.warning(f"Concurrent login detected for user {user['id']}")
         # TODO: Optional alle anderen Sessions invalidieren
 
-    # SECURITY: Login-Anomalie-Erkennung
+    # SECURITY: Login-Anomalie-Erkennung + E-Mail-Benachrichtigung
     if login_anomaly_detector.is_anomalous_login(user["id"], client_ip, user_agent):
         log_audit_event(user["id"], SecurityEventType.LOGIN_ANOMALY,
                         "user", user["id"], f"ip={client_ip}", client_ip)
-        # TODO: Optional E-Mail-Benachrichtigung an User senden
+        # E-Mail-Benachrichtigung bei verdächtigem Login
+        if EmailConfig.is_configured():
+            send_login_notification(email, client_ip, user_agent)
 
     # Login-Historie für zukünftige Anomalie-Erkennung speichern
     login_anomaly_detector.record_login(user["id"], client_ip, user_agent)
@@ -958,6 +964,208 @@ async def activate_user(request: Request, user_id: int):
     logger.info(f"Admin {admin['id']} activated user {user_id} ({email})")
 
     return JSONResponse({"success": True, "message": f"User {email} wurde freigeschaltet"})
+
+
+# ============================================
+# Admin Security & Backup Endpoints
+# ============================================
+
+@router.get("/api/admin/security-stats")
+async def get_security_stats(request: Request):
+    """
+    Admin-Endpoint: Security-Statistiken abrufen.
+    SECURITY: Nur für Admins.
+    """
+    admin = get_current_user(request)
+    if not admin:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_admin = get_user_by_id(admin["id"])
+    if not db_admin or not db_admin.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        
+        # User-Statistiken
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE deleted_at IS NULL")
+        total_users = cursor.fetchone()["total"]
+        
+        cursor.execute("SELECT COUNT(*) as active FROM users WHERE is_active = 1 AND deleted_at IS NULL")
+        active_users = cursor.fetchone()["active"]
+        
+        # 2FA-Statistiken
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM user_2fa 
+            WHERE is_enabled = 1 AND user_id IN (SELECT id FROM users WHERE deleted_at IS NULL)
+        """)
+        users_with_2fa = cursor.fetchone()["count"]
+        
+        # Login-Statistiken (letzte 24h)
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM login_attempts 
+            WHERE timestamp > datetime('now', '-24 hours') AND success = 1
+        """)
+        logins_24h = cursor.fetchone()["count"]
+        
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM login_attempts 
+            WHERE timestamp > datetime('now', '-24 hours') AND success = 0
+        """)
+        failed_logins_24h = cursor.fetchone()["count"]
+        
+        # Security Events (letzte 7 Tage)
+        cursor.execute("""
+            SELECT event_type, COUNT(*) as count FROM security_events 
+            WHERE timestamp > datetime('now', '-7 days')
+            GROUP BY event_type
+        """)
+        security_events = {row["event_type"]: row["count"] for row in cursor.fetchall()}
+
+    # Backup-Statistiken
+    try:
+        from backup_service import get_backup_stats
+        backup_stats = get_backup_stats()
+    except:
+        backup_stats = {"count": 0, "total_size_human": "N/A"}
+
+    return JSONResponse({
+        "users": {
+            "total": total_users,
+            "active": active_users,
+            "with_2fa": users_with_2fa,
+            "2fa_percentage": round(users_with_2fa / total_users * 100, 1) if total_users > 0 else 0
+        },
+        "logins_24h": {
+            "successful": logins_24h,
+            "failed": failed_logins_24h
+        },
+        "security_events_7d": security_events,
+        "backups": backup_stats
+    })
+
+
+@router.get("/api/admin/backups")
+async def list_backups_endpoint(request: Request):
+    """
+    Admin-Endpoint: Alle Backups auflisten.
+    SECURITY: Nur für Admins.
+    """
+    admin = get_current_user(request)
+    if not admin:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_admin = get_user_by_id(admin["id"])
+    if not db_admin or not db_admin.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+    from backup_service import list_backups, get_backup_stats
+    
+    return JSONResponse({
+        "backups": list_backups(),
+        "stats": get_backup_stats()
+    })
+
+
+@router.post("/api/admin/backups/create")
+async def create_backup_endpoint(request: Request):
+    """
+    Admin-Endpoint: Manuelles Backup erstellen.
+    SECURITY: Nur für Admins.
+    """
+    admin = get_current_user(request)
+    if not admin:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_admin = get_user_by_id(admin["id"])
+    if not db_admin or not db_admin.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+    from backup_service import create_backup
+    
+    client_ip = get_client_ip(request)
+    backup_path = create_backup("manual")
+    
+    if backup_path:
+        log_audit_event(admin["id"], "ADMIN_CREATED_BACKUP", "system", None,
+                        f"path={backup_path}", client_ip)
+        return JSONResponse({"success": True, "path": backup_path})
+    else:
+        return JSONResponse({"error": "Backup fehlgeschlagen"}, status_code=500)
+
+
+@router.post("/change-password")
+async def change_password(request: Request):
+    """
+    Passwort ändern - für eingeloggte User.
+    SECURITY: Prüft aktuelles Passwort, Rate Limiting.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    client_ip = get_client_ip(request)
+    
+    # Rate Limiting
+    try:
+        check_rate_limit(
+            request,
+            sensitive_rate_limiter,
+            max_requests=3,
+            window_seconds=300,
+            key_prefix="change_password"
+        )
+    except HTTPException:
+        return JSONResponse({"error": "Zu viele Versuche. Bitte warte 5 Minuten."}, status_code=429)
+
+    try:
+        data = await request.json()
+        current_password = data.get("current_password", "")
+        new_password = data.get("new_password", "")
+    except:
+        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
+
+    if not current_password or not new_password:
+        return JSONResponse({"error": "Beide Passwörter erforderlich"}, status_code=400)
+
+    # Passwort-Stärke prüfen
+    is_strong, entropy = is_password_strong_enough(new_password, min_entropy=50.0)
+    if not is_strong:
+        return JSONResponse({"error": "Neues Passwort ist nicht stark genug"}, status_code=400)
+
+    if is_common_password(new_password):
+        return JSONResponse({"error": "Dieses Passwort ist zu häufig"}, status_code=400)
+
+    # Aktuelles Passwort prüfen
+    db_user = get_user_by_id(user["id"])
+    if not db_user:
+        return JSONResponse({"error": "User nicht gefunden"}, status_code=404)
+
+    peppered_current = current_password + SecurityConfig.PASSWORD_PEPPER
+    if not bcrypt.checkpw(peppered_current.encode('utf-8'), db_user["password_hash"].encode('utf-8')):
+        log_audit_event(user["id"], "PASSWORD_CHANGE_FAILED", "user", user["id"], "wrong_current_password", client_ip)
+        return JSONResponse({"error": "Aktuelles Passwort ist falsch"}, status_code=400)
+
+    # Neues Passwort hashen und speichern
+    peppered_new = new_password + SecurityConfig.PASSWORD_PEPPER
+    new_hash = bcrypt.hashpw(peppered_new.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (new_hash, user["id"]))
+        db.commit()
+
+    log_audit_event(user["id"], "PASSWORD_CHANGED", "user", user["id"], None, client_ip)
+    logger.info(f"Password changed for user {user['id']}")
+
+    # E-Mail-Benachrichtigung senden
+    if EmailConfig.is_configured():
+        send_password_changed_notification(db_user["email"])
+
+    return JSONResponse({"success": True, "message": "Passwort erfolgreich geändert"})
 
 
 # ============================================
