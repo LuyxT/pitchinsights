@@ -2600,12 +2600,13 @@
         }
 
         .taktik-content {
-            flex: 1;
             display: flex;
             flex-direction: column;
             padding: 24px;
             gap: 16px;
             overflow-y: auto;
+            height: 100%;
+            box-sizing: border-box;
         }
 
         .taktik-toolbar {
@@ -2724,7 +2725,7 @@
         }
 
         .canvas-container {
-            flex: 1;
+            flex: 1 1 auto;
             background: var(--card-light);
             border-radius: 16px;
             padding: 16px;
@@ -4580,7 +4581,7 @@
         </div>
 
         <!-- TAKTIK-TAFEL -->
-        <div id="taktik" class="app-view">
+        <div id="taktik" class="app-view" style="display: none; padding: 0;">
             <div class="taktik-content">
                 <!-- Taktik Toolbar -->
                 <div class="taktik-toolbar">
