@@ -69,8 +69,9 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
     SECURITY: Token-Ablauf, IP-Binding und Fingerprint werden geprüft.
     """
     token = request.cookies.get("session")
-    logging.info(f"[AUTH] get_current_user called, session_cookie_present={bool(token)}")
-    
+    logging.info(
+        f"[AUTH] get_current_user called, session_cookie_present={bool(token)}")
+
     if not token:
         logging.info("[AUTH] No session cookie found")
         return None
@@ -81,7 +82,8 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
             token,
             max_age=SecurityConfig.SESSION_MAX_AGE_SECONDS
         )
-        logging.info(f"[AUTH] Token decoded successfully, user_id={data.get('id')}")
+        logging.info(
+            f"[AUTH] Token decoded successfully, user_id={data.get('id')}")
 
         # SECURITY: IP-Binding prüfen
         if SecurityConfig.SESSION_BIND_IP:
@@ -104,10 +106,12 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
         # Zusätzliche Validierung: User muss noch existieren und aktiv sein
         user = get_user_by_id(data.get("id"))
         if not user or not user.get("is_active"):
-            logging.warning(f"[AUTH] User not found or inactive: id={data.get('id')}")
+            logging.warning(
+                f"[AUTH] User not found or inactive: id={data.get('id')}")
             return None
 
-        logging.info(f"[AUTH] Authentication successful for user_id={data.get('id')}")
+        logging.info(
+            f"[AUTH] Authentication successful for user_id={data.get('id')}")
         return {"email": data["email"], "id": data["id"]}
 
     except SignatureExpired:
@@ -544,12 +548,14 @@ async def login(
 
     # User laden
     user = get_user_by_email(email)
+    logging.info(f"[LOGIN DEBUG] email={email}, user_found={user is not None}")
 
     # SECURITY: Account Enumeration & Timing-Attack verhindern
     # Führe immer den gleichen bcrypt-Aufwand durch, unabhängig ob User existiert
     # Verwende einen echten Work Factor 12 Hash für realistische Timing
     DUMMY_HASH = b"$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4JQ5kUOIgUfGHVzy"
     if not user:
+        logging.warning(f"[LOGIN DEBUG] User not found in database: {email}")
         bcrypt.checkpw(b"timing_attack_prevention_dummy_password", DUMMY_HASH)
         record_login_attempt(email, client_ip, False)
         activity_detector.record_failed_login(client_ip)
@@ -2274,11 +2280,12 @@ async def stream_video(request: Request, video_id: int):
     """
     # Debug: Log session info
     session_cookie = request.cookies.get("session")
-    logging.info(f"[VIDEO STREAM] video_id={video_id}, session_cookie_present={bool(session_cookie)}")
-    
+    logging.info(
+        f"[VIDEO STREAM] video_id={video_id}, session_cookie_present={bool(session_cookie)}")
+
     user = get_current_user(request)
     logging.info(f"[VIDEO STREAM] user={user}")
-    
+
     if not user:
         logging.warning(f"[VIDEO STREAM] 401 - No user from session")
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
