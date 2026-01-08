@@ -88,18 +88,18 @@ async def lifespan(app: FastAPI):
     SECURITY: Sichere Initialisierung.
     """
     import time
-    
+
     # Startup
     logger.info("PitchInsights starting up...")
 
     # Data-Verzeichnis aus Config
     data_dir = SecurityConfig.DATA_DIR
     logger.info(f"Using data directory: {data_dir}")
-    db_path = os.path.join(data_dir, "pitchinsights.db")
-    logger.info(f"Database path: {db_path}")
 
     # Warte auf Volume-Mount (Railway braucht manchmal etwas Zeit)
-    max_retries = 10
+    max_retries = 5
+    use_fallback = False
+    
     for attempt in range(max_retries):
         try:
             os.makedirs(f"{data_dir}/uploads", exist_ok=True)
@@ -112,16 +112,27 @@ async def lifespan(app: FastAPI):
                 logger.warning(f"Permission denied, retrying in 2s... (attempt {attempt + 1}/{max_retries})")
                 time.sleep(2)
             else:
-                logger.error(f"Could not create directories after {max_retries} attempts: {e}")
-                # Fallback zu /tmp wenn Volume nicht verfügbar
-                data_dir = "/tmp/pitchinsights_data"
-                logger.warning(f"Falling back to {data_dir}")
-                os.makedirs(f"{data_dir}/uploads", exist_ok=True)
-                os.makedirs(f"{data_dir}/videos", exist_ok=True)
-                os.makedirs(f"{data_dir}/backups", exist_ok=True)
+                logger.warning(f"Volume not accessible, using /tmp fallback")
+                use_fallback = True
         except Exception as e:
             logger.error(f"Unexpected error creating directories: {e}")
-            raise
+            use_fallback = True
+            break
+
+    # Fallback zu /tmp wenn Volume nicht verfügbar
+    if use_fallback:
+        data_dir = "/tmp/pitchinsights_data"
+        # WICHTIG: SecurityConfig aktualisieren damit database.py den richtigen Pfad nutzt
+        SecurityConfig.DATA_DIR = data_dir
+        SecurityConfig.DATABASE_PATH = f"{data_dir}/pitchinsights.db"
+        SecurityConfig.LOG_FILE = f"{data_dir}/security.log"
+        logger.info(f"Switched to fallback directory: {data_dir}")
+        os.makedirs(f"{data_dir}/uploads", exist_ok=True)
+        os.makedirs(f"{data_dir}/videos", exist_ok=True)
+        os.makedirs(f"{data_dir}/backups", exist_ok=True)
+
+    logger.info(f"Final data directory: {SecurityConfig.DATA_DIR}")
+    logger.info(f"Final database path: {SecurityConfig.DATABASE_PATH}")
 
     # File-Logging aktivieren
     setup_logging(enable_file_logging=True)
