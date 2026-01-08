@@ -28,13 +28,15 @@ def get_db_connection():
     """
     conn = None
     try:
-        db_dir = os.path.dirname(SecurityConfig.DATABASE_PATH) or "data"
+        # BULLETPROOF: Nutze DATA_DIR direkt, ignoriere DATABASE_PATH
+        db_path = os.path.join(SecurityConfig.DATA_DIR, "pitchinsights.db")
+        db_dir = os.path.dirname(db_path)
         try:
             os.makedirs(db_dir, exist_ok=True)
         except (PermissionError, OSError):
             pass  # Volume might not be mounted yet
         conn = sqlite3.connect(
-            SecurityConfig.DATABASE_PATH,
+            db_path,
             timeout=30.0,  # Längerer Timeout für konkurrierende Zugriffe
             check_same_thread=False  # Für async-Kompatibilität
         )
@@ -57,12 +59,13 @@ def get_db():
     Legacy-Funktion für Kompatibilität.
     WARNUNG: Aufrufer MUSS Verbindung schließen!
     """
-    db_dir = os.path.dirname(SecurityConfig.DATABASE_PATH) or "data"
+    db_path = os.path.join(SecurityConfig.DATA_DIR, "pitchinsights.db")
+    db_dir = os.path.dirname(db_path)
     try:
         os.makedirs(db_dir, exist_ok=True)
     except (PermissionError, OSError):
         pass  # Volume might not be mounted yet
-    conn = sqlite3.connect(SecurityConfig.DATABASE_PATH)
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn

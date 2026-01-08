@@ -93,7 +93,8 @@ async def lifespan(app: FastAPI):
     # Data-Verzeichnis aus Config (auf Railway: /tmp/pitchinsights_data)
     data_dir = SecurityConfig.DATA_DIR
     logger.info(f"Using data directory: {data_dir}")
-    logger.info(f"Database path: {SecurityConfig.DATABASE_PATH}")
+    db_path = os.path.join(data_dir, "pitchinsights.db")
+    logger.info(f"Database path: {db_path}")
 
     # Erstelle Verzeichnisse
     try:
