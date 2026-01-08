@@ -102,10 +102,11 @@ class SecurityConfig:
     CSRF_TOKEN_EXPIRY: int = 3600  # 1 Stunde
 
     # Data Directory - Railway Volume oder lokal
-    # Railway mountet Volumes unter /app/data oder nutzt RAILWAY_VOLUME_MOUNT_PATH
-    # Automatische Erkennung: Prüfe ob /app/data existiert (Railway), sonst lokales "data"
-    _RAILWAY_DATA_PATH = "/app/data"
-    _DEFAULT_DATA_DIR = _RAILWAY_DATA_PATH if os.path.exists("/app") else "data"
+    # Railway setzt RAILWAY_VOLUME_MOUNT_PATH automatisch
+    # Fallback: /app/data auf Railway, sonst lokales "data"
+    _RAILWAY_VOLUME = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "")
+    _DEFAULT_DATA_DIR = _RAILWAY_VOLUME if _RAILWAY_VOLUME else (
+        "/app/data" if os.path.exists("/app") else "data")
     DATA_DIR: str = os.environ.get("PITCHINSIGHTS_DATA_DIR", _DEFAULT_DATA_DIR)
 
     # Database
