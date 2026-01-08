@@ -87,24 +87,41 @@ async def lifespan(app: FastAPI):
     Application Lifecycle Handler.
     SECURITY: Sichere Initialisierung.
     """
+    import time
+    
     # Startup
     logger.info("PitchInsights starting up...")
 
-    # Data-Verzeichnis aus Config (auf Railway: /tmp/pitchinsights_data)
+    # Data-Verzeichnis aus Config
     data_dir = SecurityConfig.DATA_DIR
     logger.info(f"Using data directory: {data_dir}")
     db_path = os.path.join(data_dir, "pitchinsights.db")
     logger.info(f"Database path: {db_path}")
 
-    # Erstelle Verzeichnisse
-    try:
-        os.makedirs(f"{data_dir}/uploads", exist_ok=True)
-        os.makedirs(f"{data_dir}/videos", exist_ok=True)
-        os.makedirs(f"{data_dir}/backups", exist_ok=True)
-        logger.info("Data directories created")
-    except Exception as e:
-        logger.error(f"Could not create directories: {e}")
-        raise
+    # Warte auf Volume-Mount (Railway braucht manchmal etwas Zeit)
+    max_retries = 10
+    for attempt in range(max_retries):
+        try:
+            os.makedirs(f"{data_dir}/uploads", exist_ok=True)
+            os.makedirs(f"{data_dir}/videos", exist_ok=True)
+            os.makedirs(f"{data_dir}/backups", exist_ok=True)
+            logger.info("Data directories created successfully")
+            break
+        except PermissionError as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"Permission denied, retrying in 2s... (attempt {attempt + 1}/{max_retries})")
+                time.sleep(2)
+            else:
+                logger.error(f"Could not create directories after {max_retries} attempts: {e}")
+                # Fallback zu /tmp wenn Volume nicht verfügbar
+                data_dir = "/tmp/pitchinsights_data"
+                logger.warning(f"Falling back to {data_dir}")
+                os.makedirs(f"{data_dir}/uploads", exist_ok=True)
+                os.makedirs(f"{data_dir}/videos", exist_ok=True)
+                os.makedirs(f"{data_dir}/backups", exist_ok=True)
+        except Exception as e:
+            logger.error(f"Unexpected error creating directories: {e}")
+            raise
 
     # File-Logging aktivieren
     setup_logging(enable_file_logging=True)
