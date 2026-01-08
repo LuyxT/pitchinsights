@@ -79,24 +79,27 @@ async def lifespan(app: FastAPI):
     Application Lifecycle Handler.
     SECURITY: Sichere Initialisierung.
     """
+    import time
+    
     # Startup
     logger.info("PitchInsights starting up...")
     
-    # Verzeichnisse erstellen - graceful wenn nicht möglich (Railway Volume)
-    try:
-        os.makedirs("data/uploads", exist_ok=True)
-    except (PermissionError, OSError) as e:
-        logger.warning(f"Could not create data/uploads: {e}")
-    
-    init_db()
-    init_team_tables()
-    logger.info("Database initialized")
-
-    yield
-
-    # Shutdown
-    logger.info("PitchInsights shutting down...")
-
+    # Railway mountet Volume nach Container-Start - warte darauf
+    max_retries = 10
+    for attempt in range(max_retries):
+        try:
+            os.makedirs("data/uploads", exist_ok=True)
+            init_db()
+            init_team_tables()
+            logger.info("Database initialized")
+            break
+        except (PermissionError, OSError, Exception) as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"Waiting for volume mount (attempt {attempt + 1}/{max_retries}): {e}")
+                time.sleep(2)  # Warte 2 Sekunden
+            else:
+                logger.error(f"Failed to initialize after {max_retries} attempts: {e}")
+                raise
 
 # ============================================
 # Templates Setup
