@@ -6866,7 +6866,8 @@
                     credentials: 'include'
                 });
                 if (!response.ok) throw new Error('Fehler');
-                const clips = await response.json();
+                const data = await response.json();
+                const clips = data.clips || data || [];
                 renderVideoClips(clips);
             } catch (error) {
                 console.error('Fehler beim Laden der Clips:', error);
@@ -6876,7 +6877,7 @@
         // Clips rendern
         function renderVideoClips(clips) {
             const container = document.getElementById('videoClipsList');
-            if (clips.length === 0) {
+            if (!Array.isArray(clips) || clips.length === 0) {
                 container.innerHTML = '<div style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5); font-size: 14px;">Noch keine Clips für dieses Video</div>';
                 return;
             }
