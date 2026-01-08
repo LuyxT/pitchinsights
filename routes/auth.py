@@ -249,21 +249,21 @@ async def add_to_waitlist(request: Request):
         # E-Mail validieren
         email = InputValidator.validate_email(email)
 
-        # In Datenbank speichern
-        db = get_db()
-        cursor = db.cursor()
+        # In Datenbank speichern (mit Context Manager für garantiertes Schließen)
+        with get_db_connection() as db:
+            cursor = db.cursor()
 
-        # Prüfen ob bereits eingetragen
-        cursor.execute("SELECT id FROM waitlist WHERE email = ?", (email,))
-        if cursor.fetchone():
-            return JSONResponse({"status": "already_registered"})
+            # Prüfen ob bereits eingetragen
+            cursor.execute("SELECT id FROM waitlist WHERE email = ?", (email,))
+            if cursor.fetchone():
+                return JSONResponse({"status": "already_registered"})
 
-        # Eintragen
-        cursor.execute(
-            "INSERT INTO waitlist (email, created_at, ip_address) VALUES (?, ?, ?)",
-            (email, datetime.now().isoformat(), client_ip)
-        )
-        db.commit()
+            # Eintragen
+            cursor.execute(
+                "INSERT INTO waitlist (email, created_at, ip_address) VALUES (?, ?, ?)",
+                (email, datetime.now().isoformat(), client_ip)
+            )
+            db.commit()
 
         logger.info(f"Waitlist signup: {email}")
         return JSONResponse({"status": "success"})
@@ -311,24 +311,24 @@ async def add_to_pilot(request: Request):
             return JSONResponse({"error": "Ansprechpartner erforderlich"}, status_code=400)
         email = InputValidator.validate_email(email)
 
-        # In Datenbank speichern
-        db = get_db()
-        cursor = db.cursor()
+        # In Datenbank speichern (mit Context Manager für garantiertes Schließen)
+        with get_db_connection() as db:
+            cursor = db.cursor()
 
-        # Prüfen ob bereits eingetragen
-        cursor.execute(
-            "SELECT id FROM pilot_signups WHERE email = ?", (email,))
-        if cursor.fetchone():
-            return JSONResponse({"status": "already_registered"})
+            # Prüfen ob bereits eingetragen
+            cursor.execute(
+                "SELECT id FROM pilot_signups WHERE email = ?", (email,))
+            if cursor.fetchone():
+                return JSONResponse({"status": "already_registered"})
 
-        # Eintragen
-        cursor.execute(
-            """INSERT INTO pilot_signups (vereinsname, ansprechpartner, email, created_at, ip_address) 
-               VALUES (?, ?, ?, ?, ?)""",
-            (vereinsname, ansprechpartner, email,
-             datetime.now().isoformat(), client_ip)
-        )
-        db.commit()
+            # Eintragen
+            cursor.execute(
+                """INSERT INTO pilot_signups (vereinsname, ansprechpartner, email, created_at, ip_address) 
+                   VALUES (?, ?, ?, ?, ?)""",
+                (vereinsname, ansprechpartner, email,
+                 datetime.now().isoformat(), client_ip)
+            )
+            db.commit()
 
         logger.info(f"Pilot signup: {vereinsname} - {email}")
         return JSONResponse({"status": "success"})
@@ -986,41 +986,44 @@ async def get_security_stats(request: Request):
 
     with get_db_connection() as db:
         cursor = db.cursor()
-        
+
         # User-Statistiken
-        cursor.execute("SELECT COUNT(*) as total FROM users WHERE deleted_at IS NULL")
+        cursor.execute(
+            "SELECT COUNT(*) as total FROM users WHERE deleted_at IS NULL")
         total_users = cursor.fetchone()["total"]
-        
-        cursor.execute("SELECT COUNT(*) as active FROM users WHERE is_active = 1 AND deleted_at IS NULL")
+
+        cursor.execute(
+            "SELECT COUNT(*) as active FROM users WHERE is_active = 1 AND deleted_at IS NULL")
         active_users = cursor.fetchone()["active"]
-        
+
         # 2FA-Statistiken
         cursor.execute("""
             SELECT COUNT(*) as count FROM user_2fa 
             WHERE is_enabled = 1 AND user_id IN (SELECT id FROM users WHERE deleted_at IS NULL)
         """)
         users_with_2fa = cursor.fetchone()["count"]
-        
+
         # Login-Statistiken (letzte 24h)
         cursor.execute("""
             SELECT COUNT(*) as count FROM login_attempts 
             WHERE timestamp > datetime('now', '-24 hours') AND success = 1
         """)
         logins_24h = cursor.fetchone()["count"]
-        
+
         cursor.execute("""
             SELECT COUNT(*) as count FROM login_attempts 
             WHERE timestamp > datetime('now', '-24 hours') AND success = 0
         """)
         failed_logins_24h = cursor.fetchone()["count"]
-        
+
         # Security Events (letzte 7 Tage)
         cursor.execute("""
             SELECT event_type, COUNT(*) as count FROM security_events 
             WHERE timestamp > datetime('now', '-7 days')
             GROUP BY event_type
         """)
-        security_events = {row["event_type"]: row["count"] for row in cursor.fetchall()}
+        security_events = {row["event_type"]: row["count"]
+                           for row in cursor.fetchall()}
 
     # Backup-Statistiken
     try:
@@ -1060,7 +1063,7 @@ async def list_backups_endpoint(request: Request):
         return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
     from backup_service import list_backups, get_backup_stats
-    
+
     return JSONResponse({
         "backups": list_backups(),
         "stats": get_backup_stats()
@@ -1082,10 +1085,10 @@ async def create_backup_endpoint(request: Request):
         return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
     from backup_service import create_backup
-    
+
     client_ip = get_client_ip(request)
     backup_path = create_backup("manual")
-    
+
     if backup_path:
         log_audit_event(admin["id"], "ADMIN_CREATED_BACKUP", "system", None,
                         f"path={backup_path}", client_ip)
@@ -1105,7 +1108,7 @@ async def change_password(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     client_ip = get_client_ip(request)
-    
+
     # Rate Limiting
     try:
         check_rate_limit(
@@ -1129,7 +1132,8 @@ async def change_password(request: Request):
         return JSONResponse({"error": "Beide Passwörter erforderlich"}, status_code=400)
 
     # Passwort-Stärke prüfen
-    is_strong, entropy = is_password_strong_enough(new_password, min_entropy=50.0)
+    is_strong, entropy = is_password_strong_enough(
+        new_password, min_entropy=50.0)
     if not is_strong:
         return JSONResponse({"error": "Neues Passwort ist nicht stark genug"}, status_code=400)
 
@@ -1143,12 +1147,14 @@ async def change_password(request: Request):
 
     peppered_current = current_password + SecurityConfig.PASSWORD_PEPPER
     if not bcrypt.checkpw(peppered_current.encode('utf-8'), db_user["password_hash"].encode('utf-8')):
-        log_audit_event(user["id"], "PASSWORD_CHANGE_FAILED", "user", user["id"], "wrong_current_password", client_ip)
+        log_audit_event(user["id"], "PASSWORD_CHANGE_FAILED",
+                        "user", user["id"], "wrong_current_password", client_ip)
         return JSONResponse({"error": "Aktuelles Passwort ist falsch"}, status_code=400)
 
     # Neues Passwort hashen und speichern
     peppered_new = new_password + SecurityConfig.PASSWORD_PEPPER
-    new_hash = bcrypt.hashpw(peppered_new.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
+    new_hash = bcrypt.hashpw(peppered_new.encode(
+        'utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
 
     with get_db_connection() as db:
         cursor = db.cursor()
@@ -1158,7 +1164,8 @@ async def change_password(request: Request):
         """, (new_hash, user["id"]))
         db.commit()
 
-    log_audit_event(user["id"], "PASSWORD_CHANGED", "user", user["id"], None, client_ip)
+    log_audit_event(user["id"], "PASSWORD_CHANGED",
+                    "user", user["id"], None, client_ip)
     logger.info(f"Password changed for user {user['id']}")
 
     # E-Mail-Benachrichtigung senden
@@ -1628,6 +1635,7 @@ async def get_team_roles(request: Request):
     """
     Team-Rollen abrufen.
     SECURITY: Nur eigenes Team.
+    PERFORMANCE: Single Query statt N+1 für Permissions.
     """
     user = get_current_user(request)
     if not user:
@@ -1645,33 +1653,51 @@ async def get_team_roles(request: Request):
         if not user_data or not user_data["team_id"]:
             return {"error": "Kein Team gefunden", "roles": []}
 
+        team_id = user_data["team_id"]
+
+        # PERFORMANCE: Single Query für Rollen mit Member-Count
         cursor.execute("""
             SELECT r.*,
                    (SELECT COUNT(*) FROM team_members WHERE role_id = r.id) as member_count
             FROM roles r
             WHERE r.team_id = ?
             ORDER BY r.id
-        """, (user_data["team_id"],))
+        """, (team_id,))
         roles = cursor.fetchall()
+        
+        if not roles:
+            return {"roles": []}
+
+        # PERFORMANCE: Alle Permissions für alle Rollen des Teams in EINER Query
+        role_ids = [r["id"] for r in roles]
+        placeholders = ",".join("?" * len(role_ids))
+        cursor.execute(f"""
+            SELECT role_id, app_id, can_view, can_edit 
+            FROM permissions 
+            WHERE role_id IN ({placeholders})
+        """, role_ids)
+        all_permissions = cursor.fetchall()
+        
+        # Gruppiere Permissions nach role_id
+        permissions_by_role = {}
+        for p in all_permissions:
+            role_id = p["role_id"]
+            if role_id not in permissions_by_role:
+                permissions_by_role[role_id] = {}
+            permissions_by_role[role_id][p["app_id"]] = {
+                "view": bool(p["can_view"]), 
+                "edit": bool(p["can_edit"])
+            }
 
         result = []
         for role in roles:
-            cursor.execute("""
-                SELECT app_id, can_view, can_edit FROM permissions WHERE role_id = ?
-            """, (role["id"],))
-            permissions = cursor.fetchall()
-
             result.append({
                 "id": role["id"],
                 "name": role["name"],
                 "description": role["description"] or "",
                 "is_default": bool(role["is_default"]),
                 "member_count": role["member_count"],
-                "permissions": {
-                    p["app_id"]: {"view": bool(
-                        p["can_view"]), "edit": bool(p["can_edit"])}
-                    for p in permissions
-                }
+                "permissions": permissions_by_role.get(role["id"], {})
             })
 
     return {"roles": result}
@@ -3018,30 +3044,60 @@ async def get_week_events(request: Request):
 # ============================================
 
 @router.get("/api/messages")
-async def get_messages(request: Request):
-    """Team-Chat Nachrichten abrufen."""
+async def get_messages(request: Request, limit: int = 50, before_id: int = None):
+    """
+    Team-Chat Nachrichten abrufen.
+    PERFORMANCE: Cursor-basierte Pagination für große Chat-Historien.
+    
+    Query Params:
+        limit: Max Nachrichten (default 50, max 100)
+        before_id: Für Pagination - Nachrichten vor dieser ID laden
+    """
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
     if not db_user or not db_user.get("team_id"):
-        return JSONResponse({"messages": []})
+        return JSONResponse({"messages": [], "has_more": False})
+
+    # SECURITY: Limit begrenzen
+    limit = min(max(1, limit), 100)
 
     with get_db_connection() as db:
         cursor = db.cursor()
-        cursor.execute("""
-            SELECT m.id, m.content, m.created_at, m.sender_id,
-                   u.vorname || ' ' || u.nachname as sender_name
-            FROM messages m
-            LEFT JOIN users u ON m.sender_id = u.id
-            WHERE m.team_id = ? AND m.recipient_id IS NULL AND m.deleted_at IS NULL
-            ORDER BY m.created_at DESC
-            LIMIT 50
-        """, (db_user["team_id"],))
-        messages = [dict(row) for row in cursor.fetchall()]
+        
+        if before_id:
+            # PERFORMANCE: Cursor-Pagination (schneller als OFFSET)
+            cursor.execute("""
+                SELECT m.id, m.content, m.created_at, m.sender_id,
+                       u.vorname || ' ' || u.nachname as sender_name
+                FROM messages m
+                LEFT JOIN users u ON m.sender_id = u.id
+                WHERE m.team_id = ? AND m.recipient_id IS NULL AND m.deleted_at IS NULL
+                AND m.id < ?
+                ORDER BY m.created_at DESC
+                LIMIT ?
+            """, (db_user["team_id"], before_id, limit + 1))
+        else:
+            cursor.execute("""
+                SELECT m.id, m.content, m.created_at, m.sender_id,
+                       u.vorname || ' ' || u.nachname as sender_name
+                FROM messages m
+                LEFT JOIN users u ON m.sender_id = u.id
+                WHERE m.team_id = ? AND m.recipient_id IS NULL AND m.deleted_at IS NULL
+                ORDER BY m.created_at DESC
+                LIMIT ?
+            """, (db_user["team_id"], limit + 1))
+        
+        rows = cursor.fetchall()
+        has_more = len(rows) > limit
+        messages = [dict(row) for row in rows[:limit]]
 
-    return JSONResponse({"messages": messages[::-1]})  # Älteste zuerst
+    return JSONResponse({
+        "messages": messages[::-1],  # Älteste zuerst
+        "has_more": has_more
+    })
 
 
 @router.post("/api/messages")

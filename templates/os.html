@@ -6744,7 +6744,7 @@
         // ========================
         // SECURITY FUNCTIONS
         // ========================
-        
+
         async function load2FAStatus() {
             try {
                 const response = await fetch('/auth/2fa/status');
@@ -6758,11 +6758,11 @@
                 console.error('2FA status error:', e);
             }
         }
-        
+
         function openTwoFactorSetup() {
             window.location.href = '/auth/2fa/setup';
         }
-        
+
         function showChangePassword() {
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
@@ -6798,12 +6798,12 @@
             document.body.appendChild(modal);
             modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
         }
-        
+
         async function changePassword() {
             const current = document.getElementById('currentPassword').value;
             const newPw = document.getElementById('newPassword').value;
             const confirm = document.getElementById('confirmPassword').value;
-            
+
             if (newPw !== confirm) {
                 alert('Passwörter stimmen nicht überein!');
                 return;
@@ -6812,7 +6812,7 @@
                 alert('Passwort muss mindestens 8 Zeichen haben!');
                 return;
             }
-            
+
             try {
                 const response = await fetch('/auth/change-password', {
                     method: 'POST',
@@ -6820,7 +6820,7 @@
                     body: JSON.stringify({ current_password: current, new_password: newPw })
                 });
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     showToast('Passwort erfolgreich geändert!', 'success');
                     document.querySelector('.modal-overlay').remove();
@@ -6831,13 +6831,13 @@
                 alert('Netzwerkfehler');
             }
         }
-        
+
         function showActiveSessions() {
             showToast('Aktive Sitzungen: Diese Funktion wird bald verfügbar sein.', 'info');
         }
-        
+
         // 2FA-Status beim Laden der Settings prüfen
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             setTimeout(load2FAStatus, 500);
         });
 

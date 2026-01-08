@@ -21,9 +21,10 @@ class EmailConfig:
     SMTP_PORT: int = int(os.environ.get("PITCHINSIGHTS_SMTP_PORT", "587"))
     SMTP_USER: str = os.environ.get("PITCHINSIGHTS_SMTP_USER", "")
     SMTP_PASSWORD: str = os.environ.get("PITCHINSIGHTS_SMTP_PASSWORD", "")
-    FROM_EMAIL: str = os.environ.get("PITCHINSIGHTS_FROM_EMAIL", "noreply@pitchinsights.de")
+    FROM_EMAIL: str = os.environ.get(
+        "PITCHINSIGHTS_FROM_EMAIL", "noreply@pitchinsights.de")
     FROM_NAME: str = "PitchInsights"
-    
+
     @classmethod
     def is_configured(cls) -> bool:
         return bool(cls.SMTP_HOST and cls.SMTP_USER and cls.SMTP_PASSWORD)
@@ -35,31 +36,32 @@ def send_email(to_email: str, subject: str, html_body: str, text_body: Optional[
     SECURITY: TLS/SSL wird erzwungen.
     """
     if not EmailConfig.is_configured():
-        logger.warning("E-Mail nicht konfiguriert - E-Mail wird nicht gesendet")
+        logger.warning(
+            "E-Mail nicht konfiguriert - E-Mail wird nicht gesendet")
         return False
-    
+
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
         msg["From"] = f"{EmailConfig.FROM_NAME} <{EmailConfig.FROM_EMAIL}>"
         msg["To"] = to_email
-        
+
         # Text-Version als Fallback
         if text_body:
             msg.attach(MIMEText(text_body, "plain", "utf-8"))
-        
+
         # HTML-Version
         msg.attach(MIMEText(html_body, "html", "utf-8"))
-        
+
         # SMTP-Verbindung mit TLS
         with smtplib.SMTP(EmailConfig.SMTP_HOST, EmailConfig.SMTP_PORT) as server:
             server.starttls()
             server.login(EmailConfig.SMTP_USER, EmailConfig.SMTP_PASSWORD)
             server.send_message(msg)
-        
+
         logger.info(f"E-Mail gesendet an {to_email[:3]}***")
         return True
-        
+
     except Exception as e:
         logger.error(f"E-Mail-Fehler: {type(e).__name__}")
         return False
@@ -71,7 +73,7 @@ def send_login_notification(email: str, ip_address: str, user_agent: str, locati
     SECURITY: Warnt User bei verdächtigen Logins.
     """
     now = datetime.now().strftime("%d.%m.%Y um %H:%M Uhr")
-    
+
     html_body = f"""
     <!DOCTYPE html>
     <html>
@@ -116,7 +118,7 @@ def send_login_notification(email: str, ip_address: str, user_agent: str, locati
     </body>
     </html>
     """
-    
+
     text_body = f"""
     Neuer Login bei PitchInsights
     
@@ -126,7 +128,7 @@ def send_login_notification(email: str, ip_address: str, user_agent: str, locati
     
     Das warst nicht du? Ändere sofort dein Passwort!
     """
-    
+
     return send_email(email, "🔐 Neuer Login bei PitchInsights", html_body, text_body)
 
 
@@ -173,7 +175,7 @@ def send_2fa_code(email: str, code: str) -> bool:
     </body>
     </html>
     """
-    
+
     text_body = f"""
     Dein PitchInsights Bestätigungscode: {code}
     
@@ -181,7 +183,7 @@ def send_2fa_code(email: str, code: str) -> bool:
     
     Wenn du diesen Code nicht angefordert hast, ignoriere diese E-Mail.
     """
-    
+
     return send_email(email, f"🔑 Dein Code: {code}", html_body, text_body)
 
 
@@ -191,7 +193,7 @@ def send_password_changed_notification(email: str) -> bool:
     SECURITY: Frühzeitige Warnung bei Account-Kompromittierung.
     """
     now = datetime.now().strftime("%d.%m.%Y um %H:%M Uhr")
-    
+
     html_body = f"""
     <!DOCTYPE html>
     <html>
@@ -227,7 +229,7 @@ def send_password_changed_notification(email: str) -> bool:
     </body>
     </html>
     """
-    
+
     return send_email(email, "✅ Dein Passwort wurde geändert", html_body)
 
 
@@ -264,5 +266,5 @@ def send_2fa_enabled_notification(email: str) -> bool:
     </body>
     </html>
     """
-    
+
     return send_email(email, "🛡️ 2FA wurde aktiviert", html_body)

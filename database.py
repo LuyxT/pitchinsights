@@ -24,15 +24,25 @@ def get_db_connection():
     """
     Context Manager für sichere Datenbankverbindungen.
     SECURITY: Garantiert Schließen der Verbindung.
+    PERFORMANCE: Optimierte SQLite-Einstellungen für Multi-Tenant.
     """
     conn = None
     try:
         os.makedirs(os.path.dirname(SecurityConfig.DATABASE_PATH)
                     or "data", exist_ok=True)
-        conn = sqlite3.connect(SecurityConfig.DATABASE_PATH)
+        conn = sqlite3.connect(
+            SecurityConfig.DATABASE_PATH,
+            timeout=30.0,  # Längerer Timeout für konkurrierende Zugriffe
+            check_same_thread=False  # Für async-Kompatibilität
+        )
         conn.row_factory = sqlite3.Row
         # SECURITY: Foreign Keys aktivieren
         conn.execute("PRAGMA foreign_keys = ON")
+        # PERFORMANCE: Optimierungen für viele gleichzeitige Leser
+        conn.execute("PRAGMA journal_mode = WAL")  # Write-Ahead Logging
+        conn.execute("PRAGMA synchronous = NORMAL")  # Schneller, noch sicher
+        conn.execute("PRAGMA cache_size = -64000")  # 64MB Cache
+        conn.execute("PRAGMA temp_store = MEMORY")  # Temp Tables im RAM
         yield conn
     finally:
         if conn:
@@ -355,6 +365,32 @@ def init_db():
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_players_team 
             ON players(team_id) WHERE deleted_at IS NULL
+        """)
+
+        # PERFORMANCE: Kritische Indizes für Multi-Tenant-Skalierung
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_team_members_team_user
+            ON team_members(team_id, user_id)
+        """)
+        
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_team_members_user
+            ON team_members(user_id)
+        """)
+        
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_permissions_role
+            ON permissions(role_id)
+        """)
+        
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_users_team
+            ON users(team_id) WHERE deleted_at IS NULL AND is_active = 1
+        """)
+        
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_roles_team
+            ON roles(team_id)
         """)
 
         # Kalender-Events Tabelle
@@ -1258,3 +1294,105 @@ def export_user_data(user_id: int) -> Dict[str, Any]:
             "user": dict(user),
             "team_memberships": [dict(m) for m in memberships]
         }
+
+
+# ============================================
+# PERFORMANCE: Log Cleanup & Maintenance
+# ============================================
+
+def cleanup_old_logs(days_to_keep: int = 30) -> Dict[str, int]:
+    """
+    Löscht alte Log-Einträge für Performance.
+    SECURITY: Behält kritische Events länger.
+    
+    Args:
+        days_to_keep: Tage für normale Logs (kritische: 90 Tage)
+    
+    Returns:
+        Anzahl gelöschter Einträge pro Tabelle
+    """
+    deleted = {}
+    
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Login Attempts älter als 7 Tage
+        cursor.execute("""
+            DELETE FROM login_attempts 
+            WHERE attempted_at < datetime('now', '-7 days')
+        """)
+        deleted["login_attempts"] = cursor.rowcount
+        
+        # Security Events älter als 30 Tage (außer blocked)
+        cursor.execute("""
+            DELETE FROM security_events 
+            WHERE created_at < datetime('now', '-30 days')
+            AND blocked = 0
+        """)
+        deleted["security_events"] = cursor.rowcount
+        
+        # Audit Log: Normale Events nach X Tagen, kritische nach 90
+        cursor.execute(f"""
+            DELETE FROM audit_log 
+            WHERE created_at < datetime('now', '-{days_to_keep} days')
+            AND severity IN ('DEBUG', 'INFO')
+        """)
+        deleted["audit_log_normal"] = cursor.rowcount
+        
+        cursor.execute("""
+            DELETE FROM audit_log 
+            WHERE created_at < datetime('now', '-90 days')
+            AND severity IN ('WARNING', 'ERROR', 'CRITICAL')
+        """)
+        deleted["audit_log_critical"] = cursor.rowcount
+        
+        conn.commit()
+        
+        # VACUUM für Speicherfreigabe (nur periodisch)
+        try:
+            conn.execute("VACUUM")
+        except:
+            pass  # Kann bei laufenden Transaktionen fehlschlagen
+    
+    logger.info(f"Log cleanup completed: {deleted}")
+    return deleted
+
+
+def get_database_stats() -> Dict[str, Any]:
+    """
+    Gibt Datenbank-Statistiken für Monitoring zurück.
+    """
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        stats = {}
+        
+        # Tabellen-Größen
+        tables = [
+            "users", "teams", "team_members", "players", 
+            "calendar_events", "messages", "videos",
+            "audit_log", "security_events", "login_attempts"
+        ]
+        
+        for table in tables:
+            try:
+                cursor.execute(f"SELECT COUNT(*) as count FROM {table}")
+                stats[f"{table}_count"] = cursor.fetchone()["count"]
+            except:
+                stats[f"{table}_count"] = 0
+        
+        # Aktive Vereine (Teams)
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM teams 
+            WHERE deleted_at IS NULL AND is_active = 1
+        """)
+        stats["active_teams"] = cursor.fetchone()["count"]
+        
+        # Aktive User
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM users 
+            WHERE deleted_at IS NULL AND is_active = 1
+        """)
+        stats["active_users"] = cursor.fetchone()["count"]
+        
+        return stats
