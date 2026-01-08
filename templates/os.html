@@ -338,14 +338,16 @@
         }
 
         .content-area {
-            flex: 1;
+            flex: 1 1 auto;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             height: 100%;
-            width: 100%;
+            width: calc(100% - 280px);
             min-width: 0;
-            max-width: 100%;
+            max-width: none;
+            margin-left: 0;
+            padding-left: 0;
         }
 
         .app-view {
@@ -355,8 +357,9 @@
             display: none;
             min-height: 0;
             width: 100%;
-            max-width: 100%;
+            max-width: none;
             box-sizing: border-box;
+            margin: 0;
             /* Apple-Style Screen Transition */
             opacity: 0;
             transform: translateY(var(--anim-slide-distance));
