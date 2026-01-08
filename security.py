@@ -178,7 +178,9 @@ def get_client_ip(request: Request) -> str:
     SECURITY: Berücksichtigt X-Forwarded-For nur hinter Proxy.
     SECURITY FIX: Validiert IP-Format um Spoofing zu verhindern.
     """
-    if os.environ.get("PITCHINSIGHTS_BEHIND_PROXY") == "true":
+    # Auto-detect Railway oder explizit gesetzt
+    _is_behind_proxy = os.environ.get("PITCHINSIGHTS_BEHIND_PROXY", "true" if os.path.exists("/app") else "false") == "true"
+    if _is_behind_proxy:
         forwarded = request.headers.get("X-Forwarded-For")
         if forwarded:
             # Erste IP in der Kette ist der echte Client

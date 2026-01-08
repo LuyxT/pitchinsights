@@ -18,7 +18,8 @@ class SecurityConfig:
     """
 
     # Umgebung
-    IS_PRODUCTION: bool = os.environ.get("PITCHINSIGHTS_ENV") == "production"
+    _IS_RAILWAY = os.path.exists("/app")
+    IS_PRODUCTION: bool = os.environ.get("PITCHINSIGHTS_ENV") == "production" or _IS_RAILWAY
 
     # Secret Key für Session-Tokens - MUSS in Produktion gesetzt werden
     # SECURITY: In Produktion NIEMALS den Fallback-Key verwenden!
@@ -58,8 +59,9 @@ class SecurityConfig:
         "PITCHINSIGHTS_SESSION_MAX_AGE", "86400"))  # 24h default
 
     # Session-Sicherheit
+    # WICHTIG: IP-Binding auf Railway deaktivieren wegen Load Balancer
     SESSION_BIND_IP: bool = os.environ.get(
-        "PITCHINSIGHTS_SESSION_BIND_IP", "True"
+        "PITCHINSIGHTS_SESSION_BIND_IP", "False" if _IS_RAILWAY else "True"
     ).lower() in ("1", "true", "yes")
     SESSION_ROTATE_ON_LOGIN: bool = True
 
