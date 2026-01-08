@@ -87,43 +87,24 @@ async def lifespan(app: FastAPI):
     Application Lifecycle Handler.
     SECURITY: Sichere Initialisierung.
     """
-    import asyncio
-
     # Startup
     logger.info("PitchInsights starting up...")
 
-    # Data-Verzeichnis aus Config
+    # Data-Verzeichnis aus Config (auf Railway: /tmp/pitchinsights_data)
     data_dir = SecurityConfig.DATA_DIR
     logger.info(f"Using data directory: {data_dir}")
 
-    # Railway mountet Volume nach Container-Start - warte darauf
-    max_retries = 15  # 30 Sekunden max
-    for attempt in range(max_retries):
-        try:
-            os.makedirs(f"{data_dir}/uploads", exist_ok=True)
-            os.makedirs(f"{data_dir}/videos", exist_ok=True)
-            os.makedirs(f"{data_dir}/backups", exist_ok=True)
+    # Erstelle Verzeichnisse
+    try:
+        os.makedirs(f"{data_dir}/uploads", exist_ok=True)
+        os.makedirs(f"{data_dir}/videos", exist_ok=True)
+        os.makedirs(f"{data_dir}/backups", exist_ok=True)
+        logger.info("Data directories created")
+    except Exception as e:
+        logger.error(f"Could not create directories: {e}")
+        raise
 
-            # Test ob wir schreiben können
-            test_file = f"{data_dir}/.write_test"
-            with open(test_file, "w") as f:
-                f.write("test")
-            os.remove(test_file)
-
-            logger.info(f"Volume ready after {attempt + 1} attempts")
-            break
-        except (PermissionError, OSError) as e:
-            if attempt < max_retries - 1:
-                logger.warning(
-                    f"Waiting for volume mount (attempt {attempt + 1}/{max_retries}): {e}")
-                await asyncio.sleep(2)  # Async sleep
-            else:
-                logger.error(
-                    f"Volume not available after {max_retries} attempts: {e}")
-                logger.error("Continuing without persistent storage...")
-                break
-
-    # Jetzt File-Logging aktivieren (falls Volume bereit)
+    # File-Logging aktivieren
     setup_logging(enable_file_logging=True)
 
     # Database initialisieren
