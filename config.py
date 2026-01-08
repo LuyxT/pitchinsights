@@ -19,7 +19,8 @@ class SecurityConfig:
 
     # Umgebung
     _IS_RAILWAY = os.path.exists("/app")
-    IS_PRODUCTION: bool = os.environ.get("PITCHINSIGHTS_ENV") == "production" or _IS_RAILWAY
+    IS_PRODUCTION: bool = os.environ.get(
+        "PITCHINSIGHTS_ENV") == "production" or _IS_RAILWAY
 
     # Secret Key für Session-Tokens - MUSS in Produktion gesetzt werden
     # SECURITY: In Produktion NIEMALS den Fallback-Key verwenden!

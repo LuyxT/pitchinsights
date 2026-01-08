@@ -341,6 +341,7 @@
             height: 100%;
             width: 100%;
             min-width: 0;
+            max-width: 100%;
         }
 
         .app-view {
@@ -350,10 +351,15 @@
             display: none;
             min-height: 0;
             width: 100%;
+            max-width: 100%;
             box-sizing: border-box;
             /* Apple-Style Screen Transition */
             opacity: 0;
             transform: translateY(var(--anim-slide-distance));
+        }
+
+        .app-view > * {
+            max-width: 100%;
         }
 
         .app-view.active {
@@ -5144,13 +5150,13 @@
         </div>
 
         <!-- MANNSCHAFTSKASSE VIEW -->
-        <div id="kasse" class="app-view">
+        <div id="kasse" class="app-view" style="max-width: 100%; width: 100%;">
             <h1>Mannschaftskasse</h1>
             <p class="subtitle">Ein- und Ausgaben verwalten</p>
 
             <!-- Kassenstand Karte -->
             <div
-                style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 16px; padding: 24px; color: white; margin-bottom: 24px;">
+                style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 16px; padding: 24px; color: white; margin-bottom: 24px; max-width: 100%;">
                 <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">Aktueller Kassenstand</div>
                 <div id="kasseBalance" style="font-size: 36px; font-weight: 700;">0,00 €</div>
                 <div style="display: flex; gap: 24px; margin-top: 16px; font-size: 14px;">
