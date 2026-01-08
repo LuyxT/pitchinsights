@@ -32,13 +32,18 @@ from security import (
 # Security Logging Setup
 # ============================================
 
-def setup_logging():
+def setup_logging(enable_file_logging: bool = False):
     """
     Konfiguriert sicheres Logging.
     SECURITY: Keine sensiblen Daten in Logs.
     """
     # Security Logger
     security_logger = logging.getLogger("pitchinsights.security")
+    
+    # Verhindere doppelte Handler
+    if security_logger.handlers:
+        return security_logger
+        
     security_logger.setLevel(getattr(logging, SecurityConfig.LOG_LEVEL))
 
     # Console Handler (immer aktiv)
@@ -48,25 +53,28 @@ def setup_logging():
     ))
     security_logger.addHandler(console_handler)
 
-    # File Handler mit Rotation - nur wenn Verzeichnis schreibbar ist
-    try:
-        os.makedirs("data", exist_ok=True)
-        file_handler = RotatingFileHandler(
-            SecurityConfig.LOG_FILE,
-            maxBytes=10_000_000,  # 10MB
-            backupCount=5
-        )
-        file_handler.setFormatter(logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        ))
-        security_logger.addHandler(file_handler)
-    except (PermissionError, OSError) as e:
-        security_logger.warning(f"File logging disabled: {e}")
+    # File Handler nur wenn explizit angefordert und möglich
+    if enable_file_logging:
+        try:
+            os.makedirs("data", exist_ok=True)
+            file_handler = RotatingFileHandler(
+                SecurityConfig.LOG_FILE,
+                maxBytes=10_000_000,  # 10MB
+                backupCount=5
+            )
+            file_handler.setFormatter(logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            ))
+            security_logger.addHandler(file_handler)
+            security_logger.info("File logging enabled")
+        except (PermissionError, OSError) as e:
+            security_logger.warning(f"File logging disabled: {e}")
 
     return security_logger
 
 
-logger = setup_logging()
+# Initial nur Console-Logging
+logger = setup_logging(enable_file_logging=False)
 
 
 # ============================================
@@ -80,28 +88,49 @@ async def lifespan(app: FastAPI):
     SECURITY: Sichere Initialisierung.
     """
     import time
+    import asyncio
 
     # Startup
     logger.info("PitchInsights starting up...")
 
     # Railway mountet Volume nach Container-Start - warte darauf
-    max_retries = 10
+    max_retries = 15  # 30 Sekunden max
     for attempt in range(max_retries):
         try:
             os.makedirs("data/uploads", exist_ok=True)
-            init_db()
-            init_team_tables()
-            logger.info("Database initialized")
+            os.makedirs("data/videos", exist_ok=True)
+            os.makedirs("data/backups", exist_ok=True)
+            
+            # Test ob wir schreiben können
+            test_file = "data/.write_test"
+            with open(test_file, "w") as f:
+                f.write("test")
+            os.remove(test_file)
+            
+            logger.info(f"Volume ready after {attempt + 1} attempts")
             break
-        except (PermissionError, OSError, Exception) as e:
+        except (PermissionError, OSError) as e:
             if attempt < max_retries - 1:
                 logger.warning(
                     f"Waiting for volume mount (attempt {attempt + 1}/{max_retries}): {e}")
-                time.sleep(2)  # Warte 2 Sekunden
+                await asyncio.sleep(2)  # Async sleep
             else:
                 logger.error(
-                    f"Failed to initialize after {max_retries} attempts: {e}")
-                raise
+                    f"Volume not available after {max_retries} attempts: {e}")
+                logger.error("Continuing without persistent storage...")
+                break
+    
+    # Jetzt File-Logging aktivieren (falls Volume bereit)
+    setup_logging(enable_file_logging=True)
+    
+    # Database initialisieren
+    try:
+        init_db()
+        init_team_tables()
+        logger.info("Database initialized")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        raise
 
     yield
 
