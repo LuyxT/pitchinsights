@@ -69,7 +69,10 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
     SECURITY: Token-Ablauf, IP-Binding und Fingerprint werden geprüft.
     """
     token = request.cookies.get("session")
+    logging.info(f"[AUTH] get_current_user called, session_cookie_present={bool(token)}")
+    
     if not token:
+        logging.info("[AUTH] No session cookie found")
         return None
 
     try:
@@ -78,6 +81,7 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
             token,
             max_age=SecurityConfig.SESSION_MAX_AGE_SECONDS
         )
+        logging.info(f"[AUTH] Token decoded successfully, user_id={data.get('id')}")
 
         # SECURITY: IP-Binding prüfen
         if SecurityConfig.SESSION_BIND_IP:
@@ -87,20 +91,23 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
                     f"Session IP mismatch for user {data.get('id')}")
                 return None
 
-        # SECURITY: Fingerprint-Validierung (Browser-Charakteristiken)
-        stored_fingerprint = data.get("fp")
-        if stored_fingerprint:
-            current_fingerprint = get_request_fingerprint(request)
-            if stored_fingerprint != current_fingerprint:
-                logger.warning(
-                    f"Session fingerprint mismatch for user {data.get('id')}")
-                return None
+        # SECURITY: Fingerprint-Validierung - DISABLED on Railway for now
+        # Fingerprint can change between requests due to Accept-Language/Encoding headers
+        # stored_fingerprint = data.get("fp")
+        # if stored_fingerprint:
+        #     current_fingerprint = get_request_fingerprint(request)
+        #     if stored_fingerprint != current_fingerprint:
+        #         logger.warning(
+        #             f"Session fingerprint mismatch for user {data.get('id')}")
+        #         return None
 
         # Zusätzliche Validierung: User muss noch existieren und aktiv sein
         user = get_user_by_id(data.get("id"))
         if not user or not user.get("is_active"):
+            logging.warning(f"[AUTH] User not found or inactive: id={data.get('id')}")
             return None
 
+        logging.info(f"[AUTH] Authentication successful for user_id={data.get('id')}")
         return {"email": data["email"], "id": data["id"]}
 
     except SignatureExpired:
@@ -110,7 +117,7 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
         logger.warning("Invalid session token signature")
         return None
     except Exception as e:
-        logger.error(f"Session token error: {type(e).__name__}")
+        logger.error(f"Session token error: {type(e).__name__}: {e}")
         return None
 
 
