@@ -6543,7 +6543,7 @@
 
         async function load2FAStatus() {
             try {
-                const response = await fetch('/auth/2fa/status');
+                const response = await fetch('/auth/2fa/status', { credentials: 'include' });
                 const data = await response.json();
                 const statusEl = document.getElementById('2faStatus');
                 if (statusEl) {
@@ -6613,6 +6613,7 @@
                 const response = await fetch('/auth/change-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ current_password: current, new_password: newPw })
                 });
                 const data = await response.json();
