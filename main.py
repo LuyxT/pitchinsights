@@ -80,10 +80,10 @@ async def lifespan(app: FastAPI):
     SECURITY: Sichere Initialisierung.
     """
     import time
-    
+
     # Startup
     logger.info("PitchInsights starting up...")
-    
+
     # Railway mountet Volume nach Container-Start - warte darauf
     max_retries = 10
     for attempt in range(max_retries):
@@ -95,11 +95,19 @@ async def lifespan(app: FastAPI):
             break
         except (PermissionError, OSError, Exception) as e:
             if attempt < max_retries - 1:
-                logger.warning(f"Waiting for volume mount (attempt {attempt + 1}/{max_retries}): {e}")
+                logger.warning(
+                    f"Waiting for volume mount (attempt {attempt + 1}/{max_retries}): {e}")
                 time.sleep(2)  # Warte 2 Sekunden
             else:
-                logger.error(f"Failed to initialize after {max_retries} attempts: {e}")
+                logger.error(
+                    f"Failed to initialize after {max_retries} attempts: {e}")
                 raise
+
+    yield
+
+    # Shutdown
+    logger.info("PitchInsights shutting down...")
+
 
 # ============================================
 # Templates Setup
