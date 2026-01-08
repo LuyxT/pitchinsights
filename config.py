@@ -110,14 +110,18 @@ class SecurityConfig:
         "/tmp/pitchinsights_data" if _IS_RAILWAY else "data"
     )
 
-    # Database
+    # Database - MUSS DATA_DIR explizit nutzen
     DATABASE_PATH: str = os.environ.get(
-        "PITCHINSIGHTS_DB_PATH", f"{DATA_DIR}/pitchinsights.db")
+        "PITCHINSIGHTS_DB_PATH", 
+        "/tmp/pitchinsights_data/pitchinsights.db" if _IS_RAILWAY else "data/pitchinsights.db"
+    )
 
     # Logging
     LOG_LEVEL: str = os.environ.get("PITCHINSIGHTS_LOG_LEVEL", "INFO")
     LOG_FILE: str = os.environ.get(
-        "PITCHINSIGHTS_LOG_FILE", f"{DATA_DIR}/security.log")
+        "PITCHINSIGHTS_LOG_FILE", 
+        "/tmp/pitchinsights_data/security.log" if _IS_RAILWAY else "data/security.log"
+    )
 
 
 class AppPermissions:
