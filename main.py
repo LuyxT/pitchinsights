@@ -93,6 +93,7 @@ async def lifespan(app: FastAPI):
     # Data-Verzeichnis aus Config (auf Railway: /tmp/pitchinsights_data)
     data_dir = SecurityConfig.DATA_DIR
     logger.info(f"Using data directory: {data_dir}")
+    logger.info(f"Database path: {SecurityConfig.DATABASE_PATH}")
 
     # Erstelle Verzeichnisse
     try:
@@ -114,6 +115,7 @@ async def lifespan(app: FastAPI):
         logger.info("Database initialized")
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
+        logger.error(f"Attempted DB path: {SecurityConfig.DATABASE_PATH}")
         raise
 
     yield
