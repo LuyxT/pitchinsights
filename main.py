@@ -91,7 +91,7 @@ async def lifespan(app: FastAPI):
 
     # Startup
     logger.info("PitchInsights starting up...")
-    
+
     # Data-Verzeichnis aus Config
     data_dir = SecurityConfig.DATA_DIR
     logger.info(f"Using data directory: {data_dir}")
