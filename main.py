@@ -94,7 +94,18 @@ async def lifespan(app: FastAPI):
 
     # Data-Verzeichnis aus Config
     data_dir = SecurityConfig.DATA_DIR
-    logger.info(f"Using data directory: {data_dir}")
+    logger.info(f"Configured data directory: {data_dir}")
+    
+    # Debug: Check if /app/data exists and its permissions
+    if os.path.exists("/app/data"):
+        logger.info(f"/app/data EXISTS - Volume is mounted!")
+        try:
+            stat_info = os.stat("/app/data")
+            logger.info(f"/app/data permissions: {oct(stat_info.st_mode)}, uid={stat_info.st_uid}, gid={stat_info.st_gid}")
+        except Exception as e:
+            logger.warning(f"Could not stat /app/data: {e}")
+    else:
+        logger.warning("/app/data does NOT exist - Volume not mounted!")
 
     # Warte auf Volume-Mount (Railway braucht manchmal etwas Zeit)
     max_retries = 5
@@ -105,18 +116,23 @@ async def lifespan(app: FastAPI):
             os.makedirs(f"{data_dir}/uploads", exist_ok=True)
             os.makedirs(f"{data_dir}/videos", exist_ok=True)
             os.makedirs(f"{data_dir}/backups", exist_ok=True)
-            logger.info("Data directories created successfully")
+            # Test write
+            test_file = f"{data_dir}/.write_test"
+            with open(test_file, "w") as f:
+                f.write("test")
+            os.remove(test_file)
+            logger.info(f"Data directories created and writable at {data_dir}")
             break
         except PermissionError as e:
             if attempt < max_retries - 1:
                 logger.warning(
-                    f"Permission denied, retrying in 2s... (attempt {attempt + 1}/{max_retries})")
+                    f"Permission denied for {data_dir}, retrying in 2s... (attempt {attempt + 1}/{max_retries})")
                 time.sleep(2)
             else:
-                logger.warning(f"Volume not accessible, using /tmp fallback")
+                logger.warning(f"Volume {data_dir} not accessible after {max_retries} attempts, using /tmp fallback")
                 use_fallback = True
         except Exception as e:
-            logger.error(f"Unexpected error creating directories: {e}")
+            logger.error(f"Unexpected error creating directories in {data_dir}: {e}")
             use_fallback = True
             break
 
