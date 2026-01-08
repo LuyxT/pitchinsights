@@ -1260,9 +1260,10 @@ def get_secure_headers_with_nonce(nonce: str, is_production: bool = False) -> Di
     # XSS-Schutz durch Input-Validierung und escapeHtml() im Frontend
     csp = (
         f"default-src 'self'; "
-        f"script-src 'self' 'unsafe-inline'; "
+        f"script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
         f"style-src 'self' 'unsafe-inline'; "
         f"img-src 'self' data: blob:; "
+        f"media-src 'self' blob:; "
         f"font-src 'self'; "
         f"connect-src 'self'; "
         f"frame-ancestors 'none'; "

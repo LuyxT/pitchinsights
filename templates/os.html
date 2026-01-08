@@ -6703,7 +6703,8 @@
                     credentials: 'include'
                 });
                 if (!response.ok) throw new Error('Fehler beim Laden');
-                teamVideos = await response.json();
+                const data = await response.json();
+                teamVideos = data.videos || [];
                 renderVideoList();
             } catch (error) {
                 console.error('Fehler beim Laden der Videos:', error);
@@ -6967,7 +6968,8 @@
                     credentials: 'include'
                 });
                 if (!response.ok) throw new Error('Fehler');
-                sharedClips = await response.json();
+                const data = await response.json();
+                sharedClips = data.shared_clips || [];
                 renderSharedClips();
                 updateSharedClipsBadge();
             } catch (error) {
@@ -6995,17 +6997,17 @@
                             <div>
                                 <h4 style="margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
                                     ${!share.is_viewed ? '<span style="width: 8px; height: 8px; background: #007AFF; border-radius: 50%; display: inline-block;"></span>' : ''}
-                                    ${escapeHtml(share.video_title)}
+                                    ${escapeHtml(share.video?.title || share.clip?.title || 'Video')}
                                 </h4>
-                                <p style="margin: 0; font-size: 12px; opacity: 0.6;">Von ${escapeHtml(share.sender_name)} • ${new Date(share.shared_at).toLocaleDateString('de-DE')}</p>
+                                <p style="margin: 0; font-size: 12px; opacity: 0.6;">Von ${escapeHtml(share.sender || 'Unbekannt')} • ${new Date(share.shared_at).toLocaleDateString('de-DE')}</p>
                             </div>
                             <span style="font-family: monospace; font-size: 13px; padding: 4px 8px; background: var(--bg-light); border-radius: 4px;">
-                                ${formatTime(share.start_time)} - ${formatTime(share.end_time)}
+                                ${formatTime(share.clip?.start_time || 0)} - ${formatTime(share.clip?.end_time || 0)}
                             </span>
                         </div>
                         ${share.message ? `<p style="margin: 0 0 12px 0; padding: 8px; background: var(--bg-light); border-radius: 8px; font-size: 13px; font-style: italic;">"${escapeHtml(share.message)}"</p>` : ''}
-                        ${share.note ? `<p style="margin: 0 0 12px 0; font-size: 13px; opacity: 0.8;">📝 ${escapeHtml(share.note)}</p>` : ''}
-                        <button onclick="watchSharedClip(${share.id}, ${share.video_id}, ${share.start_time})" style="padding: 10px 20px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+                        ${share.clip?.note ? `<p style="margin: 0 0 12px 0; font-size: 13px; opacity: 0.8;">📝 ${escapeHtml(share.clip.note)}</p>` : ''}
+                        <button onclick="watchSharedClip(${share.share_id}, ${share.video?.id || 0}, ${share.clip?.start_time || 0})" style="padding: 10px 20px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
                             ▶ Clip ansehen
                         </button>
                     </div>
