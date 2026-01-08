@@ -81,7 +81,13 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("PitchInsights starting up...")
-    os.makedirs("data/uploads", exist_ok=True)
+    
+    # Verzeichnisse erstellen - graceful wenn nicht möglich (Railway Volume)
+    try:
+        os.makedirs("data/uploads", exist_ok=True)
+    except (PermissionError, OSError) as e:
+        logger.warning(f"Could not create data/uploads: {e}")
+    
     init_db()
     init_team_tables()
     logger.info("Database initialized")
