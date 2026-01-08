@@ -13,7 +13,8 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
 import uvicorn
 
 from config import SecurityConfig
@@ -87,6 +88,12 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("PitchInsights shutting down...")
+
+
+# ============================================
+# Templates Setup
+# ============================================
+templates = Jinja2Templates(directory="templates")
 
 
 # ============================================
@@ -361,23 +368,30 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(auth_router)
 
 
-@app.get("/os")
-async def serve_os():
+@app.get("/os", response_class=HTMLResponse)
+async def serve_os(request: Request):
     """
     Serve the PitchInsights OS.
     SECURITY: Cache-Control Header verhindert Caching.
     """
-    template_path = os.path.join(
-        os.path.dirname(__file__), "templates", "os.html"
-    )
-    return FileResponse(
-        template_path,
-        media_type="text/html",
-        headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache"
+    from routes.auth import get_current_user, get_user_by_id
+
+    # User aus Session holen
+    user = get_current_user(request)
+    user_data = None
+    if user:
+        user_data = get_user_by_id(user.get("id"))
+
+    response = templates.TemplateResponse(
+        "os.html",
+        {
+            "request": request,
+            "user": user_data
         }
     )
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 
 @app.get("/taktik")

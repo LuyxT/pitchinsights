@@ -174,23 +174,91 @@ async def home(request: Request):
 # Access-Code für geschützten Login-Bereich
 ACCESS_CODE = "pitch2026"
 
+# ============================================
+# DEV-ONLY: Auto-Login für lokales Testen
+# ============================================
+IS_PRODUCTION = os.getenv("PITCHINSIGHTS_ENV") == "production"
+
+
+@router.get("/dev-login", response_class=HTMLResponse)
+async def dev_auto_login(request: Request, user_id: int = 1):
+    """
+    DEV-ONLY: Automatischer Login ohne Passwort.
+    NUR verfügbar wenn PITCHINSIGHTS_ENV != 'production'
+
+    Beispiel: http://localhost:8000/dev-login?user_id=1
+    """
+    if IS_PRODUCTION:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    # User aus DB laden
+    user = get_user_by_id(user_id)
+    if not user:
+        return HTMLResponse(f"<h1>User {user_id} nicht gefunden</h1><p>Verfügbare User-IDs prüfen in der DB.</p>")
+
+    # Session erstellen
+    response = RedirectResponse(url="/os", status_code=303)
+    session_token = str(uuid.uuid4())
+
+    # Cookie setzen (wie beim normalen Login)
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=False,  # Localhost ist nicht HTTPS
+        samesite="lax",
+        max_age=86400 * 7  # 7 Tage
+    )
+
+    # Session in DB speichern
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO sessions (user_id, token, created_at, expires_at, ip_address, user_agent)
+            VALUES (?, ?, datetime('now'), datetime('now', '+7 days'), ?, ?)
+        """, (user_id, session_token, "127.0.0.1", "DevLogin"))
+        db.commit()
+
+    logger.info(
+        f"[DEV] Auto-login für User {user_id} ({user.get('email', 'unknown')})")
+    return response
+
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request, code: str = None):
     """Login-Seite anzeigen - nur mit gültigem Access-Code."""
-    # Prüfe Access-Code
-    if code != ACCESS_CODE:
+    # Prüfe Access-Code (URL-Parameter oder Cookie)
+    stored_code = request.cookies.get("beta_access")
+
+    if code == ACCESS_CODE:
+        # Code korrekt - Cookie setzen und zur Login-Seite
+        csrf_token = generate_csrf_token("login_form")
+        response = templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": None, "csrf_token": csrf_token}
+        )
+        response.set_cookie(
+            key="beta_access",
+            value="verified",
+            httponly=True,
+            secure=False,  # True in Production
+            samesite="lax",
+            max_age=86400 * 30  # 30 Tage
+        )
+        return response
+    elif stored_code == "verified":
+        # Bereits verifiziert via Cookie
+        csrf_token = generate_csrf_token("login_form")
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": None, "csrf_token": csrf_token}
+        )
+    else:
+        # Kein gültiger Code - zur Gate mit Redirect zu login
         return templates.TemplateResponse(
             "access_gate.html",
-            {"request": request, "error": None}
+            {"request": request, "error": None, "redirect": "login"}
         )
-
-    # SECURITY: Generiere einmaligen CSRF-Token für dieses Formular
-    csrf_token = generate_csrf_token("login_form")
-    return templates.TemplateResponse(
-        "login.html",
-        {"request": request, "error": None, "csrf_token": csrf_token}
-    )
 
 
 # ============================================
@@ -595,18 +663,38 @@ async def login(
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request, code: str = None):
     """Registrierungs-Seite anzeigen - nur mit gültigem Access-Code."""
-    # Prüfe Access-Code
-    if code != ACCESS_CODE:
+    # Prüfe Access-Code (URL-Parameter oder Cookie)
+    stored_code = request.cookies.get("beta_access")
+
+    if code == ACCESS_CODE:
+        # Code korrekt - Cookie setzen und zur Register-Seite
+        csrf_token = generate_csrf_token("register_form")
+        response = templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": None, "csrf_token": csrf_token}
+        )
+        response.set_cookie(
+            key="beta_access",
+            value="verified",
+            httponly=True,
+            secure=False,  # True in Production
+            samesite="lax",
+            max_age=86400 * 30  # 30 Tage
+        )
+        return response
+    elif stored_code == "verified":
+        # Bereits verifiziert via Cookie
+        csrf_token = generate_csrf_token("register_form")
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": None, "csrf_token": csrf_token}
+        )
+    else:
+        # Kein gültiger Code - zur Gate mit Redirect zu register
         return templates.TemplateResponse(
             "access_gate.html",
-            {"request": request, "error": None}
+            {"request": request, "error": None, "redirect": "register"}
         )
-
-    csrf_token = generate_csrf_token("register_form")
-    return templates.TemplateResponse(
-        "register.html",
-        {"request": request, "error": None, "csrf_token": csrf_token}
-    )
 
 
 @router.post("/register", response_class=HTMLResponse)
@@ -1664,7 +1752,7 @@ async def get_team_roles(request: Request):
             ORDER BY r.id
         """, (team_id,))
         roles = cursor.fetchall()
-        
+
         if not roles:
             return {"roles": []}
 
@@ -1677,7 +1765,7 @@ async def get_team_roles(request: Request):
             WHERE role_id IN ({placeholders})
         """, role_ids)
         all_permissions = cursor.fetchall()
-        
+
         # Gruppiere Permissions nach role_id
         permissions_by_role = {}
         for p in all_permissions:
@@ -1685,7 +1773,7 @@ async def get_team_roles(request: Request):
             if role_id not in permissions_by_role:
                 permissions_by_role[role_id] = {}
             permissions_by_role[role_id][p["app_id"]] = {
-                "view": bool(p["can_view"]), 
+                "view": bool(p["can_view"]),
                 "edit": bool(p["can_edit"])
             }
 
@@ -3048,7 +3136,7 @@ async def get_messages(request: Request, limit: int = 50, before_id: int = None)
     """
     Team-Chat Nachrichten abrufen.
     PERFORMANCE: Cursor-basierte Pagination für große Chat-Historien.
-    
+
     Query Params:
         limit: Max Nachrichten (default 50, max 100)
         before_id: Für Pagination - Nachrichten vor dieser ID laden
@@ -3066,7 +3154,7 @@ async def get_messages(request: Request, limit: int = 50, before_id: int = None)
 
     with get_db_connection() as db:
         cursor = db.cursor()
-        
+
         if before_id:
             # PERFORMANCE: Cursor-Pagination (schneller als OFFSET)
             cursor.execute("""
@@ -3089,7 +3177,7 @@ async def get_messages(request: Request, limit: int = 50, before_id: int = None)
                 ORDER BY m.created_at DESC
                 LIMIT ?
             """, (db_user["team_id"], limit + 1))
-        
+
         rows = cursor.fetchall()
         has_more = len(rows) > limit
         messages = [dict(row) for row in rows[:limit]]

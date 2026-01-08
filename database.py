@@ -372,22 +372,22 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_team_members_team_user
             ON team_members(team_id, user_id)
         """)
-        
+
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_team_members_user
             ON team_members(user_id)
         """)
-        
+
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_permissions_role
             ON permissions(role_id)
         """)
-        
+
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_users_team
             ON users(team_id) WHERE deleted_at IS NULL AND is_active = 1
         """)
-        
+
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_roles_team
             ON roles(team_id)
@@ -1304,25 +1304,25 @@ def cleanup_old_logs(days_to_keep: int = 30) -> Dict[str, int]:
     """
     Löscht alte Log-Einträge für Performance.
     SECURITY: Behält kritische Events länger.
-    
+
     Args:
         days_to_keep: Tage für normale Logs (kritische: 90 Tage)
-    
+
     Returns:
         Anzahl gelöschter Einträge pro Tabelle
     """
     deleted = {}
-    
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        
+
         # Login Attempts älter als 7 Tage
         cursor.execute("""
             DELETE FROM login_attempts 
             WHERE attempted_at < datetime('now', '-7 days')
         """)
         deleted["login_attempts"] = cursor.rowcount
-        
+
         # Security Events älter als 30 Tage (außer blocked)
         cursor.execute("""
             DELETE FROM security_events 
@@ -1330,7 +1330,7 @@ def cleanup_old_logs(days_to_keep: int = 30) -> Dict[str, int]:
             AND blocked = 0
         """)
         deleted["security_events"] = cursor.rowcount
-        
+
         # Audit Log: Normale Events nach X Tagen, kritische nach 90
         cursor.execute(f"""
             DELETE FROM audit_log 
@@ -1338,22 +1338,22 @@ def cleanup_old_logs(days_to_keep: int = 30) -> Dict[str, int]:
             AND severity IN ('DEBUG', 'INFO')
         """)
         deleted["audit_log_normal"] = cursor.rowcount
-        
+
         cursor.execute("""
             DELETE FROM audit_log 
             WHERE created_at < datetime('now', '-90 days')
             AND severity IN ('WARNING', 'ERROR', 'CRITICAL')
         """)
         deleted["audit_log_critical"] = cursor.rowcount
-        
+
         conn.commit()
-        
+
         # VACUUM für Speicherfreigabe (nur periodisch)
         try:
             conn.execute("VACUUM")
         except:
             pass  # Kann bei laufenden Transaktionen fehlschlagen
-    
+
     logger.info(f"Log cleanup completed: {deleted}")
     return deleted
 
@@ -1364,35 +1364,35 @@ def get_database_stats() -> Dict[str, Any]:
     """
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        
+
         stats = {}
-        
+
         # Tabellen-Größen
         tables = [
-            "users", "teams", "team_members", "players", 
+            "users", "teams", "team_members", "players",
             "calendar_events", "messages", "videos",
             "audit_log", "security_events", "login_attempts"
         ]
-        
+
         for table in tables:
             try:
                 cursor.execute(f"SELECT COUNT(*) as count FROM {table}")
                 stats[f"{table}_count"] = cursor.fetchone()["count"]
             except:
                 stats[f"{table}_count"] = 0
-        
+
         # Aktive Vereine (Teams)
         cursor.execute("""
             SELECT COUNT(*) as count FROM teams 
             WHERE deleted_at IS NULL AND is_active = 1
         """)
         stats["active_teams"] = cursor.fetchone()["count"]
-        
+
         # Aktive User
         cursor.execute("""
             SELECT COUNT(*) as count FROM users 
             WHERE deleted_at IS NULL AND is_active = 1
         """)
         stats["active_users"] = cursor.fetchone()["count"]
-        
+
         return stats

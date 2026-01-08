@@ -284,7 +284,7 @@ def get_secure_headers(is_production: bool = False) -> Dict[str, str]:
         # XSS wird durch escapeHtml() im Frontend verhindert
         headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: blob:; "
             "font-src 'self'; "
@@ -300,7 +300,7 @@ def get_secure_headers(is_production: bool = False) -> Dict[str, str]:
         # Development-CSP (lockerer für Debugging)
         headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: blob:; "
             "font-src 'self'; "

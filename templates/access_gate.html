@@ -152,7 +152,9 @@
             e.preventDefault();
             const code = document.getElementById('accessCode').value.trim();
             if (code) {
-                window.location.href = '/login?code=' + encodeURIComponent(code);
+                // Redirect-Ziel vom Server oder Default 'login'
+                const redirect = '{{ redirect|default("login") }}';
+                window.location.href = '/' + redirect + '?code=' + encodeURIComponent(code);
             }
         });
     </script>
