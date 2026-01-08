@@ -2148,7 +2148,11 @@ async def get_invitations(request: Request):
 # Erlaubte Video-Formate und Max-Größe
 ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.webm', '.mkv'}
 MAX_VIDEO_SIZE = 500 * 1024 * 1024  # 500 MB
-VIDEO_UPLOAD_DIR = os.path.join(SecurityConfig.DATA_DIR, 'videos')
+
+
+def get_video_upload_dir():
+    """Dynamisch den Video-Upload-Pfad ermitteln."""
+    return os.path.join(SecurityConfig.DATA_DIR, 'videos')
 
 
 @router.post("/api/videos/upload")
@@ -2186,7 +2190,7 @@ async def upload_video(
 
     # SECURITY: Sicherer Dateiname
     safe_filename = f"{uuid.uuid4().hex}{ext}"
-    team_dir = os.path.join(VIDEO_UPLOAD_DIR, str(db_user["team_id"]))
+    team_dir = os.path.join(get_video_upload_dir(), str(db_user["team_id"]))
     os.makedirs(team_dir, exist_ok=True)
     file_path = os.path.join(team_dir, safe_filename)
 
@@ -2280,7 +2284,7 @@ async def stream_video(request: Request, video_id: int):
     if not video:
         return JSONResponse({"error": "Video nicht gefunden"}, status_code=404)
 
-    file_path = os.path.join(VIDEO_UPLOAD_DIR, str(
+    file_path = os.path.join(get_video_upload_dir(), str(
         db_user["team_id"]), video["filename"])
     if not os.path.exists(file_path):
         return JSONResponse({"error": "Datei nicht gefunden"}, status_code=404)

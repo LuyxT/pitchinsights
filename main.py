@@ -99,7 +99,7 @@ async def lifespan(app: FastAPI):
     # Warte auf Volume-Mount (Railway braucht manchmal etwas Zeit)
     max_retries = 5
     use_fallback = False
-    
+
     for attempt in range(max_retries):
         try:
             os.makedirs(f"{data_dir}/uploads", exist_ok=True)
@@ -109,7 +109,8 @@ async def lifespan(app: FastAPI):
             break
         except PermissionError as e:
             if attempt < max_retries - 1:
-                logger.warning(f"Permission denied, retrying in 2s... (attempt {attempt + 1}/{max_retries})")
+                logger.warning(
+                    f"Permission denied, retrying in 2s... (attempt {attempt + 1}/{max_retries})")
                 time.sleep(2)
             else:
                 logger.warning(f"Volume not accessible, using /tmp fallback")
