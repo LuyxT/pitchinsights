@@ -151,7 +151,7 @@ async def https_redirect_middleware(request: Request, call_next):
     SECURITY: Verhindert unverschlüsselte Verbindungen.
     """
     # Skip für Healthcheck Endpoints (Railway macht HTTP intern)
-    if request.url.path in ["/", "/health"]:
+    if request.url.path in ["/health", "/_health"]:
         return await call_next(request)
 
     if SecurityConfig.IS_PRODUCTION:
@@ -413,8 +413,8 @@ async def serve_taktik():
 # Health Check (für Monitoring)
 # ============================================
 
-@app.get("/")
 @app.get("/health")
+@app.get("/_health")
 async def health_check():
     """
     Health Check Endpoint.
