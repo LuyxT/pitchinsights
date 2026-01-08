@@ -4334,11 +4334,8 @@
                             style="width: 44px; height: 44px; background: rgba(255,255,255,0.1); border: none; border-radius: 50%; cursor: pointer; color: white; font-size: 20px;">✕</button>
                     </div>
                     <div id="videoPlayerContainer" style="width: 90%; max-width: 1200px; position: relative;">
-                        <div class="upload-icon">📹</div>
-                        <h3 style="margin-bottom: 8px;">Video Hochladen</h3>
-                        <p>Ziehe eine Datei hier rein oder klicke zum Auswählen</p>
-                        <video id="modalVideo" style="width: 100%; max-height: 80vh; border-radius: 12px;"
-                            controls></video>
+                        <video id="modalVideo" style="width: 100%; max-height: 80vh; border-radius: 12px;" controls
+                            playsinline crossorigin="use-credentials"></video>
                         <canvas id="modalDrawCanvas"
                             style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; border-radius: 12px;"></canvas>
                     </div>

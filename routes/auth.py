@@ -11,8 +11,8 @@ import shutil
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Request, Form, HTTPException, Depends, UploadFile, File, BackgroundTasks
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse
+from fastapi import APIRouter, Request, Form, HTTPException, Depends, UploadFile, File, BackgroundTasks, Header
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 import bcrypt
@@ -2262,7 +2262,7 @@ async def get_videos(request: Request):
 @router.get("/api/videos/{video_id}/stream")
 async def stream_video(request: Request, video_id: int):
     """
-    Video streamen.
+    Video streamen mit Range-Request-Unterstützung.
     SECURITY: Nur eigenes Team, IDOR Prevention.
     """
     user = get_current_user(request)
@@ -2289,7 +2289,53 @@ async def stream_video(request: Request, video_id: int):
     if not os.path.exists(file_path):
         return JSONResponse({"error": "Datei nicht gefunden"}, status_code=404)
 
-    return FileResponse(file_path, media_type="video/mp4")
+    file_size = os.path.getsize(file_path)
+
+    # Check for Range header (for video seeking)
+    range_header = request.headers.get("range")
+
+    if range_header:
+        # Parse range header: "bytes=0-1000" or "bytes=0-"
+        range_match = range_header.replace("bytes=", "").split("-")
+        start = int(range_match[0]) if range_match[0] else 0
+        end = int(range_match[1]) if range_match[1] else file_size - 1
+
+        # Clamp end to file size
+        end = min(end, file_size - 1)
+        chunk_size = end - start + 1
+
+        def iterfile():
+            with open(file_path, "rb") as f:
+                f.seek(start)
+                remaining = chunk_size
+                while remaining > 0:
+                    read_size = min(65536, remaining)  # 64KB chunks
+                    data = f.read(read_size)
+                    if not data:
+                        break
+                    remaining -= len(data)
+                    yield data
+
+        headers = {
+            "Content-Range": f"bytes {start}-{end}/{file_size}",
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(chunk_size),
+            "Content-Type": "video/mp4",
+        }
+
+        return StreamingResponse(
+            iterfile(),
+            status_code=206,
+            headers=headers,
+            media_type="video/mp4"
+        )
+    else:
+        # No range header - return full file with Accept-Ranges header
+        return FileResponse(
+            file_path,
+            media_type="video/mp4",
+            headers={"Accept-Ranges": "bytes"}
+        )
 
 
 @router.delete("/api/videos/{video_id}")
