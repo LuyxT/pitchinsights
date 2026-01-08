@@ -2265,8 +2265,15 @@ async def stream_video(request: Request, video_id: int):
     Video streamen mit Range-Request-Unterstützung.
     SECURITY: Nur eigenes Team, IDOR Prevention.
     """
+    # Debug: Log session info
+    session_cookie = request.cookies.get("session")
+    logging.info(f"[VIDEO STREAM] video_id={video_id}, session_cookie_present={bool(session_cookie)}")
+    
     user = get_current_user(request)
+    logging.info(f"[VIDEO STREAM] user={user}")
+    
     if not user:
+        logging.warning(f"[VIDEO STREAM] 401 - No user from session")
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
