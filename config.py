@@ -102,12 +102,54 @@ class SecurityConfig:
     CSRF_TOKEN_EXPIRY: int = 3600  # 1 Stunde
 
     # Data Directory - Railway Volume oder lokal
-    # Railway setzt RAILWAY_VOLUME_MOUNT_PATH automatisch
-    # Fallback: /app/data auf Railway, sonst lokales "data"
-    _RAILWAY_VOLUME = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "")
-    _DEFAULT_DATA_DIR = _RAILWAY_VOLUME if _RAILWAY_VOLUME else (
-        "/app/data" if os.path.exists("/app") else "data")
-    DATA_DIR: str = os.environ.get("PITCHINSIGHTS_DATA_DIR", _DEFAULT_DATA_DIR)
+    # Suche nach schreibbarem Verzeichnis
+    @staticmethod
+    def _find_data_dir():
+        """Findet ein schreibbares Datenverzeichnis."""
+        # 1. Explizit gesetzt
+        if os.environ.get("PITCHINSIGHTS_DATA_DIR"):
+            return os.environ.get("PITCHINSIGHTS_DATA_DIR")
+        
+        # 2. Railway Volume Mount Path
+        if os.environ.get("RAILWAY_VOLUME_MOUNT_PATH"):
+            return os.environ.get("RAILWAY_VOLUME_MOUNT_PATH")
+        
+        # 3. Suche Railway Volume unter bekannten Pfaden
+        railway_paths = [
+            "/app/data",
+            "/data",
+            "/var/data",
+        ]
+        
+        # Auch dynamisch gefundene Railway Volumes
+        bind_mount_base = "/var/lib/containers/railwayapp/bind-mounts"
+        if os.path.exists(bind_mount_base):
+            try:
+                for d in os.listdir(bind_mount_base):
+                    vol_path = os.path.join(bind_mount_base, d)
+                    if os.path.isdir(vol_path):
+                        for v in os.listdir(vol_path):
+                            if v.startswith("vol_"):
+                                railway_paths.insert(0, os.path.join(vol_path, v))
+            except (PermissionError, OSError):
+                pass
+        
+        # Teste welcher Pfad schreibbar ist
+        for path in railway_paths:
+            try:
+                os.makedirs(path, exist_ok=True)
+                test_file = os.path.join(path, ".write_test")
+                with open(test_file, "w") as f:
+                    f.write("test")
+                os.remove(test_file)
+                return path
+            except (PermissionError, OSError):
+                continue
+        
+        # 4. Lokales Verzeichnis (Development)
+        return "data"
+    
+    DATA_DIR: str = _find_data_dir.__func__()
 
     # Database
     DATABASE_PATH: str = os.environ.get(
