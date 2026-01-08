@@ -53,8 +53,8 @@ class SecurityConfig:
     COOKIE_SECURE: bool = IS_PRODUCTION or os.environ.get(
         "PITCHINSIGHTS_COOKIE_SECURE", "False"
     ).lower() in ("1", "true", "yes")
-    COOKIE_SAMESITE: str = "Strict" if IS_PRODUCTION else os.environ.get(
-        "PITCHINSIGHTS_COOKIE_SAMESITE", "Lax")
+    # Lax statt Strict für bessere Kompatibilität mit Redirects
+    COOKIE_SAMESITE: str = os.environ.get("PITCHINSIGHTS_COOKIE_SAMESITE", "Lax")
     COOKIE_HTTPONLY: bool = True
     SESSION_MAX_AGE_SECONDS: int = int(os.environ.get(
         "PITCHINSIGHTS_SESSION_MAX_AGE", "86400"))  # 24h default
