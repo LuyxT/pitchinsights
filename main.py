@@ -37,29 +37,31 @@ def setup_logging():
     Konfiguriert sicheres Logging.
     SECURITY: Keine sensiblen Daten in Logs.
     """
-    os.makedirs("data", exist_ok=True)
-
     # Security Logger
     security_logger = logging.getLogger("pitchinsights.security")
     security_logger.setLevel(getattr(logging, SecurityConfig.LOG_LEVEL))
 
-    # File Handler mit Rotation
-    file_handler = RotatingFileHandler(
-        SecurityConfig.LOG_FILE,
-        maxBytes=10_000_000,  # 10MB
-        backupCount=5
-    )
-    file_handler.setFormatter(logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    ))
-    security_logger.addHandler(file_handler)
-
-    # Console Handler für Development
+    # Console Handler (immer aktiv)
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(logging.Formatter(
         '%(levelname)s: %(message)s'
     ))
     security_logger.addHandler(console_handler)
+
+    # File Handler mit Rotation - nur wenn Verzeichnis schreibbar ist
+    try:
+        os.makedirs("data", exist_ok=True)
+        file_handler = RotatingFileHandler(
+            SecurityConfig.LOG_FILE,
+            maxBytes=10_000_000,  # 10MB
+            backupCount=5
+        )
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        ))
+        security_logger.addHandler(file_handler)
+    except (PermissionError, OSError) as e:
+        security_logger.warning(f"File logging disabled: {e}")
 
     return security_logger
 
