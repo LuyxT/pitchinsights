@@ -109,18 +109,19 @@ class SecurityConfig:
         # 1. Explizit gesetzt
         if os.environ.get("PITCHINSIGHTS_DATA_DIR"):
             return os.environ.get("PITCHINSIGHTS_DATA_DIR")
-        
+
         # 2. Railway Volume Mount Path
         if os.environ.get("RAILWAY_VOLUME_MOUNT_PATH"):
             return os.environ.get("RAILWAY_VOLUME_MOUNT_PATH")
-        
+
         # 3. Suche Railway Volume unter bekannten Pfaden
         railway_paths = [
             "/app/data",
             "/data",
             "/var/data",
+            "/tmp/pitchinsights_data",  # Fallback - immer schreibbar
         ]
-        
+
         # Auch dynamisch gefundene Railway Volumes
         bind_mount_base = "/var/lib/containers/railwayapp/bind-mounts"
         if os.path.exists(bind_mount_base):
@@ -130,10 +131,11 @@ class SecurityConfig:
                     if os.path.isdir(vol_path):
                         for v in os.listdir(vol_path):
                             if v.startswith("vol_"):
-                                railway_paths.insert(0, os.path.join(vol_path, v))
+                                railway_paths.insert(
+                                    0, os.path.join(vol_path, v))
             except (PermissionError, OSError):
                 pass
-        
+
         # Teste welcher Pfad schreibbar ist
         for path in railway_paths:
             try:
@@ -145,10 +147,10 @@ class SecurityConfig:
                 return path
             except (PermissionError, OSError):
                 continue
-        
+
         # 4. Lokales Verzeichnis (Development)
         return "data"
-    
+
     DATA_DIR: str = _find_data_dir.__func__()
 
     # Database
