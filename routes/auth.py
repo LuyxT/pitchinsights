@@ -2148,8 +2148,7 @@ async def get_invitations(request: Request):
 # Erlaubte Video-Formate und Max-Größe
 ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.webm', '.mkv'}
 MAX_VIDEO_SIZE = 500 * 1024 * 1024  # 500 MB
-VIDEO_UPLOAD_DIR = os.path.join(os.path.dirname(
-    os.path.dirname(__file__)), 'data', 'videos')
+VIDEO_UPLOAD_DIR = os.path.join(SecurityConfig.DATA_DIR, 'videos')
 
 
 @router.post("/api/videos/upload")

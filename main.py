@@ -39,11 +39,11 @@ def setup_logging(enable_file_logging: bool = False):
     """
     # Security Logger
     security_logger = logging.getLogger("pitchinsights.security")
-    
+
     # Verhindere doppelte Handler
     if security_logger.handlers:
         return security_logger
-        
+
     security_logger.setLevel(getattr(logging, SecurityConfig.LOG_LEVEL))
 
     # Console Handler (immer aktiv)
@@ -87,26 +87,29 @@ async def lifespan(app: FastAPI):
     Application Lifecycle Handler.
     SECURITY: Sichere Initialisierung.
     """
-    import time
     import asyncio
 
     # Startup
     logger.info("PitchInsights starting up...")
+    
+    # Data-Verzeichnis aus Config
+    data_dir = SecurityConfig.DATA_DIR
+    logger.info(f"Using data directory: {data_dir}")
 
     # Railway mountet Volume nach Container-Start - warte darauf
     max_retries = 15  # 30 Sekunden max
     for attempt in range(max_retries):
         try:
-            os.makedirs("data/uploads", exist_ok=True)
-            os.makedirs("data/videos", exist_ok=True)
-            os.makedirs("data/backups", exist_ok=True)
-            
+            os.makedirs(f"{data_dir}/uploads", exist_ok=True)
+            os.makedirs(f"{data_dir}/videos", exist_ok=True)
+            os.makedirs(f"{data_dir}/backups", exist_ok=True)
+
             # Test ob wir schreiben können
-            test_file = "data/.write_test"
+            test_file = f"{data_dir}/.write_test"
             with open(test_file, "w") as f:
                 f.write("test")
             os.remove(test_file)
-            
+
             logger.info(f"Volume ready after {attempt + 1} attempts")
             break
         except (PermissionError, OSError) as e:
@@ -119,10 +122,10 @@ async def lifespan(app: FastAPI):
                     f"Volume not available after {max_retries} attempts: {e}")
                 logger.error("Continuing without persistent storage...")
                 break
-    
+
     # Jetzt File-Logging aktivieren (falls Volume bereit)
     setup_logging(enable_file_logging=True)
-    
+
     # Database initialisieren
     try:
         init_db()

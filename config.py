@@ -101,14 +101,18 @@ class SecurityConfig:
     INVITATION_MAX_USES: int = 50
     CSRF_TOKEN_EXPIRY: int = 3600  # 1 Stunde
 
+    # Data Directory - Railway Volume oder lokal
+    # Bei Railway: Setze PITCHINSIGHTS_DATA_DIR auf den Volume Mount Pfad
+    DATA_DIR: str = os.environ.get("PITCHINSIGHTS_DATA_DIR", "data")
+    
     # Database
     DATABASE_PATH: str = os.environ.get(
-        "PITCHINSIGHTS_DB_PATH", "data/pitchinsights.db")
+        "PITCHINSIGHTS_DB_PATH", f"{DATA_DIR}/pitchinsights.db")
 
     # Logging
     LOG_LEVEL: str = os.environ.get("PITCHINSIGHTS_LOG_LEVEL", "INFO")
     LOG_FILE: str = os.environ.get(
-        "PITCHINSIGHTS_LOG_FILE", "data/security.log")
+        "PITCHINSIGHTS_LOG_FILE", f"{DATA_DIR}/security.log")
 
 
 class AppPermissions:
