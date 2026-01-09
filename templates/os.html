@@ -4323,53 +4323,72 @@
                     </div>
                 </div>
 
-                <!-- Video Player Modal -->
+                <!-- Video Player Modal - Fullscreen Layout -->
                 <div id="videoPlayerModal"
-                    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 2000; justify-content: center; align-items: flex-start; flex-direction: column; overflow-y: auto; padding: 20px;">
-                    <div style="position: fixed; top: 16px; right: 16px; display: flex; gap: 12px; z-index: 2001;">
-                        <button onclick="deleteCurrentVideo()"
-                            style="width: 44px; height: 44px; background: rgba(239,68,68,0.8); border: none; border-radius: 50%; cursor: pointer; color: white; font-size: 16px;" title="Video löschen">🗑️</button>
-                        <button onclick="closeVideoPlayer()"
-                            style="width: 44px; height: 44px; background: rgba(255,255,255,0.1); border: none; border-radius: 50%; cursor: pointer; color: white; font-size: 20px;">✕</button>
-                    </div>
-                    <div id="videoPlayerContainer" style="width: 90%; max-width: 1200px; position: relative; margin: 60px auto 0 auto;">
-                        <video id="modalVideo" style="width: 100%; max-height: 80vh; border-radius: 12px;" controls
-                            playsinline></video>
-                        <canvas id="modalDrawCanvas"
-                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; border-radius: 12px;"></canvas>
-                    </div>
-                    <div id="videoPlayerInfo" style="margin-top: 16px; color: white;">
-                        <h2 id="playerVideoTitle" style="margin: 0 0 8px 0;"></h2>
-                        <p id="playerVideoDescription" style="opacity: 0.7; margin: 0;"></p>
-                    </div>
-
-                    <!-- Clip Creation Bar -->
-                    <div id="clipCreationBar"
-                        style="margin-top: 20px; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button onclick="setClipStart()"
-                                style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px;">
-                                ▶ Start setzen
+                    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0a0a0a; z-index: 2000; overflow: hidden;">
+                    
+                    <!-- Top Bar -->
+                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 50px; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 2001;">
+                        <h2 id="playerVideoTitle" style="margin: 0; font-size: 16px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%;"></h2>
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <button onclick="toggleDrawMode()" id="drawModeBtn"
+                                style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
+                                ✏️ Zeichnen
                             </button>
-                            <span id="clipStartTime" style="font-family: monospace; color: #10b981;">--:--</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button onclick="setClipEnd()"
-                                style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px;">
-                                ⏹ Ende setzen
+                            <button onclick="clearVideoDrawing()"
+                                style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
+                                🗑️ Löschen
                             </button>
-                            <span id="clipEndTime" style="font-family: monospace; color: #ef4444;">--:--</span>
+                            <button onclick="deleteCurrentVideo()"
+                                style="padding: 8px 16px; background: rgba(239,68,68,0.8); border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
+                                🗑️ Video löschen
+                            </button>
+                            <button onclick="closeVideoPlayer()"
+                                style="width: 40px; height: 40px; background: rgba(255,255,255,0.1); border: none; border-radius: 50%; cursor: pointer; color: white; font-size: 20px;">✕</button>
                         </div>
-                        <input type="text" id="clipNote" placeholder="Notiz zum Clip (optional)"
-                            style="flex: 1; min-width: 200px; padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
-                        <button onclick="saveVideoClip()" id="saveClipBtn" disabled
-                            style="padding: 8px 20px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; opacity: 0.5;">
-                            💾 Clip speichern
-                        </button>
                     </div>
-
-                    <!-- Clips List for this Video -->
-                    <div id="videoClipsList" style="margin-top: 16px; max-height: 200px; overflow-y: auto;"></div>
+                    
+                    <!-- Main Content Area -->
+                    <div style="display: flex; height: calc(100% - 50px); margin-top: 50px;">
+                        
+                        <!-- Video Area (70%) -->
+                        <div style="flex: 7; display: flex; flex-direction: column; padding: 20px; overflow: hidden;">
+                            <div id="videoPlayerContainer" style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center;">
+                                <video id="modalVideo" style="max-width: 100%; max-height: 100%; border-radius: 8px; background: #000;" controls playsinline></video>
+                                <canvas id="modalDrawCanvas"
+                                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; border-radius: 8px;"></canvas>
+                            </div>
+                            
+                            <!-- Clip Creation Bar -->
+                            <div id="clipCreationBar"
+                                style="margin-top: 16px; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                <button onclick="setClipStart()"
+                                    style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px;">
+                                    ▶ Start
+                                </button>
+                                <span id="clipStartTime" style="font-family: monospace; color: #10b981; min-width: 50px;">--:--</span>
+                                <button onclick="setClipEnd()"
+                                    style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px;">
+                                    ⏹ Ende
+                                </button>
+                                <span id="clipEndTime" style="font-family: monospace; color: #ef4444; min-width: 50px;">--:--</span>
+                                <input type="text" id="clipNote" placeholder="Notiz (optional)"
+                                    style="flex: 1; min-width: 150px; padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+                                <button onclick="saveVideoClip()" id="saveClipBtn" disabled
+                                    style="padding: 8px 20px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; opacity: 0.5;">
+                                    💾 Speichern
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Sidebar (30%) - Clips List -->
+                        <div style="flex: 3; background: rgba(255,255,255,0.03); border-left: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; overflow: hidden;">
+                            <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <h3 style="margin: 0; color: white; font-size: 16px;">📎 Gespeicherte Clips</h3>
+                            </div>
+                            <div id="videoClipsList" style="flex: 1; overflow-y: auto; padding: 12px;"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Share Clip Modal -->
@@ -6768,16 +6787,21 @@
             currentVideoId = videoId;
             clipStart = null;
             clipEnd = null;
+            videoDrawMode = false;
             updateClipUI();
 
             const video = teamVideos.find(v => v.id === videoId);
             if (!video) return;
 
             document.getElementById('playerVideoTitle').textContent = video.title;
-            document.getElementById('playerVideoDescription').textContent = video.description || '';
 
             const modalVideo = document.getElementById('modalVideo');
             modalVideo.src = `/api/videos/${videoId}/stream`;
+            
+            // Canvas Setup nach Video-Load
+            modalVideo.onloadedmetadata = function() {
+                setupVideoDrawCanvas();
+            };
 
             document.getElementById('videoPlayerModal').style.display = 'flex';
 
@@ -6792,24 +6816,114 @@
             modalVideo.src = '';
             document.getElementById('videoPlayerModal').style.display = 'none';
             currentVideoId = null;
+            videoDrawMode = false;
+            clearVideoDrawing();
+        }
+        
+        // =====================
+        // VIDEO DRAWING
+        // =====================
+        let videoDrawMode = false;
+        let videoDrawing = false;
+        let videoDrawCtx = null;
+        
+        function setupVideoDrawCanvas() {
+            const video = document.getElementById('modalVideo');
+            const canvas = document.getElementById('modalDrawCanvas');
+            
+            // Canvas an Video-Größe anpassen
+            canvas.width = video.videoWidth || video.clientWidth;
+            canvas.height = video.videoHeight || video.clientHeight;
+            canvas.style.width = video.clientWidth + 'px';
+            canvas.style.height = video.clientHeight + 'px';
+            
+            videoDrawCtx = canvas.getContext('2d');
+            videoDrawCtx.strokeStyle = '#ff0000';
+            videoDrawCtx.lineWidth = 3;
+            videoDrawCtx.lineCap = 'round';
+            videoDrawCtx.lineJoin = 'round';
+            
+            // Event-Listener nur einmal hinzufügen
+            if (!canvas.hasAttribute('data-initialized')) {
+                canvas.setAttribute('data-initialized', 'true');
+                
+                canvas.addEventListener('mousedown', startVideoDraw);
+                canvas.addEventListener('mousemove', doVideoDraw);
+                canvas.addEventListener('mouseup', stopVideoDraw);
+                canvas.addEventListener('mouseleave', stopVideoDraw);
+                
+                canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    startVideoDraw({ offsetX: touch.clientX - canvas.getBoundingClientRect().left, offsetY: touch.clientY - canvas.getBoundingClientRect().top });
+                });
+                canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    doVideoDraw({ offsetX: touch.clientX - canvas.getBoundingClientRect().left, offsetY: touch.clientY - canvas.getBoundingClientRect().top });
+                });
+                canvas.addEventListener('touchend', stopVideoDraw);
+            }
+        }
+        
+        function toggleDrawMode() {
+            videoDrawMode = !videoDrawMode;
+            const canvas = document.getElementById('modalDrawCanvas');
+            const btn = document.getElementById('drawModeBtn');
+            
+            if (videoDrawMode) {
+                canvas.style.pointerEvents = 'auto';
+                canvas.style.cursor = 'crosshair';
+                btn.style.background = '#10b981';
+                btn.textContent = '✏️ Zeichnen AN';
+            } else {
+                canvas.style.pointerEvents = 'none';
+                canvas.style.cursor = 'default';
+                btn.style.background = 'rgba(255,255,255,0.1)';
+                btn.textContent = '✏️ Zeichnen';
+            }
+        }
+        
+        function startVideoDraw(e) {
+            if (!videoDrawMode || !videoDrawCtx) return;
+            videoDrawing = true;
+            videoDrawCtx.beginPath();
+            videoDrawCtx.moveTo(e.offsetX, e.offsetY);
+        }
+        
+        function doVideoDraw(e) {
+            if (!videoDrawing || !videoDrawCtx) return;
+            videoDrawCtx.lineTo(e.offsetX, e.offsetY);
+            videoDrawCtx.stroke();
+        }
+        
+        function stopVideoDraw() {
+            videoDrawing = false;
+        }
+        
+        function clearVideoDrawing() {
+            const canvas = document.getElementById('modalDrawCanvas');
+            if (canvas && videoDrawCtx) {
+                videoDrawCtx.clearRect(0, 0, canvas.width, canvas.height);
+            }
         }
 
         // Video löschen
         async function deleteCurrentVideo() {
             if (!currentVideoId) return;
-            
+
             if (!confirm('Video wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
                 return;
             }
-            
+
             try {
                 const response = await fetch(`/api/videos/${currentVideoId}`, {
                     method: 'DELETE',
                     credentials: 'include'
                 });
-                
+
                 if (!response.ok) throw new Error('Fehler beim Löschen');
-                
+
                 showToast('Video gelöscht!', 'success');
                 closeVideoPlayer();
                 loadTeamVideos(); // Videos neu laden
@@ -7151,9 +7265,9 @@
             // Thumbnail erstellen und Dauer ermitteln
             const thumbnailVideo = document.getElementById('thumbnailVideo');
             thumbnailVideo.src = URL.createObjectURL(file);
-            
+
             // Video-Dauer ermitteln wenn Metadaten geladen
-            thumbnailVideo.onloadedmetadata = function() {
+            thumbnailVideo.onloadedmetadata = function () {
                 selectedFileDuration = thumbnailVideo.duration || 0;
                 console.log('Video duration:', selectedFileDuration);
             };

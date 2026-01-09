@@ -2419,7 +2419,8 @@ async def create_clip(request: Request, video_id: int):
         # Title is optional - use note or auto-generate
         title = data.get("title", "").strip()[:200]
         if not title:
-            title = note[:50] if note else f"Clip {int(start_time)}s-{int(end_time)}s"
+            title = note[:
+                         50] if note else f"Clip {int(start_time)}s-{int(end_time)}s"
 
         if start_time >= end_time:
             return JSONResponse({"error": "Ungültige Zeitangaben"}, status_code=400)
