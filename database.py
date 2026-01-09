@@ -571,6 +571,31 @@ def init_db():
             ON video_shares(recipient_id, is_viewed)
         """)
 
+        # Video-Marker Tabelle (Zeitmarken auf Videos)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS video_markers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                video_id INTEGER NOT NULL,
+                team_id INTEGER NOT NULL,
+                time_seconds REAL NOT NULL,
+                label TEXT CHECK(length(label) <= 100),
+                color TEXT DEFAULT '#ef4444' CHECK(length(color) <= 20),
+                created_by INTEGER NOT NULL,
+                
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                deleted_at TIMESTAMP NULL,
+                
+                FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE,
+                FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+                FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_markers_video 
+            ON video_markers(video_id) WHERE deleted_at IS NULL
+        """)
+
         conn.commit()
 
         # Migrations für bestehende Datenbanken

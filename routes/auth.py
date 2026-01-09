@@ -2491,6 +2491,123 @@ async def get_clips(request: Request, video_id: int):
     }
 
 
+# =====================
+# VIDEO MARKERS API
+# =====================
+
+@router.post("/api/videos/{video_id}/markers")
+async def create_marker(request: Request, video_id: int):
+    """
+    Marker auf Video erstellen.
+    SECURITY: Nur eigenes Team.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    try:
+        data = await request.json()
+        time_seconds = float(data.get("time_seconds", 0))
+        label = data.get("label", "").strip()[:100]
+        color = data.get("color", "#ef4444").strip()[:20]
+
+        if time_seconds < 0:
+            return JSONResponse({"error": "Ungültige Zeit"}, status_code=400)
+
+    except (ValueError, TypeError) as e:
+        logging.error(f"Marker creation error: {e}")
+        return JSONResponse({"error": "Ungültige Daten"}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+
+        # Video prüfen
+        cursor.execute("""
+            SELECT id FROM videos WHERE id = ? AND team_id = ? AND deleted_at IS NULL
+        """, (video_id, db_user["team_id"]))
+        if not cursor.fetchone():
+            return JSONResponse({"error": "Video nicht gefunden"}, status_code=404)
+
+        cursor.execute("""
+            INSERT INTO video_markers (video_id, team_id, time_seconds, label, color, created_by)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (video_id, db_user["team_id"], time_seconds, label or None, color, user["id"]))
+        marker_id = cursor.lastrowid
+        db.commit()
+
+    return {"success": True, "marker_id": marker_id, "time_seconds": time_seconds, "label": label, "color": color}
+
+
+@router.get("/api/videos/{video_id}/markers")
+async def get_markers(request: Request, video_id: int):
+    """
+    Marker eines Videos abrufen.
+    SECURITY: Nur eigenes Team.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return {"markers": []}
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT m.id, m.time_seconds, m.label, m.color, m.created_at,
+                   u.vorname, u.nachname
+            FROM video_markers m
+            JOIN users u ON m.created_by = u.id
+            WHERE m.video_id = ? AND m.team_id = ? AND m.deleted_at IS NULL
+            ORDER BY m.time_seconds
+        """, (video_id, db_user["team_id"]))
+        markers = cursor.fetchall()
+
+    return {
+        "markers": [
+            {
+                "id": m["id"],
+                "time_seconds": m["time_seconds"],
+                "label": m["label"] or "",
+                "color": m["color"] or "#ef4444",
+                "created_at": m["created_at"],
+                "created_by": f"{m['vorname'] or ''} {m['nachname'] or ''}".strip()
+            }
+            for m in markers
+        ]
+    }
+
+
+@router.delete("/api/markers/{marker_id}")
+async def delete_marker(request: Request, marker_id: int):
+    """
+    Marker löschen.
+    SECURITY: Nur eigenes Team.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            UPDATE video_markers SET deleted_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND team_id = ?
+        """, (marker_id, db_user["team_id"]))
+        db.commit()
+
+    return {"success": True}
+
+
 @router.post("/api/clips/{clip_id}/share")
 async def share_clip(request: Request, clip_id: int):
     """
