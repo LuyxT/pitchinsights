@@ -6720,6 +6720,10 @@
 
         // Video-Player schließen
         function closeVideoPlayer() {
+            // Zuerst Fullscreen beenden falls aktiv
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
             const modalVideo = document.getElementById('modalVideo');
             modalVideo.pause();
             modalVideo.src = '';
@@ -6728,6 +6732,61 @@
             videoDrawMode = false;
             clearVideoDrawing();
         }
+
+        // =====================
+        // VIDEO FULLSCREEN (mit Zeichnen-Support)
+        // =====================
+        let isVideoFullscreen = false;
+
+        function toggleVideoFullscreen() {
+            const modal = document.getElementById('videoPlayerModal');
+            const btn = document.getElementById('fullscreenBtn');
+            
+            if (!document.fullscreenElement) {
+                // Fullscreen aktivieren
+                modal.requestFullscreen().then(() => {
+                    isVideoFullscreen = true;
+                    btn.textContent = '⛶ Beenden';
+                    btn.style.background = '#10b981';
+                    // Modal-Styles für Fullscreen anpassen
+                    modal.style.left = '0';
+                    modal.style.borderRadius = '0';
+                    // Canvas neu einrichten
+                    setTimeout(() => setupVideoDrawCanvas(), 100);
+                }).catch(err => {
+                    console.error('Fullscreen error:', err);
+                });
+            } else {
+                // Fullscreen beenden
+                document.exitFullscreen().then(() => {
+                    isVideoFullscreen = false;
+                    btn.textContent = '⛶ Vollbild';
+                    btn.style.background = 'rgba(255,255,255,0.15)';
+                    // Modal-Styles zurücksetzen
+                    modal.style.left = '200px';
+                    // Canvas neu einrichten
+                    setTimeout(() => setupVideoDrawCanvas(), 100);
+                });
+            }
+        }
+
+        // Fullscreen-Änderungen überwachen (z.B. ESC-Taste)
+        document.addEventListener('fullscreenchange', () => {
+            const modal = document.getElementById('videoPlayerModal');
+            const btn = document.getElementById('fullscreenBtn');
+            
+            if (!document.fullscreenElement && isVideoFullscreen) {
+                isVideoFullscreen = false;
+                if (btn) {
+                    btn.textContent = '⛶ Vollbild';
+                    btn.style.background = 'rgba(255,255,255,0.15)';
+                }
+                if (modal) {
+                    modal.style.left = '200px';
+                }
+                setTimeout(() => setupVideoDrawCanvas(), 100);
+            }
+        });
 
         // =====================
         // VIDEO DRAWING
@@ -6924,17 +6983,17 @@
         // =====================
         // VIDEO MARKERS
         // =====================
-        
+
         // Marker hinzufügen
         async function addVideoMarker() {
             if (!currentVideoId) return;
-            
+
             const video = document.getElementById('modalVideo');
             const currentTime = video.currentTime;
-            
+
             // Optionales Label per Prompt
             const label = prompt('Marker-Beschreibung (optional):', '');
-            
+
             try {
                 const response = await fetch(`/api/videos/${currentVideoId}/markers`, {
                     method: 'POST',
@@ -6946,9 +7005,9 @@
                         color: '#f59e0b'
                     })
                 });
-                
+
                 if (!response.ok) throw new Error('Fehler beim Speichern');
-                
+
                 showToast('Marker gesetzt!', 'success');
                 loadVideoMarkers(currentVideoId);
             } catch (error) {
@@ -6956,7 +7015,7 @@
                 showToast('Fehler beim Speichern des Markers', 'error');
             }
         }
-        
+
         // Marker laden
         async function loadVideoMarkers(videoId) {
             try {
@@ -6972,7 +7031,7 @@
                 console.error('Fehler beim Laden der Marker:', error);
             }
         }
-        
+
         // Marker rendern
         function renderVideoMarkers(markers) {
             const container = document.getElementById('videoMarkersList');
@@ -6980,7 +7039,7 @@
                 container.innerHTML = '<p style="color: rgba(255,255,255,0.4); font-size: 12px; text-align: center; padding: 8px;">Keine Marker</p>';
                 return;
             }
-            
+
             container.innerHTML = markers.map(marker => `
                 <div onclick="jumpToMarker(${marker.time_seconds})" 
                      style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(245,158,11,0.15); border-radius: 6px; cursor: pointer; margin-bottom: 6px; transition: background 0.2s;"
@@ -6994,26 +7053,26 @@
                 </div>
             `).join('');
         }
-        
+
         // Zu Marker springen
         function jumpToMarker(timeSeconds) {
             const video = document.getElementById('modalVideo');
             video.currentTime = timeSeconds;
             video.play();
         }
-        
+
         // Marker löschen
         async function deleteMarker(markerId) {
             if (!confirm('Marker löschen?')) return;
-            
+
             try {
                 const response = await fetch(`/api/markers/${markerId}`, {
                     method: 'DELETE',
                     credentials: 'include'
                 });
-                
+
                 if (!response.ok) throw new Error('Fehler');
-                
+
                 showToast('Marker gelöscht', 'success');
                 loadVideoMarkers(currentVideoId);
             } catch (error) {
@@ -11893,7 +11952,7 @@
         style="display: none; position: fixed; top: 0; left: 200px; right: 0; bottom: 0; background: #0a0a0a; z-index: 9999;">
 
         <!-- Top Bar -->
-        <div
+        <div id="videoPlayerTopBar"
             style="position: absolute; top: 0; left: 0; right: 0; height: 56px; background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 100%); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 10000;">
             <h2 id="playerVideoTitle"
                 style="margin: 0; font-size: 16px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%;">
@@ -11911,6 +11970,10 @@
                     style="padding: 10px 18px; background: rgba(255,255,255,0.15); border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
                     🧹 Löschen
                 </button>
+                <button onclick="toggleVideoFullscreen()" id="fullscreenBtn" type="button"
+                    style="padding: 10px 18px; background: rgba(255,255,255,0.15); border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
+                    ⛶ Vollbild
+                </button>
                 <button onclick="deleteCurrentVideo()" type="button"
                     style="padding: 10px 18px; background: #dc2626; border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
                     🗑️ Video
@@ -11927,9 +11990,8 @@
             <div style="flex: 3; display: flex; flex-direction: column; padding: 16px; background: #0a0a0a;">
                 <div id="videoPlayerContainer"
                     style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #000; border-radius: 12px; overflow: hidden;">
-                    <video id="modalVideo"
-                        style="max-width: 100%; max-height: 100%; border-radius: 8px;"
-                        controls playsinline></video>
+                    <video id="modalVideo" style="max-width: 100%; max-height: 100%; border-radius: 8px;" controls
+                        playsinline></video>
                     <canvas id="modalDrawCanvas"
                         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
                 </div>
@@ -11947,8 +12009,7 @@
                         style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px;">
                         ⏹ Ende
                     </button>
-                    <span id="clipEndTime"
-                        style="font-family: monospace; color: #ef4444; min-width: 50px;">--:--</span>
+                    <span id="clipEndTime" style="font-family: monospace; color: #ef4444; min-width: 50px;">--:--</span>
                     <input type="text" id="clipNote" placeholder="Notiz (optional)"
                         style="flex: 1; min-width: 150px; padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
                     <button onclick="saveVideoClip()" id="saveClipBtn" type="button" disabled
@@ -11961,21 +12022,24 @@
             <!-- Sidebar (25%) - Markers & Clips -->
             <div
                 style="flex: 1; min-width: 280px; max-width: 350px; background: rgba(255,255,255,0.04); border-left: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; overflow: hidden;">
-                
+
                 <!-- Markers Section -->
                 <div style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    <div style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div
+                        style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
                         <h3 style="margin: 0; color: white; font-size: 14px;">📍 Marker</h3>
                         <span id="markerCount" style="color: rgba(255,255,255,0.5); font-size: 12px;">0</span>
                     </div>
                     <div id="videoMarkersList" style="max-height: 200px; overflow-y: auto; padding: 0 12px 12px;">
-                        <p style="color: rgba(255,255,255,0.4); font-size: 12px; text-align: center; padding: 8px;">Keine Marker</p>
+                        <p style="color: rgba(255,255,255,0.4); font-size: 12px; text-align: center; padding: 8px;">
+                            Keine Marker</p>
                     </div>
                 </div>
-                
+
                 <!-- Clips Section -->
                 <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                    <div style="padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                    <div
+                        style="padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
                         <h3 style="margin: 0; color: white; font-size: 14px;">📎 Clips</h3>
                         <span id="clipCount" style="color: rgba(255,255,255,0.5); font-size: 12px;">0</span>
                     </div>
@@ -11991,8 +12055,7 @@
     <div id="shareClipModal"
         style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 10001; justify-content: center; align-items: center;">
         <div style="background: #1c1c1e; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%;">
-            <div
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin: 0; font-size: 18px; color: white;">📤 Clip teilen</h2>
                 <button onclick="closeShareModal()"
                     style="background: none; border: none; font-size: 24px; cursor: pointer; color: white; opacity: 0.6;">✕</button>
