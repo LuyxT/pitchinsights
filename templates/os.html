@@ -6677,6 +6677,7 @@
         let clipStart = null;
         let clipEnd = null;
         let selectedFile = null;
+        let selectedFileDuration = 0;
         let currentClipToShare = null;
         let selectedPlayersForShare = [];
 
@@ -7117,10 +7118,17 @@
             }
 
             selectedFile = file;
+            selectedFileDuration = 0;
 
-            // Thumbnail erstellen
+            // Thumbnail erstellen und Dauer ermitteln
             const thumbnailVideo = document.getElementById('thumbnailVideo');
             thumbnailVideo.src = URL.createObjectURL(file);
+            
+            // Video-Dauer ermitteln wenn Metadaten geladen
+            thumbnailVideo.onloadedmetadata = function() {
+                selectedFileDuration = thumbnailVideo.duration || 0;
+                console.log('Video duration:', selectedFileDuration);
+            };
 
             // Details anzeigen
             document.getElementById('selectedFileName').textContent = file.name;
@@ -7163,6 +7171,7 @@
             formData.append('file', selectedFile);
             formData.append('title', title);
             formData.append('description', description);
+            formData.append('duration', Math.round(selectedFileDuration));
 
             try {
                 const xhr = new XMLHttpRequest();

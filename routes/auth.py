@@ -2173,6 +2173,7 @@ async def upload_video(
     request: Request,
     title: str = Form(...),
     description: str = Form(""),
+    duration: int = Form(0),
     file: UploadFile = File(...)
 ):
     """
@@ -2219,9 +2220,9 @@ async def upload_video(
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
-            INSERT INTO videos (team_id, title, description, filename, file_size, uploaded_by)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (db_user["team_id"], title[:200], description[:1000], safe_filename, file_size, user["id"]))
+            INSERT INTO videos (team_id, title, description, filename, file_size, duration, uploaded_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (db_user["team_id"], title[:200], description[:1000], safe_filename, file_size, duration, user["id"]))
         video_id = cursor.lastrowid
         db.commit()
 
