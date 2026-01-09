@@ -4325,12 +4325,14 @@
 
                 <!-- Video Player Modal -->
                 <div id="videoPlayerModal"
-                    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 2000; justify-content: center; align-items: center; flex-direction: column;">
-                    <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 12px; z-index: 2001;">
+                    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 2000; justify-content: center; align-items: flex-start; flex-direction: column; overflow-y: auto; padding: 20px;">
+                    <div style="position: fixed; top: 16px; right: 16px; display: flex; gap: 12px; z-index: 2001;">
+                        <button onclick="deleteCurrentVideo()"
+                            style="width: 44px; height: 44px; background: rgba(239,68,68,0.8); border: none; border-radius: 50%; cursor: pointer; color: white; font-size: 16px;" title="Video löschen">🗑️</button>
                         <button onclick="closeVideoPlayer()"
                             style="width: 44px; height: 44px; background: rgba(255,255,255,0.1); border: none; border-radius: 50%; cursor: pointer; color: white; font-size: 20px;">✕</button>
                     </div>
-                    <div id="videoPlayerContainer" style="width: 90%; max-width: 1200px; position: relative;">
+                    <div id="videoPlayerContainer" style="width: 90%; max-width: 1200px; position: relative; margin: 60px auto 0 auto;">
                         <video id="modalVideo" style="width: 100%; max-height: 80vh; border-radius: 12px;" controls
                             playsinline></video>
                         <canvas id="modalDrawCanvas"
@@ -6792,6 +6794,31 @@
             currentVideoId = null;
         }
 
+        // Video löschen
+        async function deleteCurrentVideo() {
+            if (!currentVideoId) return;
+            
+            if (!confirm('Video wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/videos/${currentVideoId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) throw new Error('Fehler beim Löschen');
+                
+                showToast('Video gelöscht!', 'success');
+                closeVideoPlayer();
+                loadTeamVideos(); // Videos neu laden
+            } catch (error) {
+                console.error('Fehler:', error);
+                showToast('Fehler beim Löschen des Videos', 'error');
+            }
+        }
+
         // Clip-Start setzen
         function setClipStart() {
             const video = document.getElementById('modalVideo');
@@ -6834,9 +6861,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({
-                        start_time: clipStart,
-                        end_time: clipEnd,
-                        note: note
+                        start_time: Math.round(clipStart),
+                        end_time: Math.round(clipEnd),
+                        note: note,
+                        title: note || `Clip ${formatTime(clipStart)} - ${formatTime(clipEnd)}`
                     })
                 });
 

@@ -2413,17 +2413,19 @@ async def create_clip(request: Request, video_id: int):
 
     try:
         data = await request.json()
-        title = data.get("title", "").strip()[:200]
-        start_time = int(data.get("start_time", 0))
-        end_time = int(data.get("end_time", 0))
+        start_time = float(data.get("start_time", 0))
+        end_time = float(data.get("end_time", 0))
         note = data.get("note", "").strip()[:500]
+        # Title is optional - use note or auto-generate
+        title = data.get("title", "").strip()[:200]
+        if not title:
+            title = note[:50] if note else f"Clip {int(start_time)}s-{int(end_time)}s"
 
-        if not title or len(title) < 1:
-            return JSONResponse({"error": "Titel erforderlich"}, status_code=400)
         if start_time >= end_time:
             return JSONResponse({"error": "Ungültige Zeitangaben"}, status_code=400)
 
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as e:
+        logging.error(f"Clip creation error: {e}")
         return JSONResponse({"error": "Ungültige Daten"}, status_code=400)
 
     with get_db_connection() as db:
@@ -2439,7 +2441,7 @@ async def create_clip(request: Request, video_id: int):
         cursor.execute("""
             INSERT INTO video_clips (video_id, team_id, title, start_time, end_time, note, created_by)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (video_id, db_user["team_id"], title, start_time, end_time, note, user["id"]))
+        """, (video_id, db_user["team_id"], title, int(start_time), int(end_time), note, user["id"]))
         clip_id = cursor.lastrowid
         db.commit()
 
