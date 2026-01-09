@@ -4325,64 +4325,73 @@
 
                 <!-- Video Player Modal - Fullscreen Layout -->
                 <div id="videoPlayerModal"
-                    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0a0a0a; z-index: 2000; overflow: hidden;">
-                    
+                    style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0a0a0a; z-index: 9999;">
+
                     <!-- Top Bar -->
-                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 50px; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 2001;">
-                        <h2 id="playerVideoTitle" style="margin: 0; font-size: 16px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%;"></h2>
-                        <div style="display: flex; gap: 12px; align-items: center;">
-                            <button onclick="toggleDrawMode()" id="drawModeBtn"
-                                style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
+                    <div
+                        style="position: absolute; top: 0; left: 0; right: 0; height: 56px; background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 100%); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 10000;">
+                        <h2 id="playerVideoTitle"
+                            style="margin: 0; font-size: 16px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%;">
+                        </h2>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button onclick="toggleDrawMode()" id="drawModeBtn" type="button"
+                                style="padding: 10px 18px; background: rgba(255,255,255,0.15); border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px; font-weight: 500;">
                                 ✏️ Zeichnen
                             </button>
-                            <button onclick="clearVideoDrawing()"
-                                style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
-                                🗑️ Löschen
+                            <button onclick="clearVideoDrawing()" type="button"
+                                style="padding: 10px 18px; background: rgba(255,255,255,0.15); border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
+                                🧹 Löschen
                             </button>
-                            <button onclick="deleteCurrentVideo()"
-                                style="padding: 8px 16px; background: rgba(239,68,68,0.8); border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
-                                🗑️ Video löschen
+                            <button onclick="deleteCurrentVideo()" type="button"
+                                style="padding: 10px 18px; background: #dc2626; border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
+                                🗑️ Video
                             </button>
-                            <button onclick="closeVideoPlayer()"
-                                style="width: 40px; height: 40px; background: rgba(255,255,255,0.1); border: none; border-radius: 50%; cursor: pointer; color: white; font-size: 20px;">✕</button>
+                            <button onclick="closeVideoPlayer()" type="button"
+                                style="width: 44px; height: 44px; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; cursor: pointer; color: white; font-size: 22px; display: flex; align-items: center; justify-content: center;">✕</button>
                         </div>
                     </div>
-                    
+
                     <!-- Main Content Area -->
-                    <div style="display: flex; height: calc(100% - 50px); margin-top: 50px;">
-                        
-                        <!-- Video Area (70%) -->
-                        <div style="flex: 7; display: flex; flex-direction: column; padding: 20px; overflow: hidden;">
-                            <div id="videoPlayerContainer" style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center;">
-                                <video id="modalVideo" style="max-width: 100%; max-height: 100%; border-radius: 8px; background: #000;" controls playsinline></video>
+                    <div style="position: absolute; top: 56px; left: 0; right: 0; bottom: 0; display: flex;">
+
+                        <!-- Video Area (75%) -->
+                        <div style="flex: 3; display: flex; flex-direction: column; padding: 16px; background: #0a0a0a;">
+                            <div id="videoPlayerContainer"
+                                style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #000; border-radius: 12px; overflow: hidden;">
+                                <video id="modalVideo"
+                                    style="max-width: 100%; max-height: 100%; border-radius: 8px;"
+                                    controls playsinline></video>
                                 <canvas id="modalDrawCanvas"
-                                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; border-radius: 8px;"></canvas>
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
                             </div>
-                            
+
                             <!-- Clip Creation Bar -->
                             <div id="clipCreationBar"
-                                style="margin-top: 16px; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                style="margin-top: 12px; background: rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                                 <button onclick="setClipStart()"
                                     style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px;">
                                     ▶ Start
                                 </button>
-                                <span id="clipStartTime" style="font-family: monospace; color: #10b981; min-width: 50px;">--:--</span>
+                                <span id="clipStartTime"
+                                    style="font-family: monospace; color: #10b981; min-width: 50px;">--:--</span>
                                 <button onclick="setClipEnd()"
                                     style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px;">
                                     ⏹ Ende
                                 </button>
-                                <span id="clipEndTime" style="font-family: monospace; color: #ef4444; min-width: 50px;">--:--</span>
+                                <span id="clipEndTime"
+                                    style="font-family: monospace; color: #ef4444; min-width: 50px;">--:--</span>
                                 <input type="text" id="clipNote" placeholder="Notiz (optional)"
                                     style="flex: 1; min-width: 150px; padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
-                                <button onclick="saveVideoClip()" id="saveClipBtn" disabled
-                                    style="padding: 8px 20px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; opacity: 0.5;">
+                                <button onclick="saveVideoClip()" id="saveClipBtn" type="button" disabled
+                                    style="padding: 10px 22px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; opacity: 0.5;">
                                     💾 Speichern
                                 </button>
                             </div>
                         </div>
-                        
-                        <!-- Sidebar (30%) - Clips List -->
-                        <div style="flex: 3; background: rgba(255,255,255,0.03); border-left: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; overflow: hidden;">
+
+                        <!-- Sidebar (25%) - Clips List -->
+                        <div
+                            style="flex: 1; min-width: 280px; max-width: 350px; background: rgba(255,255,255,0.04); border-left: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column;">
                             <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                 <h3 style="margin: 0; color: white; font-size: 16px;">📎 Gespeicherte Clips</h3>
                             </div>
@@ -6797,9 +6806,9 @@
 
             const modalVideo = document.getElementById('modalVideo');
             modalVideo.src = `/api/videos/${videoId}/stream`;
-            
+
             // Canvas Setup nach Video-Load
-            modalVideo.onloadedmetadata = function() {
+            modalVideo.onloadedmetadata = function () {
                 setupVideoDrawCanvas();
             };
 
@@ -6819,39 +6828,39 @@
             videoDrawMode = false;
             clearVideoDrawing();
         }
-        
+
         // =====================
         // VIDEO DRAWING
         // =====================
         let videoDrawMode = false;
         let videoDrawing = false;
         let videoDrawCtx = null;
-        
+
         function setupVideoDrawCanvas() {
             const video = document.getElementById('modalVideo');
             const canvas = document.getElementById('modalDrawCanvas');
-            
+
             // Canvas an Video-Größe anpassen
             canvas.width = video.videoWidth || video.clientWidth;
             canvas.height = video.videoHeight || video.clientHeight;
             canvas.style.width = video.clientWidth + 'px';
             canvas.style.height = video.clientHeight + 'px';
-            
+
             videoDrawCtx = canvas.getContext('2d');
             videoDrawCtx.strokeStyle = '#ff0000';
             videoDrawCtx.lineWidth = 3;
             videoDrawCtx.lineCap = 'round';
             videoDrawCtx.lineJoin = 'round';
-            
+
             // Event-Listener nur einmal hinzufügen
             if (!canvas.hasAttribute('data-initialized')) {
                 canvas.setAttribute('data-initialized', 'true');
-                
+
                 canvas.addEventListener('mousedown', startVideoDraw);
                 canvas.addEventListener('mousemove', doVideoDraw);
                 canvas.addEventListener('mouseup', stopVideoDraw);
                 canvas.addEventListener('mouseleave', stopVideoDraw);
-                
+
                 canvas.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     const touch = e.touches[0];
@@ -6865,12 +6874,12 @@
                 canvas.addEventListener('touchend', stopVideoDraw);
             }
         }
-        
+
         function toggleDrawMode() {
             videoDrawMode = !videoDrawMode;
             const canvas = document.getElementById('modalDrawCanvas');
             const btn = document.getElementById('drawModeBtn');
-            
+
             if (videoDrawMode) {
                 canvas.style.pointerEvents = 'auto';
                 canvas.style.cursor = 'crosshair';
@@ -6883,24 +6892,24 @@
                 btn.textContent = '✏️ Zeichnen';
             }
         }
-        
+
         function startVideoDraw(e) {
             if (!videoDrawMode || !videoDrawCtx) return;
             videoDrawing = true;
             videoDrawCtx.beginPath();
             videoDrawCtx.moveTo(e.offsetX, e.offsetY);
         }
-        
+
         function doVideoDraw(e) {
             if (!videoDrawing || !videoDrawCtx) return;
             videoDrawCtx.lineTo(e.offsetX, e.offsetY);
             videoDrawCtx.stroke();
         }
-        
+
         function stopVideoDraw() {
             videoDrawing = false;
         }
-        
+
         function clearVideoDrawing() {
             const canvas = document.getElementById('modalDrawCanvas');
             if (canvas && videoDrawCtx) {
@@ -7388,7 +7397,7 @@
             });
         }
 
-        // ============ VIDEO ZEICHNEN SYSTEM ============
+        // ============ OLD VIDEO ZEICHNEN SYSTEM (für videoPreview - DEPRECATED) ============
         let drawModeActive = false;
         let isDrawing = false;
         let drawCanvas, drawCtx;
@@ -7397,7 +7406,7 @@
         let currentDrawSize = 5;
         let currentTool = 'pen'; // 'pen' oder 'highlight'
 
-        function toggleDrawMode() {
+        function toggleDrawModeOld() {
             drawModeActive = !drawModeActive;
             const toolbar = document.getElementById('drawToolbar');
             const toggleBtn = document.getElementById('drawToggleSmall');
