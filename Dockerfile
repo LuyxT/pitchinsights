@@ -1,11 +1,8 @@
 # PitchInsights Docker Image
 # ==========================
-# Multi-Stage Build für minimale Image-Größe
+# Optimized for Railway deployment with volume support
 
-FROM python:3.11-slim AS base
-
-# Sicherheit: Non-root User
-RUN groupadd -r pitchinsights && useradd -r -g pitchinsights pitchinsights
+FROM python:3.11-slim
 
 # System-Dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -19,34 +16,21 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Production Stage
-FROM python:3.11-slim AS production
-
-# Sicherheit: Non-root User
-RUN groupadd -r pitchinsights && useradd -r -g pitchinsights pitchinsights
-
-WORKDIR /app
-
-# Kopiere nur die installierten Packages
-COPY --from=base /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=base /usr/local/bin /usr/local/bin
-
 # App-Code kopieren
-COPY --chown=pitchinsights:pitchinsights . .
+COPY . .
 
-# Datenverzeichnis erstellen
-RUN mkdir -p /app/data/uploads /app/data/backups \
-    && chown -R pitchinsights:pitchinsights /app/data
+# Datenverzeichnis erstellen (wird von Railway Volume überschrieben)
+RUN mkdir -p /app/data/uploads /app/data/videos /app/data/backups
 
-# Wechsle zu non-root User
-USER pitchinsights
+# NOTE: Running as root on Railway because volume is mounted with root ownership
+# This is necessary for volume write access
 
 # Health Check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
 
-# Port
-EXPOSE 8000
+# Port (Railway uses 8080)
+EXPOSE 8080
 
 # Start
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

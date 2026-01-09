@@ -95,13 +95,14 @@ async def lifespan(app: FastAPI):
     # Data-Verzeichnis aus Config
     data_dir = SecurityConfig.DATA_DIR
     logger.info(f"Configured data directory: {data_dir}")
-    
+
     # Debug: Check if /app/data exists and its permissions
     if os.path.exists("/app/data"):
         logger.info(f"/app/data EXISTS - Volume is mounted!")
         try:
             stat_info = os.stat("/app/data")
-            logger.info(f"/app/data permissions: {oct(stat_info.st_mode)}, uid={stat_info.st_uid}, gid={stat_info.st_gid}")
+            logger.info(
+                f"/app/data permissions: {oct(stat_info.st_mode)}, uid={stat_info.st_uid}, gid={stat_info.st_gid}")
         except Exception as e:
             logger.warning(f"Could not stat /app/data: {e}")
     else:
@@ -129,10 +130,12 @@ async def lifespan(app: FastAPI):
                     f"Permission denied for {data_dir}, retrying in 2s... (attempt {attempt + 1}/{max_retries})")
                 time.sleep(2)
             else:
-                logger.warning(f"Volume {data_dir} not accessible after {max_retries} attempts, using /tmp fallback")
+                logger.warning(
+                    f"Volume {data_dir} not accessible after {max_retries} attempts, using /tmp fallback")
                 use_fallback = True
         except Exception as e:
-            logger.error(f"Unexpected error creating directories in {data_dir}: {e}")
+            logger.error(
+                f"Unexpected error creating directories in {data_dir}: {e}")
             use_fallback = True
             break
 
