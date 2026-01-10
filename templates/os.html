@@ -6923,26 +6923,26 @@
         function redrawVideoStrokes() {
             const canvas = document.getElementById('modalDrawCanvas');
             if (!canvas || !videoDrawCtx) return;
-            
+
             videoDrawCtx.clearRect(0, 0, canvas.width, canvas.height);
-            
+
             // Zeichne alle gespeicherten Striche
             videoStrokes.forEach(stroke => {
                 if (stroke.points.length < 2) return;
-                
+
                 videoDrawCtx.beginPath();
                 videoDrawCtx.strokeStyle = `rgba(255, 0, 0, ${stroke.opacity})`;
                 videoDrawCtx.lineWidth = 3;
                 videoDrawCtx.lineCap = 'round';
                 videoDrawCtx.lineJoin = 'round';
-                
+
                 videoDrawCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
                 for (let i = 1; i < stroke.points.length; i++) {
                     videoDrawCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
                 }
                 videoDrawCtx.stroke();
             });
-            
+
             // Zeichne aktuellen Strich
             if (currentVideoStroke && currentVideoStroke.points.length >= 2) {
                 videoDrawCtx.beginPath();
@@ -6950,7 +6950,7 @@
                 videoDrawCtx.lineWidth = 3;
                 videoDrawCtx.lineCap = 'round';
                 videoDrawCtx.lineJoin = 'round';
-                
+
                 videoDrawCtx.moveTo(currentVideoStroke.points[0].x, currentVideoStroke.points[0].y);
                 for (let i = 1; i < currentVideoStroke.points.length; i++) {
                     videoDrawCtx.lineTo(currentVideoStroke.points[i].x, currentVideoStroke.points[i].y);
@@ -6962,11 +6962,11 @@
         function startVideoFadeAnimation() {
             if (videoFadeAnimationRunning) return;
             videoFadeAnimationRunning = true;
-            
+
             function animate() {
                 const now = Date.now();
                 let hasActiveStrokes = false;
-                
+
                 videoStrokes = videoStrokes.filter(stroke => {
                     const age = now - stroke.timestamp;
                     if (age < 3000) {
@@ -6984,23 +6984,23 @@
                         return false;
                     }
                 });
-                
+
                 redrawVideoStrokes();
-                
+
                 if (hasActiveStrokes) {
                     requestAnimationFrame(animate);
                 } else {
                     videoFadeAnimationRunning = false;
                 }
             }
-            
+
             requestAnimationFrame(animate);
         }
 
         function toggleVideoFadeMode() {
             videoFadeMode = !videoFadeMode;
             const btn = document.getElementById('fadeModeBtn');
-            
+
             if (videoFadeMode) {
                 btn.style.background = 'rgba(139,92,246,0.9)';  // Lila wenn AN
                 btn.title = 'Auto-Fade (AN)';
@@ -11582,7 +11582,7 @@
 
                 <!-- Delete Button (top right corner) -->
                 <button onclick="deleteCurrentVideo()" type="button" title="Video löschen"
-                    style="position: absolute; top: 16px; right: 240px; width: 44px; height: 44px; background: rgba(220,38,38,0.9); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); z-index: 100;">
+                    style="position: absolute; top: 16px; right: 300px; width: 44px; height: 44px; background: rgba(220,38,38,0.9); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); z-index: 100;">
                     🗑️
                 </button>
             </div>
