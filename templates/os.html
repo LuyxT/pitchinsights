@@ -7120,24 +7120,55 @@
         // Clips rendern
         function renderVideoClips(clips) {
             const container = document.getElementById('videoClipsList');
+            document.getElementById('clipCount').textContent = clips.length;
+            
             if (!Array.isArray(clips) || clips.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-light); opacity: 0.5; font-size: 14px;">Noch keine Clips für dieses Video</div>';
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-light); opacity: 0.5; font-size: 12px;">Keine Clips</div>';
                 return;
             }
 
             container.innerHTML = clips.map(clip => `
-                    <div style="background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                        <div style="cursor: pointer;" onclick="jumpToClip(${clip.start_time})">
-                            <span style="font-family: monospace; color: #10b981;">${formatTime(clip.start_time)}</span>
-                            <span style="opacity: 0.5; color: var(--text-light);"> → </span>
-                            <span style="font-family: monospace; color: #ef4444;">${formatTime(clip.end_time)}</span>
+                    <div style="background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                            <div style="cursor: pointer; flex: 1;" onclick="jumpToClip(${clip.start_time})">
+                                <span style="font-family: monospace; font-size: 12px; color: #10b981;">${formatTime(clip.start_time)}</span>
+                                <span style="opacity: 0.5; color: var(--text-light); font-size: 10px;"> → </span>
+                                <span style="font-family: monospace; font-size: 12px; color: #ef4444;">${formatTime(clip.end_time)}</span>
+                            </div>
+                            <button onclick="openShareModal(${clip.id})" title="Teilen" style="width: 28px; height: 28px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                📤
+                            </button>
+                            <button onclick="deleteClip(${clip.id})" title="Löschen" style="width: 28px; height: 28px; background: rgba(220,38,38,0.2); color: #ef4444; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                🗑️
+                            </button>
                         </div>
-                        <div style="flex: 1; font-size: 13px; color: var(--text-light); opacity: 0.8;">${escapeHtml(clip.note || 'Kein Kommentar')}</div>
-                        <button onclick="openShareModal(${clip.id})" style="padding: 6px 12px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">
-                            📤 Teilen
-                        </button>
+                        <div style="font-size: 11px; color: var(--text-light); opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(clip.note || 'Kein Kommentar')}</div>
                     </div>
                 `).join('');
+        }
+
+        // Clip löschen
+        async function deleteClip(clipId) {
+            if (!confirm('Clip wirklich löschen?')) return;
+            
+            try {
+                const response = await fetch(`/api/clips/${clipId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    showToast('Clip gelöscht', 'success');
+                    if (currentVideoId) {
+                        await loadVideoClips(currentVideoId);
+                    }
+                } else {
+                    showToast('Fehler beim Löschen', 'error');
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+                showToast('Fehler beim Löschen', 'error');
+            }
         }
 
         // Zum Clip springen
@@ -7494,63 +7525,48 @@
             });
         }
 
-        // ============ OLD VIDEO ZEICHNEN SYSTEM (für videoPreview - DEPRECATED) ============
-        let drawModeActive = false;
-        let isDrawing = false;
-        let drawCanvas, drawCtx;
-        let strokes = []; // Speichert alle Striche mit Timestamp
-        let currentDrawColor = '#ef4444';
-        let currentDrawSize = 5;
-        let currentTool = 'pen'; // 'pen' oder 'highlight'
-
-        function toggleDrawModeOld() {
-            drawModeActive = !drawModeActive;
-            const toolbar = document.getElementById('drawToolbar');
-            const toggleBtn = document.getElementById('drawToggleSmall');
-            const canvas = document.getElementById('drawCanvas');
-
-            if (drawModeActive) {
-                toolbar.style.opacity = '1';
-                toolbar.style.pointerEvents = 'auto';
-                toggleBtn.style.background = '#10b981';
-                canvas.style.pointerEvents = 'auto';
-                canvas.style.cursor = 'crosshair';
-                initDrawCanvas();
-            } else {
-                toolbar.style.opacity = '0';
-                toolbar.style.pointerEvents = 'none';
-                toggleBtn.style.background = 'rgba(30, 30, 30, 0.85)';
-                canvas.style.pointerEvents = 'none';
-                canvas.style.cursor = 'default';
-            }
-        }
-
-        function selectTool(tool) {
-            currentTool = tool;
-            document.querySelectorAll('.draw-tool-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1)).classList.add('active');
-        }
-
-        function setDrawColor(color) {
-            currentDrawColor = color;
-            document.querySelectorAll('.color-swatch').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-        }
-
-        function setDrawSize(size) {
-            currentDrawSize = size;
-            document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('size-' + (size === 2 ? 's' : size === 5 ? 'm' : 'l')).classList.add('active');
-        }
-
-        function initDrawCanvas() {
-            const video = document.getElementById('videoPreview');
-            drawCanvas = document.getElementById('drawCanvas');
-            drawCtx = drawCanvas.getContext('2d');
-
-            // Canvas Größe an Video anpassen
-            updateCanvasSize();
-
+        // Widget Templates - Widgets für jede App
+        const widgetTemplates = {
+            // KADER WIDGET
+            kader: () => `
+                <div class="widget-header">👥 Kader</div>
+                <div class="widget-content" id="widget-kader-content">
+                    <div class="widget-stat">
+                        <span class="widget-stat-label"><span class="status-dot fit"></span>Fit</span>
+                        <span class="widget-stat-value widget-kader-fit">-</span>
+                    </div>
+                    <div class="widget-stat">
+                        <span class="widget-stat-label"><span class="status-dot limited"></span>Belastet</span>
+                        <span class="widget-stat-value widget-kader-limited">-</span>
+                    </div>
+                    <div class="widget-stat">
+                        <span class="widget-stat-label"><span class="status-dot injured"></span>Verletzt</span>
+                        <span class="widget-stat-value widget-kader-injured">-</span>
+                    </div>
+                </div>
+            `,
+            // KALENDER WIDGET
+            kalender: () => `
+                <div class="widget-header">📅 Kalender</div>
+                <div class="widget-content">
+                    <div class="widget-week-grid" id="widget-kalender-grid">
+                        <div class="widget-week-day"><span class="widget-day-label">Mo</span><span class="widget-day-dot"></span></div>
+                        <div class="widget-week-day"><span class="widget-day-label">Di</span><span class="widget-day-dot"></span></div>
+                        <div class="widget-week-day"><span class="widget-day-label">Mi</span><span class="widget-day-dot"></span></div>
+                        <div class="widget-week-day"><span class="widget-day-label">Do</span><span class="widget-day-dot"></span></div>
+                        <div class="widget-week-day"><span class="widget-day-label">Fr</span><span class="widget-day-dot"></span></div>
+                        <div class="widget-week-day"><span class="widget-day-label">Sa</span><span class="widget-day-dot"></span></div>
+                        <div class="widget-week-day"><span class="widget-day-label">So</span><span class="widget-day-dot"></span></div>
+                    </div>
+                </div>
+            `,
+            // MESSENGER WIDGET
+            messenger: () => `
+                <div class="widget-header">💬 Messenger</div>
+                <div class="widget-content" id="widget-messenger-content">
+                    <span style="opacity: 0.6; font-size: 12px;">Keine neuen Nachrichten</span>
+                </div>
+            `,
             // Event Listener (einmalig)
             if (!drawCanvas.hasAttribute('data-initialized')) {
                 drawCanvas.setAttribute('data-initialized', 'true');

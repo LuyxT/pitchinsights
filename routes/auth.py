@@ -2608,6 +2608,31 @@ async def delete_marker(request: Request, marker_id: int):
     return {"success": True}
 
 
+@router.delete("/api/clips/{clip_id}")
+async def delete_clip(request: Request, clip_id: int):
+    """
+    Clip löschen.
+    SECURITY: Nur eigenes Team.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            UPDATE video_clips SET deleted_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND team_id = ?
+        """, (clip_id, db_user["team_id"]))
+        db.commit()
+
+    return {"success": True}
+
+
 @router.post("/api/clips/{clip_id}/share")
 async def share_clip(request: Request, clip_id: int):
     """
