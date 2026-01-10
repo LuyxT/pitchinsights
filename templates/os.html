@@ -6741,7 +6741,7 @@
         function toggleVideoFullscreen() {
             const modal = document.getElementById('videoPlayerModal');
             const btn = document.getElementById('fullscreenBtn');
-            
+
             if (!document.fullscreenElement) {
                 // Fullscreen aktivieren
                 modal.requestFullscreen().then(() => {
@@ -6763,7 +6763,7 @@
                     btn.textContent = '⛶ Vollbild';
                     btn.style.background = 'rgba(255,255,255,0.15)';
                     // Modal-Styles zurücksetzen
-                    modal.style.left = '200px';
+                    modal.style.left = '280px';
                     // Canvas neu einrichten
                     setTimeout(() => setupVideoDrawCanvas(), 100);
                 });
@@ -6774,7 +6774,7 @@
         document.addEventListener('fullscreenchange', () => {
             const modal = document.getElementById('videoPlayerModal');
             const btn = document.getElementById('fullscreenBtn');
-            
+
             if (!document.fullscreenElement && isVideoFullscreen) {
                 isVideoFullscreen = false;
                 if (btn) {
@@ -6782,7 +6782,7 @@
                     btn.style.background = 'rgba(255,255,255,0.15)';
                 }
                 if (modal) {
-                    modal.style.left = '200px';
+                    modal.style.left = '280px';
                 }
                 setTimeout(() => setupVideoDrawCanvas(), 100);
             }
@@ -11949,7 +11949,7 @@
 
     <!-- Video Player Modal - OUTSIDE all containers for proper fixed positioning -->
     <div id="videoPlayerModal"
-        style="display: none; position: fixed; top: 0; left: 200px; right: 0; bottom: 0; background: #0a0a0a; z-index: 9999;">
+        style="display: none; position: fixed; top: 0; left: 280px; right: 0; bottom: 0; background: #0a0a0a; z-index: 9999;">
 
         <!-- Top Bar -->
         <div id="videoPlayerTopBar"
