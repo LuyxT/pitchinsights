@@ -235,6 +235,45 @@ async def dev_auto_login(request: Request, user_id: int = 1):
     return response
 
 
+# TEMPORARY: Emergency password reset endpoint
+# DELETE THIS AFTER USE!
+@router.get("/emergency-reset-pw")
+async def emergency_reset_password(email: str = None, new_pw: str = None, secret: str = None):
+    """
+    Temporärer Notfall-Passwort-Reset.
+    URL: /emergency-reset-pw?email=tyler@tenger.de&new_pw=NewPassword123!&secret=PITCHINSIGHTS2026
+    LÖSCHE DIESEN ENDPOINT NACH VERWENDUNG!
+    """
+    RESET_SECRET = "PITCHINSIGHTS2026EMERGENCY"
+    
+    if secret != RESET_SECRET:
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    if not email or not new_pw:
+        return JSONResponse({"error": "Missing email or new_pw parameter"})
+    
+    # Passwort hashen
+    password_hash = bcrypt.hashpw(new_pw.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, email FROM users WHERE email = ? AND deleted_at IS NULL", (email,))
+        user = cursor.fetchone()
+        
+        if not user:
+            return JSONResponse({"error": f"User {email} not found"})
+        
+        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user['id']))
+        conn.commit()
+        
+        return JSONResponse({
+            "success": True,
+            "message": f"Password reset for {email}",
+            "user_id": user['id'],
+            "IMPORTANT": "DELETE THIS ENDPOINT FROM CODE IMMEDIATELY!"
+        })
+
+
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request, code: str = None):
     """Login-Seite anzeigen - nur mit gültigem Access-Code."""
