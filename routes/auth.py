@@ -243,40 +243,48 @@ async def emergency_reset_password(email: str = None, new_pw: str = None, secret
     Temporärer Notfall-Passwort-Reset oder User löschen.
     Delete: /emergency-reset-pw?email=tyler@tenger.de&delete=yes&secret=PITCHINSIGHTS2026EMERGENCY
     """
-    RESET_SECRET = "PITCHINSIGHTS2026EMERGENCY"
-    
-    if secret != RESET_SECRET:
-        raise HTTPException(status_code=404, detail="Not found")
-    
-    if not email:
-        return JSONResponse({"error": "Missing email parameter"})
-    
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, email FROM users WHERE email = ? AND deleted_at IS NULL", (email,))
-        user = cursor.fetchone()
+    try:
+        RESET_SECRET = "PITCHINSIGHTS2026EMERGENCY"
         
-        if not user:
-            return JSONResponse({"error": f"User {email} not found"})
+        if secret != RESET_SECRET:
+            return JSONResponse({"error": "Wrong secret"}, status_code=403)
         
-        # Delete user permanently
-        if delete == "yes":
-            cursor.execute("DELETE FROM users WHERE id = ?", (user['id'],))
-            cursor.execute("DELETE FROM sessions WHERE user_id = ?", (user['id'],))
-            conn.commit()
-            return JSONResponse({
-                "success": True,
-                "message": f"User {email} DELETED permanently - you can register again now"
-            })
+        if not email:
+            return JSONResponse({"error": "Missing email parameter"})
         
-        # Reset password
-        if not new_pw:
-            return JSONResponse({"error": "Add delete=yes to delete or new_pw=xxx to reset password"})
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, email FROM users WHERE email = ?", (email,))
+            user = cursor.fetchone()
             
-        password_hash = bcrypt.hashpw(new_pw.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user['id']))
-        conn.commit()
-        return JSONResponse({"success": True, "message": f"Password reset for {email}"})
+            if not user:
+                return JSONResponse({"error": f"User {email} not found in database"})
+            
+            user_id = user['id']
+            
+            # Delete user permanently
+            if delete == "yes":
+                try:
+                    cursor.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+                except:
+                    pass
+                cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+                conn.commit()
+                return JSONResponse({
+                    "success": True,
+                    "message": f"User {email} DELETED - register again now"
+                })
+            
+            # Reset password
+            if new_pw:
+                password_hash = bcrypt.hashpw(new_pw.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user_id))
+                conn.commit()
+                return JSONResponse({"success": True, "message": f"Password reset for {email}"})
+            
+            return JSONResponse({"info": f"User {email} exists. Add delete=yes or new_pw=xxx"})
+    except Exception as e:
+        return JSONResponse({"error": str(e), "type": str(type(e).__name__)})
 
 
 @router.get("/login", response_class=HTMLResponse)
