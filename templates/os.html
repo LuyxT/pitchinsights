@@ -5880,6 +5880,12 @@
 
             // Schließe Mobile Menu
             closeMobileMenu();
+            
+            // Schließe Video Player Modal falls offen
+            const videoModal = document.getElementById('videoPlayerModal');
+            if (videoModal && videoModal.style.display !== 'none') {
+                closeVideoPlayer();
+            }
 
             // Alle Views und Items deaktivieren
             document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
