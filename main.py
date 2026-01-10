@@ -162,6 +162,18 @@ async def lifespan(app: FastAPI):
         init_db()
         init_team_tables()
         logger.info("Database initialized")
+        
+        # DEBUG: Log user count to detect data loss
+        from database import get_db_connection
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM users WHERE deleted_at IS NULL")
+            user_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM videos WHERE deleted_at IS NULL")
+            video_count = cursor.fetchone()[0]
+            logger.info(f"DATABASE CHECK: {user_count} users, {video_count} videos found")
+            if user_count == 0:
+                logger.warning("WARNING: No users in database! Data may have been lost.")
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
         logger.error(f"Attempted DB path: {SecurityConfig.DATABASE_PATH}")
