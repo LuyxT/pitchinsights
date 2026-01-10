@@ -7044,19 +7044,19 @@
         function renderVideoMarkers(markers) {
             const container = document.getElementById('videoMarkersList');
             if (!Array.isArray(markers) || markers.length === 0) {
-                container.innerHTML = '<p style="color: rgba(255,255,255,0.4); font-size: 12px; text-align: center; padding: 8px;">Keine Marker</p>';
+                container.innerHTML = '<p style="color: var(--text-light); opacity: 0.4; font-size: 12px; text-align: center; padding: 8px;">Keine Marker</p>';
                 return;
             }
 
             container.innerHTML = markers.map(marker => `
                 <div onclick="jumpToMarker(${marker.time_seconds})" 
-                     style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(245,158,11,0.15); border-radius: 6px; cursor: pointer; margin-bottom: 6px; transition: background 0.2s;"
-                     onmouseover="this.style.background='rgba(245,158,11,0.3)'" 
+                     style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; cursor: pointer; margin-bottom: 6px; transition: background 0.2s;"
+                     onmouseover="this.style.background='rgba(245,158,11,0.25)'" 
                      onmouseout="this.style.background='rgba(245,158,11,0.15)'">
                     <span style="font-family: monospace; color: #f59e0b; font-size: 13px; font-weight: 600;">${formatTime(marker.time_seconds)}</span>
-                    <span style="flex: 1; font-size: 12px; color: rgba(255,255,255,0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(marker.label) || 'Marker'}</span>
+                    <span style="flex: 1; font-size: 12px; color: var(--text-light); opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(marker.label) || 'Marker'}</span>
                     <button onclick="event.stopPropagation(); deleteMarker(${marker.id})" 
-                            style="background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 14px; padding: 2px 6px;"
+                            style="background: none; border: none; color: var(--text-light); opacity: 0.4; cursor: pointer; font-size: 14px; padding: 2px 6px;"
                             title="Löschen">✕</button>
                 </div>
             `).join('');
@@ -7093,18 +7093,18 @@
         function renderVideoClips(clips) {
             const container = document.getElementById('videoClipsList');
             if (!Array.isArray(clips) || clips.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5); font-size: 14px;">Noch keine Clips für dieses Video</div>';
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-light); opacity: 0.5; font-size: 14px;">Noch keine Clips für dieses Video</div>';
                 return;
             }
 
             container.innerHTML = clips.map(clip => `
-                    <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <div style="background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
                         <div style="cursor: pointer;" onclick="jumpToClip(${clip.start_time})">
                             <span style="font-family: monospace; color: #10b981;">${formatTime(clip.start_time)}</span>
-                            <span style="opacity: 0.5;"> → </span>
+                            <span style="opacity: 0.5; color: var(--text-light);"> → </span>
                             <span style="font-family: monospace; color: #ef4444;">${formatTime(clip.end_time)}</span>
                         </div>
-                        <div style="flex: 1; font-size: 13px; opacity: 0.8;">${escapeHtml(clip.note || 'Kein Kommentar')}</div>
+                        <div style="flex: 1; font-size: 13px; color: var(--text-light); opacity: 0.8;">${escapeHtml(clip.note || 'Kein Kommentar')}</div>
                         <button onclick="openShareModal(${clip.id})" style="padding: 6px 12px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">
                             📤 Teilen
                         </button>
@@ -11957,13 +11957,13 @@
 
     <!-- Video Player Modal - OUTSIDE all containers for proper fixed positioning -->
     <div id="videoPlayerModal"
-        style="display: none; position: fixed; top: 0; left: 280px; right: 0; bottom: 0; background: #0a0a0a; z-index: 9999;">
+        style="display: none; position: fixed; top: 0; left: 280px; right: 0; bottom: 0; background: var(--bg-light); z-index: 9999;">
 
         <!-- Top Bar -->
         <div id="videoPlayerTopBar"
-            style="position: absolute; top: 0; left: 0; right: 0; height: 56px; background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 100%); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 10000;">
+            style="position: absolute; top: 0; left: 0; right: 0; height: 56px; background: var(--card-light); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 10000;">
             <h2 id="playerVideoTitle"
-                style="margin: 0; font-size: 16px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%;">
+                style="margin: 0; font-size: 16px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%;">
             </h2>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <button onclick="addVideoMarker()" id="addMarkerBtn" type="button"
@@ -11971,15 +11971,15 @@
                     📍 Marker
                 </button>
                 <button onclick="toggleDrawMode()" id="drawModeBtn" type="button"
-                    style="padding: 10px 18px; background: rgba(255,255,255,0.15); border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px; font-weight: 500;">
+                    style="padding: 10px 18px; background: var(--border-light); border: none; border-radius: 8px; cursor: pointer; color: var(--text-light); font-size: 14px; font-weight: 500;">
                     ✏️ Zeichnen
                 </button>
                 <button onclick="clearVideoDrawing()" type="button"
-                    style="padding: 10px 18px; background: rgba(255,255,255,0.15); border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
+                    style="padding: 10px 18px; background: var(--border-light); border: none; border-radius: 8px; cursor: pointer; color: var(--text-light); font-size: 14px;">
                     🧹 Löschen
                 </button>
                 <button onclick="toggleVideoFullscreen()" id="fullscreenBtn" type="button"
-                    style="padding: 10px 18px; background: rgba(255,255,255,0.15); border: none; border-radius: 8px; cursor: pointer; color: white; font-size: 14px;">
+                    style="padding: 10px 18px; background: var(--border-light); border: none; border-radius: 8px; cursor: pointer; color: var(--text-light); font-size: 14px;">
                     ⛶ Vollbild
                 </button>
                 <button onclick="deleteCurrentVideo()" type="button"
@@ -11987,7 +11987,7 @@
                     🗑️ Video
                 </button>
                 <button onclick="closeVideoPlayer()" type="button"
-                    style="width: 44px; height: 44px; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; cursor: pointer; color: white; font-size: 22px; display: flex; align-items: center; justify-content: center;">✕</button>
+                    style="width: 44px; height: 44px; background: var(--border-light); border: none; border-radius: 50%; cursor: pointer; color: var(--text-light); font-size: 22px; display: flex; align-items: center; justify-content: center;">✕</button>
             </div>
         </div>
 
@@ -11995,7 +11995,7 @@
         <div style="position: absolute; top: 56px; left: 0; right: 0; bottom: 0; display: flex;">
 
             <!-- Video Area (75%) -->
-            <div style="flex: 3; display: flex; flex-direction: column; padding: 16px; background: #0a0a0a;">
+            <div style="flex: 3; display: flex; flex-direction: column; padding: 16px; background: var(--bg-light);">
                 <div id="videoPlayerContainer"
                     style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #000; border-radius: 12px; overflow: hidden;">
                     <video id="modalVideo" style="max-width: 100%; max-height: 100%; border-radius: 8px;" controls
@@ -12006,7 +12006,7 @@
 
                 <!-- Clip Creation Bar -->
                 <div id="clipCreationBar"
-                    style="margin-top: 12px; background: rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    style="margin-top: 12px; background: var(--card-light); border: 1px solid var(--border-light); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                     <button onclick="setClipStart()"
                         style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px;">
                         ▶ Start
@@ -12019,7 +12019,7 @@
                     </button>
                     <span id="clipEndTime" style="font-family: monospace; color: #ef4444; min-width: 50px;">--:--</span>
                     <input type="text" id="clipNote" placeholder="Notiz (optional)"
-                        style="flex: 1; min-width: 150px; padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+                        style="flex: 1; min-width: 150px; padding: 8px 12px; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 8px; color: var(--text-light);">
                     <button onclick="saveVideoClip()" id="saveClipBtn" type="button" disabled
                         style="padding: 10px 22px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; opacity: 0.5;">
                         💾 Speichern
@@ -12029,17 +12029,17 @@
 
             <!-- Sidebar (25%) - Markers & Clips -->
             <div
-                style="flex: 1; min-width: 280px; max-width: 350px; background: rgba(255,255,255,0.04); border-left: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; overflow: hidden;">
+                style="flex: 1; min-width: 280px; max-width: 350px; background: var(--card-light); border-left: 1px solid var(--border-light); display: flex; flex-direction: column; overflow: hidden;">
 
                 <!-- Markers Section -->
-                <div style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="border-bottom: 1px solid var(--border-light);">
                     <div
                         style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; color: white; font-size: 14px;">📍 Marker</h3>
-                        <span id="markerCount" style="color: rgba(255,255,255,0.5); font-size: 12px;">0</span>
+                        <h3 style="margin: 0; color: var(--text-light); font-size: 14px;">📍 Marker</h3>
+                        <span id="markerCount" style="color: var(--text-light); opacity: 0.5; font-size: 12px;">0</span>
                     </div>
                     <div id="videoMarkersList" style="max-height: 200px; overflow-y: auto; padding: 0 12px 12px;">
-                        <p style="color: rgba(255,255,255,0.4); font-size: 12px; text-align: center; padding: 8px;">
+                        <p style="color: var(--text-light); opacity: 0.4; font-size: 12px; text-align: center; padding: 8px;">
                             Keine Marker</p>
                     </div>
                 </div>
@@ -12047,12 +12047,12 @@
                 <!-- Clips Section -->
                 <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                     <div
-                        style="padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; color: white; font-size: 14px;">📎 Clips</h3>
-                        <span id="clipCount" style="color: rgba(255,255,255,0.5); font-size: 12px;">0</span>
+                        style="padding: 12px 16px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; color: var(--text-light); font-size: 14px;">📎 Clips</h3>
+                        <span id="clipCount" style="color: var(--text-light); opacity: 0.5; font-size: 12px;">0</span>
                     </div>
                     <div id="videoClipsList" style="flex: 1; overflow-y: auto; padding: 12px;">
-                        <p style="color: rgba(255,255,255,0.4); font-size: 12px; text-align: center;">Keine Clips</p>
+                        <p style="color: var(--text-light); opacity: 0.4; font-size: 12px; text-align: center;">Keine Clips</p>
                     </div>
                 </div>
             </div>
@@ -12061,19 +12061,19 @@
 
     <!-- Share Clip Modal -->
     <div id="shareClipModal"
-        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 10001; justify-content: center; align-items: center;">
-        <div style="background: #1c1c1e; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%;">
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10001; justify-content: center; align-items: center;">
+        <div style="background: var(--card-light); border: 1px solid var(--border-light); border-radius: 16px; padding: 24px; max-width: 500px; width: 90%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin: 0; font-size: 18px; color: white;">📤 Clip teilen</h2>
+                <h2 style="margin: 0; font-size: 18px; color: var(--text-light);">📤 Clip teilen</h2>
                 <button onclick="closeShareModal()"
-                    style="background: none; border: none; font-size: 24px; cursor: pointer; color: white; opacity: 0.6;">✕</button>
+                    style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-light); opacity: 0.6;">✕</button>
             </div>
-            <p style="color: rgba(255,255,255,0.7); margin-bottom: 16px;">Wähle Spieler aus deinem Team:</p>
+            <p style="color: var(--text-light); opacity: 0.7; margin-bottom: 16px;">Wähle Spieler aus deinem Team:</p>
             <div id="sharePlayersList"
                 style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
             </div>
             <input type="text" id="shareMessage" placeholder="Nachricht hinzufügen (optional)"
-                style="width: 100%; margin-top: 16px; padding: 12px; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 8px; color: white;">
+                style="width: 100%; margin-top: 16px; padding: 12px; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 8px; color: var(--text-light);">
             <button onclick="sendClipToPlayers()"
                 style="width: 100%; margin-top: 16px; padding: 14px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600;">
                 📤 An ausgewählte Spieler senden
