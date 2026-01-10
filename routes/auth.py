@@ -238,22 +238,18 @@ async def dev_auto_login(request: Request, user_id: int = 1):
 # TEMPORARY: Emergency password reset endpoint
 # DELETE THIS AFTER USE!
 @router.get("/emergency-reset-pw")
-async def emergency_reset_password(email: str = None, new_pw: str = None, secret: str = None):
+async def emergency_reset_password(email: str = None, new_pw: str = None, secret: str = None, delete: str = None):
     """
-    Temporärer Notfall-Passwort-Reset.
-    URL: /emergency-reset-pw?email=tyler@tenger.de&new_pw=NewPassword123!&secret=PITCHINSIGHTS2026
-    LÖSCHE DIESEN ENDPOINT NACH VERWENDUNG!
+    Temporärer Notfall-Passwort-Reset oder User löschen.
+    Delete: /emergency-reset-pw?email=tyler@tenger.de&delete=yes&secret=PITCHINSIGHTS2026EMERGENCY
     """
     RESET_SECRET = "PITCHINSIGHTS2026EMERGENCY"
     
     if secret != RESET_SECRET:
         raise HTTPException(status_code=404, detail="Not found")
     
-    if not email or not new_pw:
-        return JSONResponse({"error": "Missing email or new_pw parameter"})
-    
-    # Passwort hashen
-    password_hash = bcrypt.hashpw(new_pw.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    if not email:
+        return JSONResponse({"error": "Missing email parameter"})
     
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -263,15 +259,24 @@ async def emergency_reset_password(email: str = None, new_pw: str = None, secret
         if not user:
             return JSONResponse({"error": f"User {email} not found"})
         
+        # Delete user permanently
+        if delete == "yes":
+            cursor.execute("DELETE FROM users WHERE id = ?", (user['id'],))
+            cursor.execute("DELETE FROM sessions WHERE user_id = ?", (user['id'],))
+            conn.commit()
+            return JSONResponse({
+                "success": True,
+                "message": f"User {email} DELETED permanently - you can register again now"
+            })
+        
+        # Reset password
+        if not new_pw:
+            return JSONResponse({"error": "Add delete=yes to delete or new_pw=xxx to reset password"})
+            
+        password_hash = bcrypt.hashpw(new_pw.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user['id']))
         conn.commit()
-        
-        return JSONResponse({
-            "success": True,
-            "message": f"Password reset for {email}",
-            "user_id": user['id'],
-            "IMPORTANT": "DELETE THIS ENDPOINT FROM CODE IMMEDIATELY!"
-        })
+        return JSONResponse({"success": True, "message": f"Password reset for {email}"})
 
 
 @router.get("/login", response_class=HTMLResponse)
