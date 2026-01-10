@@ -6813,6 +6813,10 @@
         let videoDrawMode = false;
         let videoDrawing = false;
         let videoDrawCtx = null;
+        let videoStrokes = [];  // Array für Striche mit Timestamps
+        let videoFadeMode = true;  // Auto-Fade standardmäßig AN
+        let videoFadeAnimationRunning = false;
+        let currentVideoStroke = null;
 
         function setupVideoDrawCanvas() {
             const video = document.getElementById('modalVideo');
@@ -6891,18 +6895,126 @@
         function startVideoDraw(e) {
             if (!videoDrawMode || !videoDrawCtx) return;
             videoDrawing = true;
-            videoDrawCtx.beginPath();
-            videoDrawCtx.moveTo(e.offsetX, e.offsetY);
+            currentVideoStroke = {
+                points: [{ x: e.offsetX, y: e.offsetY }],
+                timestamp: Date.now(),
+                opacity: 1
+            };
         }
 
         function doVideoDraw(e) {
-            if (!videoDrawing || !videoDrawCtx) return;
-            videoDrawCtx.lineTo(e.offsetX, e.offsetY);
-            videoDrawCtx.stroke();
+            if (!videoDrawing || !videoDrawCtx || !currentVideoStroke) return;
+            currentVideoStroke.points.push({ x: e.offsetX, y: e.offsetY });
+            // Zeichne live
+            redrawVideoStrokes();
         }
 
         function stopVideoDraw() {
+            if (videoDrawing && currentVideoStroke && currentVideoStroke.points.length > 1) {
+                videoStrokes.push(currentVideoStroke);
+                if (videoFadeMode) {
+                    startVideoFadeAnimation();
+                }
+            }
             videoDrawing = false;
+            currentVideoStroke = null;
+        }
+
+        function redrawVideoStrokes() {
+            const canvas = document.getElementById('modalDrawCanvas');
+            if (!canvas || !videoDrawCtx) return;
+            
+            videoDrawCtx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Zeichne alle gespeicherten Striche
+            videoStrokes.forEach(stroke => {
+                if (stroke.points.length < 2) return;
+                
+                videoDrawCtx.beginPath();
+                videoDrawCtx.strokeStyle = `rgba(255, 0, 0, ${stroke.opacity})`;
+                videoDrawCtx.lineWidth = 3;
+                videoDrawCtx.lineCap = 'round';
+                videoDrawCtx.lineJoin = 'round';
+                
+                videoDrawCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                for (let i = 1; i < stroke.points.length; i++) {
+                    videoDrawCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                }
+                videoDrawCtx.stroke();
+            });
+            
+            // Zeichne aktuellen Strich
+            if (currentVideoStroke && currentVideoStroke.points.length >= 2) {
+                videoDrawCtx.beginPath();
+                videoDrawCtx.strokeStyle = 'rgba(255, 0, 0, 1)';
+                videoDrawCtx.lineWidth = 3;
+                videoDrawCtx.lineCap = 'round';
+                videoDrawCtx.lineJoin = 'round';
+                
+                videoDrawCtx.moveTo(currentVideoStroke.points[0].x, currentVideoStroke.points[0].y);
+                for (let i = 1; i < currentVideoStroke.points.length; i++) {
+                    videoDrawCtx.lineTo(currentVideoStroke.points[i].x, currentVideoStroke.points[i].y);
+                }
+                videoDrawCtx.stroke();
+            }
+        }
+
+        function startVideoFadeAnimation() {
+            if (videoFadeAnimationRunning) return;
+            videoFadeAnimationRunning = true;
+            
+            function animate() {
+                const now = Date.now();
+                let hasActiveStrokes = false;
+                
+                videoStrokes = videoStrokes.filter(stroke => {
+                    const age = now - stroke.timestamp;
+                    if (age < 3000) {
+                        // Noch sichtbar (3 Sekunden)
+                        stroke.opacity = 1;
+                        hasActiveStrokes = true;
+                        return true;
+                    } else if (age < 4000) {
+                        // Fade out (1 Sekunde)
+                        stroke.opacity = 1 - ((age - 3000) / 1000);
+                        hasActiveStrokes = true;
+                        return true;
+                    } else {
+                        // Komplett verblasst
+                        return false;
+                    }
+                });
+                
+                redrawVideoStrokes();
+                
+                if (hasActiveStrokes) {
+                    requestAnimationFrame(animate);
+                } else {
+                    videoFadeAnimationRunning = false;
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        function toggleVideoFadeMode() {
+            videoFadeMode = !videoFadeMode;
+            const btn = document.getElementById('fadeModeBtn');
+            
+            if (videoFadeMode) {
+                btn.style.background = 'rgba(139,92,246,0.9)';  // Lila wenn AN
+                btn.title = 'Auto-Fade (AN)';
+                // Starte Animation für existierende Striche
+                if (videoStrokes.length > 0) {
+                    startVideoFadeAnimation();
+                }
+            } else {
+                btn.style.background = 'rgba(0,0,0,0.6)';
+                btn.title = 'Auto-Fade (AUS)';
+                // Setze alle Striche auf volle Opacity
+                videoStrokes.forEach(s => s.opacity = 1);
+                redrawVideoStrokes();
+            }
         }
 
         function clearVideoDrawing() {
@@ -6910,6 +7022,8 @@
             if (canvas && videoDrawCtx) {
                 videoDrawCtx.clearRect(0, 0, canvas.width, canvas.height);
             }
+            videoStrokes = [];
+            currentVideoStroke = null;
         }
 
         // Video löschen
@@ -11443,6 +11557,10 @@
                     <button onclick="clearVideoDrawing()" type="button" title="Zeichnung löschen"
                         style="width: 44px; height: 44px; background: rgba(0,0,0,0.6); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
                         🧹
+                    </button>
+                    <button onclick="toggleVideoFadeMode()" id="fadeModeBtn" type="button" title="Auto-Fade (AN)"
+                        style="width: 44px; height: 44px; background: rgba(139,92,246,0.9); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                        ⏱️
                     </button>
                     <button onclick="toggleVideoFullscreen()" id="fullscreenBtn" type="button" title="Vollbild"
                         style="width: 44px; height: 44px; background: rgba(0,0,0,0.6); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
