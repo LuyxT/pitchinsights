@@ -6828,7 +6828,7 @@
             // Canvas genau über Video positionieren
             const videoWidth = video.clientWidth;
             const videoHeight = video.clientHeight;
-            
+
             // Berechne Video-Position innerhalb des Wrappers
             const videoLeft = (wrapperRect.width - videoWidth) / 2;
             const videoTop = (wrapperRect.height - videoHeight) / 2;
@@ -7121,7 +7121,7 @@
         function renderVideoClips(clips) {
             const container = document.getElementById('videoClipsList');
             document.getElementById('clipCount').textContent = clips.length;
-            
+
             if (!Array.isArray(clips) || clips.length === 0) {
                 container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-light); opacity: 0.5; font-size: 12px;">Keine Clips</div>';
                 return;
@@ -7150,13 +7150,13 @@
         // Clip löschen
         async function deleteClip(clipId) {
             if (!confirm('Clip wirklich löschen?')) return;
-            
+
             try {
                 const response = await fetch(`/api/clips/${clipId}`, {
                     method: 'DELETE',
                     credentials: 'include'
                 });
-                
+
                 if (response.ok) {
                     showToast('Clip gelöscht', 'success');
                     if (currentVideoId) {
@@ -7525,523 +7525,7 @@
             });
         }
 
-        // Widget Templates - Widgets für jede App
-        const widgetTemplates = {
-            // KADER WIDGET
-            kader: () => `
-                <div class="widget-header">👥 Kader</div>
-                <div class="widget-content" id="widget-kader-content">
-                    <div class="widget-stat">
-                        <span class="widget-stat-label"><span class="status-dot fit"></span>Fit</span>
-                        <span class="widget-stat-value widget-kader-fit">-</span>
-                    </div>
-                    <div class="widget-stat">
-                        <span class="widget-stat-label"><span class="status-dot limited"></span>Belastet</span>
-                        <span class="widget-stat-value widget-kader-limited">-</span>
-                    </div>
-                    <div class="widget-stat">
-                        <span class="widget-stat-label"><span class="status-dot injured"></span>Verletzt</span>
-                        <span class="widget-stat-value widget-kader-injured">-</span>
-                    </div>
-                </div>
-            `,
-            // KALENDER WIDGET
-            kalender: () => `
-                <div class="widget-header">📅 Kalender</div>
-                <div class="widget-content">
-                    <div class="widget-week-grid" id="widget-kalender-grid">
-                        <div class="widget-week-day"><span class="widget-day-label">Mo</span><span class="widget-day-dot"></span></div>
-                        <div class="widget-week-day"><span class="widget-day-label">Di</span><span class="widget-day-dot"></span></div>
-                        <div class="widget-week-day"><span class="widget-day-label">Mi</span><span class="widget-day-dot"></span></div>
-                        <div class="widget-week-day"><span class="widget-day-label">Do</span><span class="widget-day-dot"></span></div>
-                        <div class="widget-week-day"><span class="widget-day-label">Fr</span><span class="widget-day-dot"></span></div>
-                        <div class="widget-week-day"><span class="widget-day-label">Sa</span><span class="widget-day-dot"></span></div>
-                        <div class="widget-week-day"><span class="widget-day-label">So</span><span class="widget-day-dot"></span></div>
-                    </div>
-                </div>
-            `,
-            // MESSENGER WIDGET
-            messenger: () => `
-                <div class="widget-header">💬 Messenger</div>
-                <div class="widget-content" id="widget-messenger-content">
-                    <span style="opacity: 0.6; font-size: 12px;">Keine neuen Nachrichten</span>
-                </div>
-            `,
-            // Event Listener (einmalig)
-            if (!drawCanvas.hasAttribute('data-initialized')) {
-                drawCanvas.setAttribute('data-initialized', 'true');
-
-                drawCanvas.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    startDraw(e);
-                }, { passive: false });
-                drawCanvas.addEventListener('mousemove', (e) => {
-                    e.preventDefault();
-                    draw(e);
-                }, { passive: false });
-                drawCanvas.addEventListener('mouseup', stopDraw);
-                drawCanvas.addEventListener('mouseleave', stopDraw);
-
-                // Touch Support
-                drawCanvas.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const touch = e.touches[0];
-                    startDraw(touch);
-                }, { passive: false });
-                drawCanvas.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const touch = e.touches[0];
-                    draw(touch);
-                }, { passive: false });
-                drawCanvas.addEventListener('touchend', stopDraw);
-            }
-
-            // Resize Observer
-            const resizeObserver = new ResizeObserver(() => {
-                updateCanvasSize();
-            });
-            resizeObserver.observe(video);
-        }
-
-        function updateCanvasSize() {
-            const video = document.getElementById('videoPreview');
-            const canvas = document.getElementById('drawCanvas');
-            const container = document.getElementById('videoContainer');
-            if (!video || !canvas) return;
-
-            if (isPseudoFullscreen) {
-                const videoRect = video.getBoundingClientRect();
-                const containerRect = container.getBoundingClientRect();
-                canvas.style.position = 'absolute';
-                canvas.style.left = (videoRect.left - containerRect.left) + 'px';
-                canvas.style.top = (videoRect.top - containerRect.top) + 'px';
-                canvas.style.width = videoRect.width + 'px';
-                canvas.style.height = videoRect.height + 'px';
-                canvas.width = videoRect.width;
-                canvas.height = videoRect.height;
-            } else {
-                canvas.style.left = '0';
-                canvas.style.top = '0';
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-                canvas.width = video.offsetWidth;
-                canvas.height = video.offsetHeight;
-            }
-            redrawStrokes();
-        }
-
-        let currentStroke = null;
-
-        function getCanvasCoords(e) {
-            const canvas = document.getElementById('drawCanvas');
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: (e.clientX - rect.left) * (canvas.width / rect.width),
-                y: (e.clientY - rect.top) * (canvas.height / rect.height)
-            };
-        }
-
-        function startDraw(e) {
-            if (!drawModeActive) return;
-
-            const canvas = document.getElementById('drawCanvas');
-            drawCtx = canvas.getContext('2d');
-
-            isDrawing = true;
-
-            const coords = getCanvasCoords(e);
-
-            currentStroke = {
-                tool: currentTool,
-                points: [coords],
-                startX: coords.x,
-                startY: coords.y,
-                color: currentDrawColor,
-                size: currentTool === 'highlight' ? currentDrawSize * 3 : currentDrawSize,
-                alpha: currentTool === 'highlight' ? 0.4 : 1,
-                timestamp: Date.now(),
-                opacity: 1
-            };
-        }
-
-        function draw(e) {
-            if (!isDrawing || !drawModeActive || !currentStroke) return;
-
-            if (!drawCtx) {
-                const canvas = document.getElementById('drawCanvas');
-                drawCtx = canvas.getContext('2d');
-            }
-
-            const coords = getCanvasCoords(e);
-            const tool = currentStroke.tool || 'pen';
-
-            // Für Formen: Canvas neu zeichnen mit Vorschau
-            if (tool === 'rect' || tool === 'circle' || tool === 'line' || tool === 'straight') {
-                redrawStrokes();
-
-                // Animierter Glow-Effekt während Zeichnen
-                const pulseIntensity = 0.5 + 0.3 * Math.sin(Date.now() / 100);
-                drawCtx.shadowColor = currentStroke.color;
-                drawCtx.shadowBlur = 8 * pulseIntensity;
-
-                drawCtx.beginPath();
-                drawCtx.strokeStyle = currentStroke.color;
-                drawCtx.lineWidth = currentStroke.size;
-                drawCtx.globalAlpha = currentStroke.alpha;
-                drawCtx.lineCap = 'round';
-                drawCtx.lineJoin = 'round';
-
-                if (tool === 'rect') {
-                    const width = coords.x - currentStroke.startX;
-                    const height = coords.y - currentStroke.startY;
-                    drawCtx.strokeRect(currentStroke.startX, currentStroke.startY, width, height);
-                } else if (tool === 'circle') {
-                    const radius = Math.sqrt(
-                        Math.pow(coords.x - currentStroke.startX, 2) +
-                        Math.pow(coords.y - currentStroke.startY, 2)
-                    );
-                    drawCtx.arc(currentStroke.startX, currentStroke.startY, radius, 0, Math.PI * 2);
-                    drawCtx.stroke();
-                } else if (tool === 'line' || tool === 'straight') {
-                    drawCtx.moveTo(currentStroke.startX, currentStroke.startY);
-                    drawCtx.lineTo(coords.x, coords.y);
-                    drawCtx.stroke();
-                }
-
-                // Reset shadow
-                drawCtx.shadowBlur = 0;
-                currentStroke.endX = coords.x;
-                currentStroke.endY = coords.y;
-                drawCtx.globalAlpha = 1;
-
-                // Request next frame für flüssige Animation
-                requestAnimationFrame(() => {
-                    if (isDrawing && currentStroke) {
-                        draw(e);
-                    }
-                });
-                return;
-            }
-
-            currentStroke.points.push(coords);
-
-            // Zeichne aktuellen Strich (Freihand) mit Glow
-            const pulseIntensity = 0.5 + 0.3 * Math.sin(Date.now() / 100);
-            drawCtx.shadowColor = currentStroke.color;
-            drawCtx.shadowBlur = 5 * pulseIntensity;
-
-            drawCtx.beginPath();
-            drawCtx.strokeStyle = currentStroke.color;
-            drawCtx.lineWidth = currentStroke.size;
-            drawCtx.lineCap = 'round';
-            drawCtx.lineJoin = 'round';
-            drawCtx.globalAlpha = currentStroke.alpha;
-
-            const pts = currentStroke.points;
-            if (pts.length >= 2) {
-                drawCtx.moveTo(pts[pts.length - 2].x, pts[pts.length - 2].y);
-                drawCtx.lineTo(coords.x, coords.y);
-                drawCtx.stroke();
-            }
-            drawCtx.shadowBlur = 0;
-            drawCtx.globalAlpha = 1;
-        }
-
-        function stopDraw() {
-            if (isDrawing && currentStroke) {
-                strokes.push(currentStroke);
-                startFadeAnimation();
-            }
-            isDrawing = false;
-            currentStroke = null;
-        }
-
-        function redrawStrokes() {
-            if (!drawCtx) return;
-            drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-
-            strokes.forEach(stroke => {
-                drawCtx.beginPath();
-                drawCtx.strokeStyle = stroke.color;
-                drawCtx.lineWidth = stroke.size;
-                drawCtx.lineCap = 'round';
-                drawCtx.lineJoin = 'round';
-                drawCtx.globalAlpha = stroke.opacity * (stroke.alpha || 1);
-
-                const tool = stroke.tool || 'pen';
-
-                if (tool === 'rect' && stroke.startX !== undefined) {
-                    const width = stroke.endX - stroke.startX;
-                    const height = stroke.endY - stroke.startY;
-                    drawCtx.strokeRect(stroke.startX, stroke.startY, width, height);
-                } else if (tool === 'circle' && stroke.startX !== undefined) {
-                    const radius = Math.sqrt(
-                        Math.pow(stroke.endX - stroke.startX, 2) +
-                        Math.pow(stroke.endY - stroke.startY, 2)
-                    );
-                    drawCtx.arc(stroke.startX, stroke.startY, radius, 0, Math.PI * 2);
-                    drawCtx.stroke();
-                } else if ((tool === 'line' || tool === 'straight') && stroke.startX !== undefined) {
-                    drawCtx.moveTo(stroke.startX, stroke.startY);
-                    drawCtx.lineTo(stroke.endX, stroke.endY);
-                    drawCtx.stroke();
-                } else if (stroke.points && stroke.points.length >= 2) {
-                    // Freihand
-                    drawCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
-                    for (let i = 1; i < stroke.points.length; i++) {
-                        drawCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
-                    }
-                    drawCtx.stroke();
-                }
-            });
-
-            drawCtx.globalAlpha = 1;
-        }
-
-        let fadeAnimationRunning = false;
-
-        function startFadeAnimation() {
-            if (fadeAnimationRunning) return;
-            fadeAnimationRunning = true;
-
-            function animate() {
-                const now = Date.now();
-                let hasActiveStrokes = false;
-
-                strokes = strokes.filter(stroke => {
-                    const age = now - stroke.timestamp;
-                    if (age < 3000) {
-                        // Noch sichtbar, berechne Opacity
-                        stroke.opacity = 1;
-                        hasActiveStrokes = true;
-                        return true;
-                    } else if (age < 4000) {
-                        // Fade out (1 Sekunde)
-                        stroke.opacity = 1 - ((age - 3000) / 1000);
-                        hasActiveStrokes = true;
-                        return true;
-                    } else {
-                        // Komplett verblasst, entfernen
-                        return false;
-                    }
-                });
-
-                redrawStrokes();
-
-                if (hasActiveStrokes) {
-                    requestAnimationFrame(animate);
-                } else {
-                    fadeAnimationRunning = false;
-                }
-            }
-
-            requestAnimationFrame(animate);
-        }
-
-        function clearDrawing() {
-            strokes = [];
-            if (drawCtx) {
-                drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-            }
-        }
-
-        // ============ CUSTOM VIDEO CONTROLS ============
-        function initCustomControls() {
-            const video = document.getElementById('videoPreview');
-            const container = document.getElementById('videoContainer');
-            const controls = document.getElementById('customVideoControls');
-
-            if (!video || !controls) return;
-
-            // Show/hide controls on hover
-            container.addEventListener('mouseenter', () => {
-                controls.style.opacity = '1';
-            });
-            container.addEventListener('mouseleave', () => {
-                if (!video.paused) {
-                    controls.style.opacity = '0';
-                }
-            });
-
-            // Click on video to play/pause
-            video.addEventListener('click', togglePlayPause);
-
-            // Update time display
-            video.addEventListener('timeupdate', () => {
-                const current = formatTime(video.currentTime);
-                const duration = formatTime(video.duration);
-                document.getElementById('currentTime').textContent = current;
-                document.getElementById('durationTime').textContent = duration;
-
-                const percent = (video.currentTime / video.duration) * 100;
-                document.getElementById('progressBar2').style.width = percent + '%';
-            });
-
-            // Update play/pause icons
-            video.addEventListener('play', () => {
-                document.getElementById('playIcon').style.display = 'none';
-                document.getElementById('pauseIcon').style.display = 'block';
-            });
-            video.addEventListener('pause', () => {
-                document.getElementById('playIcon').style.display = 'block';
-                document.getElementById('pauseIcon').style.display = 'none';
-                controls.style.opacity = '1';
-            });
-
-            // Duration loaded
-            video.addEventListener('loadedmetadata', () => {
-                document.getElementById('durationTime').textContent = formatTime(video.duration);
-            });
-        }
-
-        function togglePlayPause() {
-            const video = document.getElementById('videoPreview');
-            if (video.paused) {
-                video.play();
-            } else {
-                video.pause();
-            }
-        }
-
-        function seekVideo(event) {
-            const video = document.getElementById('videoPreview');
-            const progressContainer = document.getElementById('progressContainer');
-            const rect = progressContainer.getBoundingClientRect();
-            const percent = (event.clientX - rect.left) / rect.width;
-            video.currentTime = percent * video.duration;
-        }
-
-        function toggleMute() {
-            const video = document.getElementById('videoPreview');
-            video.muted = !video.muted;
-            const volumeIcon = document.getElementById('volumeIcon');
-            if (video.muted) {
-                volumeIcon.innerHTML = '<line x1="23" y1="1" x2="1" y2="23" stroke="white" stroke-width="2"/><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="none" stroke="white" stroke-width="2"/>';
-            } else {
-                volumeIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>';
-            }
-        }
-
-        function formatTime(seconds) {
-            if (isNaN(seconds)) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return mins + ':' + (secs < 10 ? '0' : '') + secs;
-        }
-
-        // ============ FULLSCREEN HANDLING ============
-        let isPseudoFullscreen = false;
-
-        function toggleVideoFullscreen() {
-            const container = document.getElementById('videoContainer');
-            const video = document.getElementById('videoPreview');
-            const canvas = document.getElementById('drawCanvas');
-            const fullscreenBtn = document.getElementById('fullscreenBtn');
-            const toolbar = document.getElementById('drawToolbar');
-
-            isPseudoFullscreen = !isPseudoFullscreen;
-
-            if (isPseudoFullscreen) {
-                // Enter pseudo-fullscreen
-                container.style.cssText = `
-                        position: fixed !important;
-                        top: 0 !important;
-                        left: 0 !important;
-                        width: 100vw !important;
-                        height: 100vh !important;
-                        z-index: 9999 !important;
-                        background: #000 !important;
-                        border-radius: 0 !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                    `;
-                video.style.maxHeight = '100vh';
-                video.style.maxWidth = '100vw';
-                video.style.width = 'auto';
-                video.style.height = 'auto';
-                video.style.objectFit = 'contain';
-                video.style.borderRadius = '0';
-
-                // Update button icon
-                if (fullscreenBtn) {
-                    fullscreenBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                        </svg>`;
-                }
-
-                // Add ESC listener
-                document.addEventListener('keydown', handleEscKey);
-                document.body.style.overflow = 'hidden';
-
-                // Resize canvas after video settles
-                setTimeout(() => {
-                    if (canvas && video) {
-                        const videoRect = video.getBoundingClientRect();
-                        canvas.style.position = 'absolute';
-                        canvas.style.left = (videoRect.left - container.getBoundingClientRect().left) + 'px';
-                        canvas.style.top = (videoRect.top - container.getBoundingClientRect().top) + 'px';
-                        canvas.style.width = videoRect.width + 'px';
-                        canvas.style.height = videoRect.height + 'px';
-                        canvas.width = videoRect.width;
-                        canvas.height = videoRect.height;
-                        redrawStrokes();
-                    }
-                }, 100);
-            } else {
-                // Exit pseudo-fullscreen
-                exitPseudoFullscreen();
-            }
-        }
-
-        function handleEscKey(e) {
-            if (e.key === 'Escape' && isPseudoFullscreen) {
-                exitPseudoFullscreen();
-            }
-        }
-
-        function exitPseudoFullscreen() {
-            const container = document.getElementById('videoContainer');
-            const video = document.getElementById('videoPreview');
-            const canvas = document.getElementById('drawCanvas');
-            const fullscreenBtn = document.getElementById('fullscreenBtn');
-
-            isPseudoFullscreen = false;
-            document.removeEventListener('keydown', handleEscKey);
-            document.body.style.overflow = '';
-
-            // Reset container
-            container.style.cssText = 'position: relative; border-radius: 8px; overflow: hidden;';
-
-            // Reset video
-            video.style.maxHeight = '500px';
-            video.style.maxWidth = '';
-            video.style.width = '100%';
-            video.style.height = '';
-            video.style.objectFit = '';
-            video.style.borderRadius = '8px';
-
-            // Reset canvas
-            canvas.style.position = 'absolute';
-            canvas.style.left = '0';
-            canvas.style.top = '0';
-            canvas.style.width = '100%';
-            canvas.style.height = '100%';
-            canvas.width = video.offsetWidth;
-            canvas.height = video.offsetHeight;
-
-            // Update button
-            if (fullscreenBtn) {
-                fullscreenBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-                    </svg>`;
-            }
-
-            setTimeout(() => redrawStrokes(), 50);
-        }
+        // OLD widgetTemplates removed - keeping only the one below
 
         // Widget Templates - Widgets für jede App
         const widgetTemplates = {
@@ -8092,109 +7576,40 @@
                     <span style="opacity: 0.6; font-size: 12px;">Noch keine Analyse vorhanden</span>
                 </div>
             `,
-            // TRAINING WIDGET (Premium)
+            // TRAINING WIDGET
             training: () => `
-                <div class="widget-header">🏋️ Training <span style="background: #8b5cf6; color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; margin-left: 6px;">💎</span></div>
+                <div class="widget-header">🏋️ Training</div>
                 <div class="widget-content" id="widget-training-content">
                     <span style="opacity: 0.6; font-size: 12px;">Kein Training geplant</span>
                 </div>
             `,
-            // MEDIZIN WIDGET (Premium)
+            // MEDIZIN WIDGET
             medizin: () => `
-                <div class="widget-header">⚕️ Medizin <span style="background: #8b5cf6; color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; margin-left: 6px;">💎</span></div>
+                <div class="widget-header">⚕️ Medizin</div>
                 <div class="widget-content">
                     <div class="widget-stat">
                         <span class="widget-stat-label">Verletzt</span>
                         <span class="widget-stat-value widget-medizin-injured">-</span>
                     </div>
-                    <div class="widget-stat">
-                        <span class="widget-stat-label">Angeschlagen</span>
-                        <span class="widget-stat-value widget-medizin-limited">-</span>
-                    </div>
                 </div>
             `,
-            // FINANZEN WIDGET (Premium)
+            // FINANZEN WIDGET
             finanzen: () => `
-                <div class="widget-header">💰 Finanzen <span style="background: #8b5cf6; color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; margin-left: 6px;">💎</span></div>
+                <div class="widget-header">💰 Finanzen</div>
                 <div class="widget-content" id="widget-finanzen-content">
                     <span style="opacity: 0.6; font-size: 12px;">Keine Finanzdaten</span>
                 </div>
             `,
-            // MANNSCHAFTSKASSE WIDGET
-            kasse: () => `
-                <div class="widget-header">💵 Kasse</div>
-                <div class="widget-content" id="widget-kasse-content">
-                    <div class="widget-stat">
-                        <span class="widget-stat-label">Kontostand</span>
-                        <span class="widget-stat-value widget-kasse-saldo">0€</span>
-                    </div>
-                </div>
-            `,
-            // TAKTIK WIDGET
-            taktik: () => `
-                <div class="widget-header">⚽ Taktik</div>
-                <div class="widget-content">
-                    <span style="opacity: 0.6; font-size: 12px;">Taktik-Tafel öffnen</span>
-                </div>
-            `,
-            // VIDEO UPLOAD WIDGET
-            upload: () => `
-                <div class="widget-header">📹 Videos</div>
-                <div class="widget-content" id="widget-upload-content">
-                    <div class="widget-stat">
-                        <span class="widget-stat-label">Hochgeladen</span>
-                        <span class="widget-stat-value widget-video-count">0</span>
-                    </div>
-                </div>
-            `,
-            // SCOUTING WIDGET (Coming Soon)
-            scouting: () => `
-                <div class="widget-header">🔍 Scouting <span style="background: #f59e0b; color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; margin-left: 6px;">Soon</span></div>
-                <div class="widget-content">
-                    <div class="widget-stat">
-                        <span class="widget-stat-label">Spieler</span>
-                        <span class="widget-stat-value">0</span>
-                    </div>
-                </div>
-            `,
-            // QUICK STATS WIDGET
-            stats: () => `
-                <div class="widget-header">📊 Statistiken</div>
-                <div class="widget-content">
-                    <div class="widget-stat">
-                        <span class="widget-stat-label">Videos:</span>
-                        <span class="widget-stat-value widget-stats-videos">0</span>
-                    </div>
-                    <div class="widget-stat">
-                        <span class="widget-stat-label">Spieler:</span>
-                        <span class="widget-stat-value widget-stats-players">0</span>
-                    </div>
-                    <div class="widget-stat">
-                        <span class="widget-stat-label">Matches:</span>
-                        <span class="widget-stat-value widget-stats-matches">0</span>
-                    </div>
-                </div>
-            `,
-            // NÄCHSTE SPIELE WIDGET
-            upcoming: () => `
-                <div class="widget-header">📅 Nächste Spiele</div>
-                <div class="widget-content" id="widget-upcoming-content">
-                    <span style="opacity: 0.6; font-size: 12px;">Keine Spiele geplant</span>
-                </div>
-            `,
-            // QUICK LINKS WIDGET
-            quick_links: () => `
-                <div class="widget-header">🔗 Schnellzugriff</div>
-                <div class="widget-content">
-                    <div class="widget-grid">
-                        <div class="widget-item" onclick="switchApp('kader')"><span class="widget-item-icon">👥</span> Kader</div>
-                        <div class="widget-item" onclick="switchApp('kalender')"><span class="widget-item-icon">📅</span> Kalender</div>
-                        <div class="widget-item" onclick="switchApp('messenger')"><span class="widget-item-icon">💬</span> Chat</div>
-                        <div class="widget-item" onclick="switchApp('taktik')"><span class="widget-item-icon">⚽</span> Taktik</div>
-                    </div>
+            // VIDEO WIDGET
+            video: () => `
+                <div class="widget-header">🎬 Video</div>
+                <div class="widget-content" id="widget-video-content">
+                    <span style="opacity: 0.6; font-size: 12px;">Keine Videos</span>
                 </div>
             `
         };
+
+        // Widget code consolidated
 
         function openWidgetModal() {
             document.getElementById('widgetModal').classList.add('active');
@@ -12004,15 +11419,19 @@
         style="display: none; position: fixed; top: 0; left: 280px; right: 0; bottom: 0; background: #000; z-index: 9999;">
 
         <!-- Video Container (takes full space, will go fullscreen) -->
-        <div id="videoPlayerContainer" style="position: absolute; top: 0; left: 0; right: 280px; bottom: 0; display: flex; flex-direction: column;">
-            
+        <div id="videoPlayerContainer"
+            style="position: absolute; top: 0; left: 0; right: 280px; bottom: 0; display: flex; flex-direction: column;">
+
             <!-- Video Wrapper -->
-            <div id="videoWrapper" style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden;">
+            <div id="videoWrapper"
+                style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden;">
                 <video id="modalVideo" style="max-width: 100%; max-height: 100%;" controls playsinline></video>
-                <canvas id="modalDrawCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
-                
+                <canvas id="modalDrawCanvas"
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+
                 <!-- Floating Toolbar (top right) -->
-                <div id="videoToolbar" style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; z-index: 100;">
+                <div id="videoToolbar"
+                    style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; z-index: 100;">
                     <button onclick="addVideoMarker()" id="addMarkerBtn" type="button" title="Marker setzen"
                         style="width: 44px; height: 44px; background: rgba(245,158,11,0.9); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
                         📍
@@ -12032,12 +11451,15 @@
                 </div>
 
                 <!-- Title & Close (top left) -->
-                <div style="position: absolute; top: 16px; left: 16px; display: flex; align-items: center; gap: 12px; z-index: 100;">
+                <div
+                    style="position: absolute; top: 16px; left: 16px; display: flex; align-items: center; gap: 12px; z-index: 100;">
                     <button onclick="closeVideoPlayer()" type="button" title="Schließen"
                         style="width: 44px; height: 44px; background: rgba(0,0,0,0.6); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
                         ✕
                     </button>
-                    <h2 id="playerVideoTitle" style="margin: 0; font-size: 14px; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></h2>
+                    <h2 id="playerVideoTitle"
+                        style="margin: 0; font-size: 14px; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    </h2>
                 </div>
 
                 <!-- Delete Button (top right corner) -->
@@ -12048,15 +11470,20 @@
             </div>
 
             <!-- Clip Creation Bar (bottom, always visible) -->
-            <div id="clipCreationBar" style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <button onclick="setClipStart()" style="padding: 8px 14px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">
+            <div id="clipCreationBar"
+                style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <button onclick="setClipStart()"
+                    style="padding: 8px 14px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">
                     ▶ Start
                 </button>
-                <span id="clipStartTime" style="font-family: monospace; color: #10b981; min-width: 50px; font-size: 14px;">--:--</span>
-                <button onclick="setClipEnd()" style="padding: 8px 14px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">
+                <span id="clipStartTime"
+                    style="font-family: monospace; color: #10b981; min-width: 50px; font-size: 14px;">--:--</span>
+                <button onclick="setClipEnd()"
+                    style="padding: 8px 14px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">
                     ⏹ Ende
                 </button>
-                <span id="clipEndTime" style="font-family: monospace; color: #ef4444; min-width: 50px; font-size: 14px;">--:--</span>
+                <span id="clipEndTime"
+                    style="font-family: monospace; color: #ef4444; min-width: 50px; font-size: 14px;">--:--</span>
                 <input type="text" id="clipNote" placeholder="Notiz (optional)"
                     style="flex: 1; min-width: 120px; padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; font-size: 13px;">
                 <button onclick="saveVideoClip()" id="saveClipBtn" type="button" disabled
@@ -12067,8 +11494,9 @@
         </div>
 
         <!-- Sidebar (outside fullscreen container) -->
-        <div id="videoSidebar" style="position: absolute; top: 0; right: 0; width: 280px; height: 100%; background: var(--card-light); border-left: 1px solid var(--border-light); display: flex; flex-direction: column; overflow: hidden; z-index: 50;">
-            
+        <div id="videoSidebar"
+            style="position: absolute; top: 0; right: 0; width: 280px; height: 100%; background: var(--card-light); border-left: 1px solid var(--border-light); display: flex; flex-direction: column; overflow: hidden; z-index: 50;">
+
             <!-- Markers Section -->
             <div style="border-bottom: 1px solid var(--border-light);">
                 <div style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
@@ -12076,18 +11504,22 @@
                     <span id="markerCount" style="color: var(--text-light); opacity: 0.5; font-size: 12px;">0</span>
                 </div>
                 <div id="videoMarkersList" style="max-height: 180px; overflow-y: auto; padding: 0 12px 12px;">
-                    <p style="color: var(--text-light); opacity: 0.4; font-size: 12px; text-align: center; padding: 8px;">Keine Marker</p>
+                    <p
+                        style="color: var(--text-light); opacity: 0.4; font-size: 12px; text-align: center; padding: 8px;">
+                        Keine Marker</p>
                 </div>
             </div>
-            
+
             <!-- Clips Section -->
             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                <div style="padding: 12px 16px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+                <div
+                    style="padding: 12px 16px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="margin: 0; color: var(--text-light); font-size: 14px;">📎 Clips</h3>
                     <span id="clipCount" style="color: var(--text-light); opacity: 0.5; font-size: 12px;">0</span>
                 </div>
                 <div id="videoClipsList" style="flex: 1; overflow-y: auto; padding: 12px;">
-                    <p style="color: var(--text-light); opacity: 0.4; font-size: 12px; text-align: center;">Keine Clips</p>
+                    <p style="color: var(--text-light); opacity: 0.4; font-size: 12px; text-align: center;">Keine Clips
+                    </p>
                 </div>
             </div>
         </div>
@@ -12096,7 +11528,8 @@
     <!-- Share Clip Modal -->
     <div id="shareClipModal"
         style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10001; justify-content: center; align-items: center;">
-        <div style="background: var(--card-light); border: 1px solid var(--border-light); border-radius: 16px; padding: 24px; max-width: 500px; width: 90%;">
+        <div
+            style="background: var(--card-light); border: 1px solid var(--border-light); border-radius: 16px; padding: 24px; max-width: 500px; width: 90%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin: 0; font-size: 18px; color: var(--text-light);">📤 Clip teilen</h2>
                 <button onclick="closeShareModal()"
