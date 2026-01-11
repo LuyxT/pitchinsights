@@ -5035,8 +5035,7 @@
             <!-- Tab Content: Einladungen -->
             <div id="verwaltung-einladungen" class="verwaltung-content" style="display: none;">
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
-                    <button class="btn-primary"
-                        onclick="document.getElementById('create-invitation-modal').style.display='flex'; loadRolesForInvitation();">
+                    <button class="btn-primary" id="neue-einladung-btn">
                         + Neue Einladung
                     </button>
                 </div>
@@ -10459,6 +10458,20 @@
                 localStorage.removeItem('appConfig');
             }
 
+            // Event Listener für Neue Einladung Button
+            const neueEinladungBtn = document.getElementById('neue-einladung-btn');
+            if (neueEinladungBtn) {
+                neueEinladungBtn.addEventListener('click', function() {
+                    console.log('Neue Einladung Button geklickt!');
+                    const modal = document.getElementById('create-invitation-modal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                        loadRolesForInvitation();
+                    } else {
+                        alert('Modal nicht gefunden!');
+                    }
+                });
+            }
 
             checkTeamStatus(); // Team-Status prüfen
             if (registeredClub) {
