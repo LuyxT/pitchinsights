@@ -5035,7 +5035,8 @@
             <!-- Tab Content: Einladungen -->
             <div id="verwaltung-einladungen" class="verwaltung-content" style="display: none;">
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
-                    <button class="btn-primary" onclick="alert('Test!'); document.getElementById('create-invitation-modal').style.display='flex';">
+                    <button class="btn-primary"
+                        onclick="document.getElementById('create-invitation-modal').style.display='flex'; loadRolesForInvitation();">
                         + Neue Einladung
                     </button>
                 </div>
@@ -6517,6 +6518,29 @@
                 document.getElementById('invitation-days').value = 7;
                 modal.style.display = 'flex';
             }
+        }
+
+        // Vereinfachte Funktion zum Laden der Rollen im Modal
+        async function loadRolesForInvitation() {
+            const select = document.getElementById('invitation-role');
+            if (!select) return;
+            
+            try {
+                const response = await fetch('/api/team/roles');
+                const data = await response.json();
+                const roles = data.roles || [];
+                
+                if (roles.length > 0) {
+                    select.innerHTML = roles.map(r => `<option value="${parseInt(r.id)}">${escapeHtml(r.name)}</option>`).join('');
+                } else {
+                    select.innerHTML = '<option value="1">Spieler</option><option value="2">Trainer</option>';
+                }
+            } catch (e) {
+                select.innerHTML = '<option value="1">Spieler</option><option value="2">Trainer</option>';
+            }
+            
+            document.getElementById('invitation-max-uses').value = 1;
+            document.getElementById('invitation-days').value = 7;
         }
 
         function closeModal(modalId) {
