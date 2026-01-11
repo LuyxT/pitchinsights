@@ -5035,7 +5035,8 @@
             <!-- Tab Content: Einladungen -->
             <div id="verwaltung-einladungen" class="verwaltung-content" style="display: none;">
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
-                    <button class="btn-primary" style="position: relative; z-index: 100;" onclick="alert('KLICK!'); document.getElementById('create-invitation-modal').style.display='flex';">
+                    <button class="btn-primary" style="position: relative; z-index: 100;"
+                        onclick="document.getElementById('create-invitation-modal').style.display='flex'; loadRolesForInvitation();">
                         + Neue Einladung
                     </button>
                 </div>
