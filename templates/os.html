@@ -983,23 +983,24 @@
         }
 
         .add-widget-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 56px;
-            height: 56px;
+            position: fixed !important;
+            bottom: 30px !important;
+            right: 30px !important;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+            background: linear-gradient(135deg, #10b981, #059669) !important;
             border: none;
             color: white;
-            font-size: 28px;
+            font-size: 32px;
+            font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
             transition: all 0.3s;
-            display: flex;
+            display: flex !important;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 99999 !important;
         }
 
         .add-widget-btn:hover {
@@ -3115,9 +3116,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- ADD WIDGET BUTTON -->
-                <button class="add-widget-btn" onclick="openWidgetModal()" title="Widget hinzufügen">+</button>
 
                 <div class="app-grid" id="appGrid">
                     <!-- Wird dynamisch durch renderHomeGrid() gefüllt -->
@@ -11680,6 +11678,10 @@
             </button>
         </div>
     </div>
+
+    <!-- FLOATING ADD WIDGET BUTTON - Always visible -->
+    <button id="floatingAddWidget" class="add-widget-btn" onclick="openWidgetModal()" title="Widget hinzufügen">+</button>
+
 </body>
 
 </html>
