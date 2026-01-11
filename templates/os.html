@@ -8171,37 +8171,24 @@
         }
 
         // Kalender Widget Daten
-        async function updateKalenderWidgets() {
+        function updateKalenderWidgets() {
             try {
-                // Events aus API laden
-                const response = await fetch('/api/events/week');
-                let weekEvents = {};
-                let allEvents = [];
-
-                if (response.ok) {
-                    const data = await response.json();
-                    allEvents = data.events || [];
-                    // Die API gibt bereits week als gruppierte Daten zurück
-                    weekEvents = data.week || {};
-
-                    console.log('Kalender API Response:', data);
-                } else {
-                    // Fallback auf localStorage
-                    const storageKey = getUserStorageKey('calendarEvents');
-                    const storedEvents = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                    allEvents = storedEvents;
-
-                    const today = new Date();
-                    const dayOfWeek = today.getDay();
-                    const monday = new Date(today);
-                    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-
-                    for (let i = 0; i < 7; i++) {
-                        const currentDay = new Date(monday);
-                        currentDay.setDate(monday.getDate() + i);
-                        const dateStr = currentDay.toISOString().split('T')[0];
-                        weekEvents[i] = storedEvents.filter(e => e.date === dateStr);
-                    }
+                // Events aus localStorage laden (wie die App)
+                const storageKey = getUserStorageKey('calendarEvents');
+                const allEvents = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                
+                // Nach Woche gruppieren
+                const today = new Date();
+                const dayOfWeek = today.getDay();
+                const monday = new Date(today);
+                monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+                
+                const weekEvents = {};
+                for (let i = 0; i < 7; i++) {
+                    const currentDay = new Date(monday);
+                    currentDay.setDate(monday.getDate() + i);
+                    const dateStr = currentDay.toISOString().split('T')[0];
+                    weekEvents[i] = allEvents.filter(e => e.date === dateStr);
                 }
 
                 // Kalender Widget aktualisieren
@@ -8210,10 +8197,10 @@
                     days.forEach((dayEl, index) => {
                         const dot = dayEl.querySelector('.widget-day-dot');
                         if (dot) {
-                            const events = weekEvents[index] || weekEvents[String(index)] || [];
+                            const events = weekEvents[index] || [];
                             dot.classList.remove('has-event', 'has-match');
                             if (events.length > 0) {
-                                const hasMatch = events.some(e => e.event_type === 'match' || e.event_type === 'spiel' || e.type === 'match');
+                                const hasMatch = events.some(e => e.type === 'match' || e.type === 'spiel');
                                 dot.classList.add(hasMatch ? 'has-match' : 'has-event');
                             }
                         }
@@ -8221,22 +8208,21 @@
                 });
 
                 // Nächste Events Widget aktualisieren
-                const today = new Date();
                 const upcomingContent = document.querySelectorAll('#widget-upcoming-content');
                 const futureEvents = allEvents
-                    .filter(e => new Date(e.event_date || e.date || e.start_date) >= today)
-                    .sort((a, b) => new Date(a.event_date || a.date) - new Date(b.event_date || b.date))
+                    .filter(e => new Date(e.date) >= today)
+                    .sort((a, b) => new Date(a.date) - new Date(b.date))
                     .slice(0, 2);
 
                 upcomingContent.forEach(container => {
                     if (futureEvents.length > 0) {
                         container.innerHTML = futureEvents.map(e => {
-                            const eventDate = new Date(e.event_date || e.date || e.start_date);
+                            const eventDate = new Date(e.date);
                             const dateStr = eventDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-                            const type = e.event_type || e.type || 'event';
+                            const type = e.type || 'event';
                             const typeIcon = type === 'match' || type === 'spiel' ? '⚽' : type === 'training' ? '🏋️' : '📅';
                             return `<div style="margin-bottom: 8px; font-size: 12px;">
-                                    <span>${typeIcon}</span> <strong>${e.title || e.name || 'Event'}</strong>
+                                    <span>${typeIcon}</span> <strong>${e.title || 'Event'}</strong>
                                     <div style="opacity: 0.6; font-size: 11px;">${dateStr}</div>
                                 </div>`;
                         }).join('');
@@ -8245,11 +8231,7 @@
                     }
                 });
 
-                // Stats Widget - Matches zählen
-                const matchCount = allEvents.filter(e => e.event_type === 'match' || e.event_type === 'spiel').length;
-                document.querySelectorAll('.widget-stats-matches').forEach(el => el.textContent = matchCount);
-
-                // Events Anzahl im Stats Widget
+                // Stats Widget - Events zählen
                 document.querySelectorAll('.widget-stats-events').forEach(el => el.textContent = allEvents.length);
             } catch (e) {
                 console.error('Fehler beim Laden der Kalender-Widget-Daten:', e);
@@ -8257,27 +8239,18 @@
         }
 
         // Messenger Widget Daten
-        async function updateMessengerWidgets() {
+        function updateMessengerWidgets() {
             try {
-                // Nachrichten aus API laden
-                const response = await fetch('/api/messages?limit=1');
-                let messages = [];
-
-                if (response.ok) {
-                    const data = await response.json();
-                    messages = data.messages || [];
-                } else {
-                    // Fallback auf localStorage
-                    const storageKey = getUserStorageKey('messengerMessages');
-                    messages = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                }
+                // Nachrichten aus localStorage laden (wie die App)
+                const storageKey = getUserStorageKey('messengerMessages');
+                const messages = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
                 document.querySelectorAll('#widget-messenger-content').forEach(container => {
                     if (messages.length > 0) {
-                        const lastMessage = messages[0]; // Neueste zuerst
-                        const time = new Date(lastMessage.created_at || lastMessage.timestamp || Date.now()).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-                        const sender = lastMessage.sender_name || lastMessage.sender || 'Unbekannt';
-                        const text = lastMessage.content || lastMessage.text || '';
+                        const lastMessage = messages[messages.length - 1]; // Neueste am Ende
+                        const time = new Date(lastMessage.timestamp || Date.now()).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                        const sender = lastMessage.sender || 'Unbekannt';
+                        const text = lastMessage.text || '';
                         container.innerHTML = `
                                 <div style="font-size: 12px;">
                                     <strong>${escapeHtml(sender)}</strong>
@@ -8289,54 +8262,28 @@
                         container.innerHTML = '<span style="opacity: 0.6; font-size: 12px;">Keine Nachrichten</span>';
                     }
                 });
-
-                // Ungelesene Nachrichten Badge
-                const unreadResponse = await fetch('/api/messages/unread');
-                if (unreadResponse.ok) {
-                    const unreadData = await unreadResponse.json();
-                    const unreadCount = unreadData.count || 0;
-                    document.querySelectorAll('.widget-messenger-badge').forEach(badge => {
-                        if (unreadCount > 0) {
-                            badge.textContent = unreadCount;
-                            badge.style.display = 'block';
-                        } else {
-                            badge.style.display = 'none';
-                        }
-                    });
-                }
             } catch (e) {
                 console.error('Fehler beim Laden der Messenger-Widget-Daten:', e);
             }
         }
 
         // Mannschaftskasse Widget Daten
-        async function updateKasseWidgets() {
+        function updateKasseWidgets() {
             try {
-                // Kasse aus API laden
-                const response = await fetch('/api/kasse');
-                let saldo = 0;
+                // Kasse aus localStorage laden (wie die App)
+                const storageKey = getUserStorageKey('kasseTransactions');
+                const transactions = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Kasse API Response:', data);
-                    saldo = data.saldo || 0;
-                } else {
-                    console.log('Kasse API failed, using localStorage fallback');
-                    // Fallback auf localStorage
-                    const storageKey = getUserStorageKey('kasseTransactions');
-                    const transactions = JSON.parse(localStorage.getItem(storageKey) || '[]');
-
-                    let totalIncome = 0;
-                    let totalExpense = 0;
-                    transactions.forEach(t => {
-                        if (t.type === 'income') {
-                            totalIncome += t.amount;
-                        } else {
-                            totalExpense += t.amount;
-                        }
-                    });
-                    saldo = totalIncome - totalExpense;
-                }
+                let totalIncome = 0;
+                let totalExpense = 0;
+                transactions.forEach(t => {
+                    if (t.type === 'income') {
+                        totalIncome += t.amount;
+                    } else {
+                        totalExpense += t.amount;
+                    }
+                });
+                const saldo = totalIncome - totalExpense;
 
                 // Widget aktualisieren
                 document.querySelectorAll('.widget-kasse-balance').forEach(el => {
@@ -8389,9 +8336,9 @@
         // Alle Widget-Daten beim Start laden
         async function updateAllWidgetData() {
             await updateKaderWidgets();
-            await updateKalenderWidgets();
-            await updateMessengerWidgets();
-            await updateKasseWidgets();
+            updateKalenderWidgets();
+            updateMessengerWidgets();
+            updateKasseWidgets();
             await updateUploadWidgets();
         }
 
