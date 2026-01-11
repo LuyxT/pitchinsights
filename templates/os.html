@@ -983,7 +983,7 @@
         }
 
         .add-widget-btn {
-            position: absolute;
+            position: fixed;
             bottom: 30px;
             right: 30px;
             width: 56px;
@@ -999,7 +999,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 100;
+            z-index: 1000;
         }
 
         .add-widget-btn:hover {
@@ -5557,9 +5557,14 @@
         }
 
         function renderHomeGrid() {
+            console.log('renderHomeGrid() called');
             const config = getAppConfig();
             const homeGrid = document.querySelector('#home .app-grid');
-            if (!homeGrid) return;
+            if (!homeGrid) {
+                console.error('homeGrid not found!');
+                return;
+            }
+            console.log('homeGrid found:', homeGrid);
 
             const positions = getHomeAppPositions();
             homeGrid.innerHTML = '';
@@ -5647,13 +5652,21 @@
 
         // Funktion zum Wiederherstellen gespeicherter Widgets
         function restoreSavedWidgets(grid) {
+            console.log('restoreSavedWidgets() called');
             const savedPositions = localStorage.getItem('appPositions');
-            if (!savedPositions) return;
+            console.log('Saved positions:', savedPositions);
+            if (!savedPositions) {
+                console.log('No saved positions found');
+                return;
+            }
 
             try {
                 const positions = JSON.parse(savedPositions);
+                console.log('Parsed positions:', positions);
                 Object.entries(positions).forEach(([id, data]) => {
+                    console.log('Processing:', id, data);
                     if (data.type === 'widget' && data.widgetType && widgetTemplates[data.widgetType]) {
+                        console.log('Creating widget:', id, data.widgetType);
                         // Widget bereits vorhanden? Überspringen
                         if (document.getElementById(id)) return;
 
