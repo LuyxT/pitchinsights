@@ -8028,6 +8028,10 @@
                         <span class="widget-stat-value widget-stats-players">-</span>
                     </div>
                     <div class="widget-stat">
+                        <span class="widget-stat-label">Events</span>
+                        <span class="widget-stat-value widget-stats-events">-</span>
+                    </div>
+                    <div class="widget-stat">
                         <span class="widget-stat-label">Videos</span>
                         <span class="widget-stat-value widget-stats-videos">-</span>
                     </div>
@@ -8177,19 +8181,10 @@
                 if (response.ok) {
                     const data = await response.json();
                     allEvents = data.events || [];
-
-                    // Nach Tag gruppieren (Index 0-6 für Mo-So)
-                    const today = new Date();
-                    const dayOfWeek = today.getDay();
-                    const monday = new Date(today);
-                    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-
-                    for (let i = 0; i < 7; i++) {
-                        const currentDay = new Date(monday);
-                        currentDay.setDate(monday.getDate() + i);
-                        const dateStr = currentDay.toISOString().split('T')[0];
-                        weekEvents[i] = allEvents.filter(e => e.date === dateStr || (e.start_date && e.start_date.startsWith(dateStr)));
-                    }
+                    // Die API gibt bereits week als gruppierte Daten zurück
+                    weekEvents = data.week || {};
+                    
+                    console.log('Kalender API Response:', data);
                 } else {
                     // Fallback auf localStorage
                     const storageKey = getUserStorageKey('calendarEvents');
@@ -8215,10 +8210,10 @@
                     days.forEach((dayEl, index) => {
                         const dot = dayEl.querySelector('.widget-day-dot');
                         if (dot) {
-                            const events = weekEvents[index] || [];
+                            const events = weekEvents[index] || weekEvents[String(index)] || [];
                             dot.classList.remove('has-event', 'has-match');
                             if (events.length > 0) {
-                                const hasMatch = events.some(e => e.type === 'match' || e.type === 'spiel' || e.event_type === 'match');
+                                const hasMatch = events.some(e => e.event_type === 'match' || e.event_type === 'spiel' || e.type === 'match');
                                 dot.classList.add(hasMatch ? 'has-match' : 'has-event');
                             }
                         }
@@ -8229,16 +8224,16 @@
                 const today = new Date();
                 const upcomingContent = document.querySelectorAll('#widget-upcoming-content');
                 const futureEvents = allEvents
-                    .filter(e => new Date(e.date || e.start_date) >= today)
-                    .sort((a, b) => new Date(a.date || a.start_date) - new Date(b.date || b.start_date))
+                    .filter(e => new Date(e.event_date || e.date || e.start_date) >= today)
+                    .sort((a, b) => new Date(a.event_date || a.date) - new Date(b.event_date || b.date))
                     .slice(0, 2);
 
                 upcomingContent.forEach(container => {
                     if (futureEvents.length > 0) {
                         container.innerHTML = futureEvents.map(e => {
-                            const eventDate = new Date(e.date || e.start_date);
+                            const eventDate = new Date(e.event_date || e.date || e.start_date);
                             const dateStr = eventDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-                            const type = e.type || e.event_type || 'event';
+                            const type = e.event_type || e.type || 'event';
                             const typeIcon = type === 'match' || type === 'spiel' ? '⚽' : type === 'training' ? '🏋️' : '📅';
                             return `<div style="margin-bottom: 8px; font-size: 12px;">
                                     <span>${typeIcon}</span> <strong>${e.title || e.name || 'Event'}</strong>
@@ -8251,8 +8246,11 @@
                 });
 
                 // Stats Widget - Matches zählen
-                const matchCount = allEvents.filter(e => (e.type || e.event_type) === 'match' || e.type === 'spiel').length;
+                const matchCount = allEvents.filter(e => e.event_type === 'match' || e.event_type === 'spiel').length;
                 document.querySelectorAll('.widget-stats-matches').forEach(el => el.textContent = matchCount);
+                
+                // Events Anzahl im Stats Widget
+                document.querySelectorAll('.widget-stats-events').forEach(el => el.textContent = allEvents.length);
             } catch (e) {
                 console.error('Fehler beim Laden der Kalender-Widget-Daten:', e);
             }
@@ -8320,8 +8318,10 @@
 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Kasse API Response:', data);
                     saldo = data.saldo || 0;
                 } else {
+                    console.log('Kasse API failed, using localStorage fallback');
                     // Fallback auf localStorage
                     const storageKey = getUserStorageKey('kasseTransactions');
                     const transactions = JSON.parse(localStorage.getItem(storageKey) || '[]');
