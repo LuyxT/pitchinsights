@@ -6020,7 +6020,7 @@
                 }, 100);
             } else if (appName === 'profil') {
                 setTimeout(() => {
-                    loadProfilData();
+                    loadProfile();  // Verwendet die rollenbasierte Funktion
                 }, 100);
             } else if (appName === 'upload') {
                 setTimeout(() => {
@@ -6075,14 +6075,14 @@
                 const teamResponse = await fetch('/api/team/info');
                 let teamRolle = '';
                 let isTeamAdmin = false;
-                
+
                 if (teamResponse.ok) {
                     const teamData = await teamResponse.json();
                     teamRolle = (teamData.role_name || '').toLowerCase();
                     isTeamAdmin = teamData.is_admin || false;
                     console.log('[Profil] Team-Rolle:', teamData.role_name, '| isAdmin:', isTeamAdmin);
                 }
-                
+
                 const response = await fetch('/api/profile');
                 const data = await response.json();
 
@@ -6167,9 +6167,63 @@
                     window.currentUserRolle = rolle;
                     // Profil-Daten global speichern für setProfilTyp
                     window.currentProfilData = data;
+                    
+                    // Team-Info Box aktualisieren (wenn wir schon Team-Daten haben)
+                    const teamInfoDiv = document.getElementById('profilTeamInfo');
+                    if (teamInfoDiv && teamResponse.ok) {
+                        const teamData = await teamResponse.json().catch(() => null);
+                        // teamData wurde schon oben geladen, nutze die Variablen
+                    }
                 }
+                
+                // Team-Info Anzeige aktualisieren
+                await updateTeamInfoDisplay();
+                
             } catch (error) {
                 console.error('Fehler beim Laden des Profils:', error);
+            }
+        }
+        
+        // Team-Info Box im Profil aktualisieren
+        async function updateTeamInfoDisplay() {
+            try {
+                const teamResponse = await fetch('/api/team/info');
+                const teamInfoDiv = document.getElementById('profilTeamInfo');
+                
+                if (!teamInfoDiv) return;
+                
+                if (teamResponse.ok) {
+                    const team = await teamResponse.json();
+                    
+                    if (team.has_team) {
+                        teamInfoDiv.innerHTML = `
+                            <div class="profil-team-badge">
+                                <span style="font-size: 24px;">⚽</span>
+                                <div>
+                                    <div style="font-weight: 600;">${escapeHtml(team.verein || team.team_name || 'Team')}</div>
+                                    <div style="font-size: 12px; opacity: 0.7;">${escapeHtml(team.mannschaft || '')}</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 16px; font-size: 14px;">
+                                <div style="margin-bottom: 8px;"><strong>Rolle:</strong> ${escapeHtml(team.role_name || 'Mitglied')}</div>
+                                ${team.is_admin ? '<div style="color: #22c55e;">✓ Team-Administrator</div>' : ''}
+                            </div>
+                        `;
+                    } else {
+                        teamInfoDiv.innerHTML = `
+                            <div style="text-align: center; padding: 20px;">
+                                <div style="font-size: 40px; margin-bottom: 12px;">🏟️</div>
+                                <p style="margin-bottom: 16px;">Du bist noch keinem Team beigetreten.</p>
+                                <button onclick="switchApp('home')" 
+                                    style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                    Team erstellen
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (e) {
+                console.error('Fehler beim Laden der Team-Info:', e);
             }
         }
 
