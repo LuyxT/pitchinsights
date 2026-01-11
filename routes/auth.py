@@ -1482,7 +1482,7 @@ async def get_profile(request: Request):
             role_row = cursor.fetchone()
             if role_row:
                 rolle = role_row["name"].lower()
-    
+
     # Fallback auf users.rolle wenn keine role_id
     if not rolle:
         rolle = db_user.get("rolle", "").lower()
@@ -1560,7 +1560,7 @@ async def update_profile(request: Request):
             role_row = cursor.fetchone()
             if role_row:
                 rolle = role_row["name"].lower()
-    
+
     # Fallback auf users.rolle wenn keine role_id
     if not rolle:
         rolle = db_user.get("rolle", "").lower()
