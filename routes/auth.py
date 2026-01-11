@@ -3167,7 +3167,7 @@ async def update_player(request: Request, player_id: int):
                 params.append(None)
         if "status" in data:
             status = str(data["status"]).strip()
-            if status in ("Fit", "Belastet", "Angeschlagen", "Verletzt", "Reha", "Ausfall"):
+            if status in ("Fit", "Training", "Reha", "Ausfall"):
                 updates.append("status = ?")
                 params.append(status)
         if "email" in data:

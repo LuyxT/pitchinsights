@@ -10572,7 +10572,7 @@
             document.getElementById('editPlayerModal').classList.remove('active');
         }
 
-        function saveEditPlayer() {
+        async function saveEditPlayer() {
             const id = parseInt(document.getElementById('editPlayerId').value);
             const playerIndex = kaderPlayers.findIndex(p => p.id === id);
             if (playerIndex === -1) return;
@@ -10580,7 +10580,8 @@
             const firstname = document.getElementById('editPlayerFirstname').value.trim();
             const lastname = document.getElementById('editPlayerLastname').value.trim();
             const jersey = parseInt(document.getElementById('editPlayerJersey').value);
-            const status = document.getElementById('editPlayerStatus').value.toLowerCase();
+            const statusSelect = document.getElementById('editPlayerStatus');
+            const status = statusSelect.options[statusSelect.selectedIndex].text; // Hole den Display-Text (Fit, Training, etc.)
             const birthdate = document.getElementById('editPlayerBirthdate').value;
             const country = document.getElementById('editPlayerCountry').value;
             const team = document.getElementById('editPlayerTeam').value;
@@ -10625,27 +10626,51 @@
                 positionCategory = 'sturm';
             }
 
-            // Spieler aktualisieren
-            kaderPlayers[playerIndex] = {
-                ...kaderPlayers[playerIndex],
-                firstname,
-                lastname,
-                jersey,
-                positions,
-                position: positionCategory,
-                status,
-                birthdate,
-                age,
-                country,
-                team,
-                height,
-                weight
-            };
+            // An Server senden
+            try {
+                const response = await fetch(`/api/players/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: `${firstname} ${lastname}`,
+                        position: positions.join(', '),
+                        trikotnummer: jersey,
+                        status: status
+                    })
+                });
 
-            localStorage.setItem('kaderPlayers', JSON.stringify(kaderPlayers));
-            closeEditPlayerModal();
-            renderCharts();
-            renderDashboardStats();
+                if (!response.ok) {
+                    const err = await response.json();
+                    alert(err.error || 'Fehler beim Speichern');
+                    return;
+                }
+
+                // Lokal aktualisieren
+                kaderPlayers[playerIndex] = {
+                    ...kaderPlayers[playerIndex],
+                    firstname,
+                    lastname,
+                    name: `${firstname} ${lastname}`,
+                    jersey,
+                    positions,
+                    position: positionCategory,
+                    status,
+                    birthdate,
+                    age,
+                    country,
+                    team,
+                    height,
+                    weight
+                };
+
+                closeEditPlayerModal();
+                await loadPlayers(); // Neu laden von Server
+                renderCharts();
+                renderDashboardStats();
+            } catch (e) {
+                console.error('Fehler beim Speichern:', e);
+                alert('Fehler beim Speichern des Spielers');
+            }
         }
 
         // TEAM FUNKTIONEN
