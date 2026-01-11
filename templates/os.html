@@ -5036,7 +5036,7 @@
             <div id="verwaltung-einladungen" class="verwaltung-content" style="display: none;">
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
                     <button class="btn-primary" style="position: relative; z-index: 100;"
-                        onclick="document.getElementById('create-invitation-modal').style.display='flex'; loadRolesForInvitation();">
+                        onclick="document.getElementById('create-invitation-modal').classList.add('active'); loadRolesForInvitation();">
                         + Neue Einladung
                     </button>
                 </div>
@@ -6564,7 +6564,7 @@
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
+            document.getElementById(modalId).classList.remove('active');
         }
 
         async function createRole() {
