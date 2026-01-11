@@ -1472,10 +1472,23 @@ async def get_profile(request: Request):
     if not db_user:
         return JSONResponse({"error": "Benutzer nicht gefunden"}, status_code=404)
 
-    rolle = db_user.get("rolle", "").lower()
+    # Rolle aus roles Tabelle holen (via role_id) - das ist die echte Rolle
+    rolle = ""
+    role_id = db_user.get("role_id")
+    if role_id:
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT name FROM roles WHERE id = ?", (role_id,))
+            role_row = cursor.fetchone()
+            if role_row:
+                rolle = role_row["name"].lower()
+    
+    # Fallback auf users.rolle wenn keine role_id
+    if not rolle:
+        rolle = db_user.get("rolle", "").lower()
 
     # Admin bekommt BEIDE Profile, damit er wählen kann
-    is_admin = rolle == "admin"
+    is_admin = rolle == "admin" or db_user.get("is_admin")
     is_trainer = rolle in ["trainer", "co-trainer"] or is_admin
     is_spieler = rolle == "spieler" or is_admin
 
@@ -1488,7 +1501,7 @@ async def get_profile(request: Request):
         "verein": db_user.get("verein", ""),
         "werdegang": db_user.get("werdegang", ""),
         "teamname": db_user.get("teamname", ""),
-        "rolle": db_user.get("rolle", ""),
+        "rolle": rolle.capitalize() if rolle else "",  # Rolle aus roles Tabelle
         "mannschaft": db_user.get("mannschaft", ""),
         "telefon": db_user.get("telefon", ""),
     }
@@ -1537,11 +1550,24 @@ async def update_profile(request: Request):
     except Exception:
         return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
 
-    rolle = db_user.get("rolle", "").lower()
+    # Rolle aus roles Tabelle holen (via role_id) - das ist die echte Rolle
+    rolle = ""
+    role_id = db_user.get("role_id")
+    if role_id:
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT name FROM roles WHERE id = ?", (role_id,))
+            role_row = cursor.fetchone()
+            if role_row:
+                rolle = role_row["name"].lower()
+    
+    # Fallback auf users.rolle wenn keine role_id
+    if not rolle:
+        rolle = db_user.get("rolle", "").lower()
 
     # Admin kann wählen welches Profil (Trainer oder Spieler)
     # Erkennung: Anhand der gesendeten Felder
-    is_admin = rolle == "admin"
+    is_admin = rolle == "admin" or db_user.get("is_admin")
 
     # Prüfen welcher Profiltyp vom Frontend gewählt wurde
     has_spieler_fields = any(k in data for k in [
