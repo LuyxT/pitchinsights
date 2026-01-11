@@ -1474,9 +1474,10 @@ async def get_profile(request: Request):
 
     rolle = db_user.get("rolle", "").lower()
 
-    # Admin wird als Trainer behandelt (typischerweise sind Admins Trainer)
-    is_trainer = rolle in ["trainer", "admin", "co-trainer"]
-    is_spieler = rolle == "spieler"
+    # Admin bekommt BEIDE Profile, damit er wählen kann
+    is_admin = rolle == "admin"
+    is_trainer = rolle in ["trainer", "co-trainer"] or is_admin
+    is_spieler = rolle == "spieler" or is_admin
 
     # Basis-Profil für alle Rollen
     profile = {
@@ -1492,7 +1493,7 @@ async def get_profile(request: Request):
         "telefon": db_user.get("telefon", ""),
     }
 
-    # Spieler-spezifische Felder
+    # Spieler-spezifische Felder (für Spieler UND Admin)
     if is_spieler:
         profile.update({
             "groesse": db_user.get("groesse"),
@@ -1503,8 +1504,8 @@ async def get_profile(request: Request):
             "jahrgang": db_user.get("jahrgang"),
         })
 
-    # Trainer-spezifische Felder (inkl. Admin, Co-Trainer)
-    elif is_trainer:
+    # Trainer-spezifische Felder (für Trainer, Co-Trainer UND Admin)
+    if is_trainer:
         profile.update({
             "spielsystem": db_user.get("spielsystem", ""),
             "taktische_grundidee": db_user.get("taktische_grundidee", ""),
@@ -1538,9 +1539,21 @@ async def update_profile(request: Request):
 
     rolle = db_user.get("rolle", "").lower()
 
-    # Admin wird als Trainer behandelt (typischerweise sind Admins Trainer)
-    is_trainer = rolle in ["trainer", "admin", "co-trainer"]
-    is_spieler = rolle == "spieler"
+    # Admin kann wählen welches Profil (Trainer oder Spieler)
+    # Erkennung: Anhand der gesendeten Felder
+    is_admin = rolle == "admin"
+    
+    # Prüfen welcher Profiltyp vom Frontend gewählt wurde
+    has_spieler_fields = any(k in data for k in ["groesse", "gewicht", "position", "nebenpositionen", "starker_fuss", "jahrgang"])
+    has_trainer_fields = any(k in data for k in ["spielsystem", "taktische_grundidee", "trainingsschwerpunkte", "bisherige_stationen", "lizenzen"])
+    
+    # Für Admin: Anhand der gesendeten Felder entscheiden
+    if is_admin:
+        is_spieler = has_spieler_fields and not has_trainer_fields
+        is_trainer = has_trainer_fields or (not has_spieler_fields)  # Default: Trainer
+    else:
+        is_trainer = rolle in ["trainer", "co-trainer"]
+        is_spieler = rolle == "spieler"
 
     # SECURITY: Basis-Felder (für alle Rollen)
     try:
