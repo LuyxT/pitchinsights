@@ -6076,6 +6076,9 @@
 
                 if (!data.error) {
                     const rolle = (data.rolle || '').toLowerCase();
+                    
+                    console.log('[DEBUG] API Response:', JSON.stringify(data));
+                    console.log('[DEBUG] data.rolle =', data.rolle, '| rolle =', rolle);
 
                     // Helper-Funktion
                     const setVal = (id, val) => {
