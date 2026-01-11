@@ -253,10 +253,10 @@
     </div>
 
     <script>
-        document.getElementById('register-form')?.addEventListener('submit', function(e) {
+        document.getElementById('register-form')?.addEventListener('submit', function (e) {
             const pw = document.querySelector('input[name="password"]').value;
             const pwConfirm = document.querySelector('input[name="password_confirm"]').value;
-            
+
             if (pw !== pwConfirm) {
                 e.preventDefault();
                 alert('Passwörter stimmen nicht überein!');
@@ -264,4 +264,5 @@
         });
     </script>
 </body>
+
 </html>
