@@ -8506,6 +8506,11 @@
                 const kaderCard = document.getElementById('profilKaderCard');
                 const kaderInfo = document.getElementById('profilKaderInfo');
 
+                // Null-Check - Element existiert möglicherweise nicht
+                if (!kaderCard || !kaderInfo) {
+                    return;
+                }
+
                 if (response.ok) {
                     const data = await response.json();
 
