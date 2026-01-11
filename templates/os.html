@@ -6071,14 +6071,26 @@
         // Profil laden - rollenbasiert
         async function loadProfile() {
             try {
+                // Zuerst Team-Info laden um die echte Rolle zu bekommen
+                const teamResponse = await fetch('/api/team/info');
+                let teamRolle = '';
+                let isTeamAdmin = false;
+                
+                if (teamResponse.ok) {
+                    const teamData = await teamResponse.json();
+                    teamRolle = (teamData.role_name || '').toLowerCase();
+                    isTeamAdmin = teamData.is_admin || false;
+                    console.log('[Profil] Team-Rolle:', teamData.role_name, '| isAdmin:', isTeamAdmin);
+                }
+                
                 const response = await fetch('/api/profile');
                 const data = await response.json();
 
                 if (!data.error) {
-                    const rolle = (data.rolle || '').toLowerCase();
-                    
-                    console.log('[DEBUG] API Response:', JSON.stringify(data));
-                    console.log('[DEBUG] data.rolle =', data.rolle, '| rolle =', rolle);
+                    // Rolle: Zuerst aus Team-Info, dann Fallback auf Profile
+                    const rolle = teamRolle || (data.rolle || '').toLowerCase();
+
+                    console.log('[DEBUG] Finale Rolle:', rolle, '| data.rolle:', data.rolle, '| teamRolle:', teamRolle);
 
                     // Helper-Funktion
                     const setVal = (id, val) => {
@@ -6113,12 +6125,10 @@
                     // Rollen-Checks - case-insensitive
                     const rolleLower = rolle.toLowerCase();
                     const isSpieler = rolleLower === 'spieler';
-                    const isAdmin = rolleLower === 'admin';
+                    const isAdmin = isTeamAdmin || rolleLower === 'admin';
                     const isTrainer = rolleLower === 'trainer' || rolleLower === 'co-trainer';
 
-                    console.log('[Profil] Rolle:', data.rolle, '| rolleLower:', rolleLower);
-                    console.log('[Profil] isAdmin:', isAdmin, '| isTrainer:', isTrainer, '| isSpieler:', isSpieler);
-                    console.log('[Profil] trainerCard:', trainerCard, '| spielerCard:', spielerCard);
+                    console.log('[Profil] rolleLower:', rolleLower, '| isAdmin:', isAdmin, '| isTrainer:', isTrainer, '| isSpieler:', isSpieler);
 
                     // Admin kann Profil-Typ wählen
                     if (isAdmin) {
