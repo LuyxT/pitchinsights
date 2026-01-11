@@ -5366,6 +5366,26 @@
     </div>
     <script>
         // ========================
+        // EVENT DELEGATION FÜR DYNAMISCHE BUTTONS
+        // ========================
+        document.addEventListener('click', function(e) {
+            // Neue Einladung Button
+            if (e.target && e.target.id === 'neue-einladung-btn') {
+                e.preventDefault();
+                console.log('Neue Einladung Button geklickt (delegation)!');
+                const modal = document.getElementById('create-invitation-modal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    if (typeof loadRolesForInvitation === 'function') {
+                        loadRolesForInvitation();
+                    }
+                } else {
+                    alert('Modal nicht gefunden!');
+                }
+            }
+        });
+
+        // ========================
         // APPLE-STYLE TOAST NOTIFICATIONS
         // Ruhige, professionelle Benachrichtigungen
         // ========================
@@ -10456,21 +10476,6 @@
             if (configCheck && !configCheck.includes('"kasse"')) {
                 console.log('Resetting appConfig to include new apps');
                 localStorage.removeItem('appConfig');
-            }
-
-            // Event Listener für Neue Einladung Button
-            const neueEinladungBtn = document.getElementById('neue-einladung-btn');
-            if (neueEinladungBtn) {
-                neueEinladungBtn.addEventListener('click', function() {
-                    console.log('Neue Einladung Button geklickt!');
-                    const modal = document.getElementById('create-invitation-modal');
-                    if (modal) {
-                        modal.style.display = 'flex';
-                        loadRolesForInvitation();
-                    } else {
-                        alert('Modal nicht gefunden!');
-                    }
-                });
             }
 
             checkTeamStatus(); // Team-Status prüfen
