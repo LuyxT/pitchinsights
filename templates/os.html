@@ -6087,9 +6087,10 @@
                     if (spielerCard) spielerCard.style.display = 'none';
                     if (trainerCard) trainerCard.style.display = 'none';
 
-                    // Rollen-Checks (Admin = Trainer)
-                    const isSpieler = rolle === 'spieler';
-                    const isTrainer = ['trainer', 'admin', 'co-trainer'].includes(rolle);
+                    // Rollen-Checks (Admin = Trainer) - case-insensitive
+                    const rolleLower = rolle.toLowerCase();
+                    const isSpieler = rolleLower === 'spieler';
+                    const isTrainer = ['trainer', 'admin', 'co-trainer'].includes(rolleLower);
 
                     // Spieler-spezifische Felder
                     if (isSpieler) {
@@ -8477,9 +8478,10 @@
             };
 
             // Spieler-spezifische Felder
-            // Rollen-Checks (Admin = Trainer)
-            const isSpieler = rolle === 'spieler';
-            const isTrainer = ['trainer', 'admin', 'co-trainer'].includes(rolle);
+            // Rollen-Checks (Admin = Trainer) - case-insensitive
+            const rolleLower = rolle.toLowerCase();
+            const isSpieler = rolleLower === 'spieler';
+            const isTrainer = ['trainer', 'admin', 'co-trainer'].includes(rolleLower);
 
             if (isSpieler) {
                 data.groesse = document.getElementById('profilGroesse')?.value || '';
