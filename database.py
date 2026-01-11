@@ -596,6 +596,29 @@ def init_db():
             ON video_markers(video_id) WHERE deleted_at IS NULL
         """)
 
+        # Mannschaftskasse Tabelle
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS kasse_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL,
+                amount REAL NOT NULL,
+                type TEXT NOT NULL CHECK(type IN ('income', 'expense')),
+                description TEXT CHECK(length(description) <= 200),
+                created_by INTEGER NOT NULL,
+                
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                deleted_at TIMESTAMP NULL,
+                
+                FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+                FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_kasse_team 
+            ON kasse_transactions(team_id) WHERE deleted_at IS NULL
+        """)
+
         conn.commit()
 
         # Migrations für bestehende Datenbanken

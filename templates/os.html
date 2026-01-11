@@ -6167,7 +6167,7 @@
                     window.currentUserRolle = rolle;
                     // Profil-Daten global speichern für setProfilTyp
                     window.currentProfilData = data;
-                    
+
                     // Team-Info Box aktualisieren (wenn wir schon Team-Daten haben)
                     const teamInfoDiv = document.getElementById('profilTeamInfo');
                     if (teamInfoDiv && teamResponse.ok) {
@@ -6175,26 +6175,26 @@
                         // teamData wurde schon oben geladen, nutze die Variablen
                     }
                 }
-                
+
                 // Team-Info Anzeige aktualisieren
                 await updateTeamInfoDisplay();
-                
+
             } catch (error) {
                 console.error('Fehler beim Laden des Profils:', error);
             }
         }
-        
+
         // Team-Info Box im Profil aktualisieren
         async function updateTeamInfoDisplay() {
             try {
                 const teamResponse = await fetch('/api/team/info');
                 const teamInfoDiv = document.getElementById('profilTeamInfo');
-                
+
                 if (!teamInfoDiv) return;
-                
+
                 if (teamResponse.ok) {
                     const team = await teamResponse.json();
-                    
+
                     if (team.has_team) {
                         teamInfoDiv.innerHTML = `
                             <div class="profil-team-badge">
@@ -8169,23 +8169,44 @@
         // Kalender Widget Daten
         async function updateKalenderWidgets() {
             try {
-                // Events aus localStorage laden
-                const storageKey = getUserStorageKey('calendarEvents');
-                const storedEvents = JSON.parse(localStorage.getItem(storageKey) || '[]');
-
-                // Aktuelle Woche berechnen
-                const today = new Date();
-                const dayOfWeek = today.getDay();
-                const monday = new Date(today);
-                monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-
-                // Events pro Tag zählen
-                const weekEvents = {};
-                for (let i = 0; i < 7; i++) {
-                    const currentDay = new Date(monday);
-                    currentDay.setDate(monday.getDate() + i);
-                    const dateStr = currentDay.toISOString().split('T')[0];
-                    weekEvents[i] = storedEvents.filter(e => e.date === dateStr);
+                // Events aus API laden
+                const response = await fetch('/api/events/week');
+                let weekEvents = {};
+                let allEvents = [];
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    allEvents = data.events || [];
+                    
+                    // Nach Tag gruppieren (Index 0-6 für Mo-So)
+                    const today = new Date();
+                    const dayOfWeek = today.getDay();
+                    const monday = new Date(today);
+                    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+                    
+                    for (let i = 0; i < 7; i++) {
+                        const currentDay = new Date(monday);
+                        currentDay.setDate(monday.getDate() + i);
+                        const dateStr = currentDay.toISOString().split('T')[0];
+                        weekEvents[i] = allEvents.filter(e => e.date === dateStr || (e.start_date && e.start_date.startsWith(dateStr)));
+                    }
+                } else {
+                    // Fallback auf localStorage
+                    const storageKey = getUserStorageKey('calendarEvents');
+                    const storedEvents = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    allEvents = storedEvents;
+                    
+                    const today = new Date();
+                    const dayOfWeek = today.getDay();
+                    const monday = new Date(today);
+                    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+                    
+                    for (let i = 0; i < 7; i++) {
+                        const currentDay = new Date(monday);
+                        currentDay.setDate(monday.getDate() + i);
+                        const dateStr = currentDay.toISOString().split('T')[0];
+                        weekEvents[i] = storedEvents.filter(e => e.date === dateStr);
+                    }
                 }
 
                 // Kalender Widget aktualisieren
@@ -8197,28 +8218,30 @@
                             const events = weekEvents[index] || [];
                             dot.classList.remove('has-event', 'has-match');
                             if (events.length > 0) {
-                                const hasMatch = events.some(e => e.type === 'match' || e.type === 'spiel');
+                                const hasMatch = events.some(e => e.type === 'match' || e.type === 'spiel' || e.event_type === 'match');
                                 dot.classList.add(hasMatch ? 'has-match' : 'has-event');
                             }
                         }
                     });
                 });
 
-                // Nächste Spiele Widget aktualisieren
+                // Nächste Events Widget aktualisieren
+                const today = new Date();
                 const upcomingContent = document.querySelectorAll('#widget-upcoming-content');
-                const futureEvents = storedEvents
-                    .filter(e => new Date(e.date) >= today)
-                    .sort((a, b) => new Date(a.date) - new Date(b.date))
+                const futureEvents = allEvents
+                    .filter(e => new Date(e.date || e.start_date) >= today)
+                    .sort((a, b) => new Date(a.date || a.start_date) - new Date(b.date || b.start_date))
                     .slice(0, 2);
 
                 upcomingContent.forEach(container => {
                     if (futureEvents.length > 0) {
                         container.innerHTML = futureEvents.map(e => {
-                            const eventDate = new Date(e.date);
+                            const eventDate = new Date(e.date || e.start_date);
                             const dateStr = eventDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-                            const typeIcon = e.type === 'match' || e.type === 'spiel' ? '⚽' : e.type === 'training' ? '🏋️' : '📅';
+                            const type = e.type || e.event_type || 'event';
+                            const typeIcon = type === 'match' || type === 'spiel' ? '⚽' : type === 'training' ? '🏋️' : '📅';
                             return `<div style="margin-bottom: 8px; font-size: 12px;">
-                                    <span>${typeIcon}</span> <strong>${e.title || 'Event'}</strong>
+                                    <span>${typeIcon}</span> <strong>${e.title || e.name || 'Event'}</strong>
                                     <div style="opacity: 0.6; font-size: 11px;">${dateStr}</div>
                                 </div>`;
                         }).join('');
@@ -8228,7 +8251,7 @@
                 });
 
                 // Stats Widget - Matches zählen
-                const matchCount = storedEvents.filter(e => e.type === 'match' || e.type === 'spiel').length;
+                const matchCount = allEvents.filter(e => (e.type || e.event_type) === 'match' || e.type === 'spiel').length;
                 document.querySelectorAll('.widget-stats-matches').forEach(el => el.textContent = matchCount);
             } catch (e) {
                 console.error('Fehler beim Laden der Kalender-Widget-Daten:', e);
@@ -8238,17 +8261,29 @@
         // Messenger Widget Daten
         async function updateMessengerWidgets() {
             try {
-                const storageKey = getUserStorageKey('messengerMessages');
-                const messages = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                // Nachrichten aus API laden
+                const response = await fetch('/api/messages?limit=1');
+                let messages = [];
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    messages = data.messages || [];
+                } else {
+                    // Fallback auf localStorage
+                    const storageKey = getUserStorageKey('messengerMessages');
+                    messages = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                }
 
                 document.querySelectorAll('#widget-messenger-content').forEach(container => {
                     if (messages.length > 0) {
-                        const lastMessage = messages[messages.length - 1];
-                        const time = new Date(lastMessage.timestamp || Date.now()).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                        const lastMessage = messages[0]; // Neueste zuerst
+                        const time = new Date(lastMessage.created_at || lastMessage.timestamp || Date.now()).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                        const sender = lastMessage.sender_name || lastMessage.sender || 'Unbekannt';
+                        const text = lastMessage.content || lastMessage.text || '';
                         container.innerHTML = `
                                 <div style="font-size: 12px;">
-                                    <strong>${lastMessage.sender || 'Unbekannt'}</strong>
-                                    <div style="opacity: 0.7; font-size: 11px; margin-top: 2px;">${(lastMessage.text || '').substring(0, 30)}...</div>
+                                    <strong>${escapeHtml(sender)}</strong>
+                                    <div style="opacity: 0.7; font-size: 11px; margin-top: 2px;">${escapeHtml(text.substring(0, 30))}${text.length > 30 ? '...' : ''}</div>
                                     <div style="opacity: 0.5; font-size: 10px; margin-top: 4px;">${time}</div>
                                 </div>
                             `;
@@ -8256,28 +8291,52 @@
                         container.innerHTML = '<span style="opacity: 0.6; font-size: 12px;">Keine Nachrichten</span>';
                     }
                 });
+                
+                // Ungelesene Nachrichten Badge
+                const unreadResponse = await fetch('/api/messages/unread');
+                if (unreadResponse.ok) {
+                    const unreadData = await unreadResponse.json();
+                    const unreadCount = unreadData.count || 0;
+                    document.querySelectorAll('.widget-messenger-badge').forEach(badge => {
+                        if (unreadCount > 0) {
+                            badge.textContent = unreadCount;
+                            badge.style.display = 'block';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    });
+                }
             } catch (e) {
                 console.error('Fehler beim Laden der Messenger-Widget-Daten:', e);
             }
         }
 
         // Mannschaftskasse Widget Daten
-        function updateKasseWidgets() {
+        async function updateKasseWidgets() {
             try {
-                const storageKey = getUserStorageKey('kasseTransactions');
-                const transactions = JSON.parse(localStorage.getItem(storageKey) || '[]');
-
-                // Saldo berechnen (type ist 'income' oder 'expense')
-                let totalIncome = 0;
-                let totalExpense = 0;
-                transactions.forEach(t => {
-                    if (t.type === 'income') {
-                        totalIncome += t.amount;
-                    } else {
-                        totalExpense += t.amount;
-                    }
-                });
-                const saldo = totalIncome - totalExpense;
+                // Kasse aus API laden
+                const response = await fetch('/api/kasse');
+                let saldo = 0;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    saldo = data.saldo || 0;
+                } else {
+                    // Fallback auf localStorage
+                    const storageKey = getUserStorageKey('kasseTransactions');
+                    const transactions = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    
+                    let totalIncome = 0;
+                    let totalExpense = 0;
+                    transactions.forEach(t => {
+                        if (t.type === 'income') {
+                            totalIncome += t.amount;
+                        } else {
+                            totalExpense += t.amount;
+                        }
+                    });
+                    saldo = totalIncome - totalExpense;
+                }
 
                 // Widget aktualisieren
                 document.querySelectorAll('.widget-kasse-saldo').forEach(el => {
@@ -8290,18 +8349,29 @@
         }
 
         // Video Upload Widget Daten
-        function updateUploadWidgets() {
+        async function updateUploadWidgets() {
             try {
-                const storageKey = getUserStorageKey('uploadedVideos');
-                const videos = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                // Videos aus API laden
+                const response = await fetch('/api/videos');
+                let videoCount = 0;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    videoCount = (data.videos || []).length;
+                } else {
+                    // Fallback auf localStorage
+                    const storageKey = getUserStorageKey('uploadedVideos');
+                    const videos = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    videoCount = videos.length;
+                }
 
                 document.querySelectorAll('.widget-video-count').forEach(el => {
-                    el.textContent = videos.length;
+                    el.textContent = videoCount;
                 });
 
                 // Stats Widget
                 document.querySelectorAll('.widget-stats-videos').forEach(el => {
-                    el.textContent = videos.length;
+                    el.textContent = videoCount;
                 });
             } catch (e) {
                 console.error('Fehler beim Laden der Upload-Widget-Daten:', e);
@@ -8313,8 +8383,8 @@
             await updateKaderWidgets();
             await updateKalenderWidgets();
             await updateMessengerWidgets();
-            updateKasseWidgets();
-            updateUploadWidgets();
+            await updateKasseWidgets();
+            await updateUploadWidgets();
         }
 
         function deleteWidget(widgetId) {

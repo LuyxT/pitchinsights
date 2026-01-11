@@ -3645,6 +3645,84 @@ async def get_unread_count(request: Request):
 
 
 # ============================================
+# API Endpoints - Mannschaftskasse
+# ============================================
+
+@router.get("/api/kasse")
+async def get_kasse(request: Request):
+    """Mannschaftskasse Übersicht."""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+    
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return {"saldo": 0, "transactions": []}
+    
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        # Transaktionen laden
+        cursor.execute("""
+            SELECT id, amount, type, description, created_at, created_by
+            FROM kasse_transactions
+            WHERE team_id = ? AND deleted_at IS NULL
+            ORDER BY created_at DESC
+            LIMIT 50
+        """, (db_user["team_id"],))
+        transactions = [dict(row) for row in cursor.fetchall()]
+        
+        # Saldo berechnen
+        cursor.execute("""
+            SELECT 
+                COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as income,
+                COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expense
+            FROM kasse_transactions
+            WHERE team_id = ? AND deleted_at IS NULL
+        """, (db_user["team_id"],))
+        totals = cursor.fetchone()
+        saldo = (totals["income"] or 0) - (totals["expense"] or 0)
+    
+    return {"saldo": saldo, "transactions": transactions}
+
+
+@router.post("/api/kasse")
+async def add_kasse_transaction(request: Request):
+    """Transaktion zur Mannschaftskasse hinzufügen."""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+    
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team zugeordnet"}, status_code=400)
+    
+    try:
+        data = await request.json()
+    except:
+        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
+    
+    amount = data.get("amount", 0)
+    trans_type = data.get("type", "expense")
+    description = str(data.get("description", ""))[:200]
+    
+    if not amount or amount <= 0:
+        return JSONResponse({"error": "Ungültiger Betrag"}, status_code=400)
+    
+    if trans_type not in ["income", "expense"]:
+        return JSONResponse({"error": "Ungültiger Typ"}, status_code=400)
+    
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO kasse_transactions (team_id, amount, type, description, created_by, created_at)
+            VALUES (?, ?, ?, ?, ?, datetime('now'))
+        """, (db_user["team_id"], amount, trans_type, description, user["id"]))
+        db.commit()
+    
+    return {"success": True}
+
+
+# ============================================
 # API Endpoints - Formations (Taktik)
 # ============================================
 
