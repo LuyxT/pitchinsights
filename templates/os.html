@@ -7741,6 +7741,60 @@
                 <div class="widget-content" id="widget-video-content">
                     <span style="opacity: 0.6; font-size: 12px;">Keine Videos</span>
                 </div>
+            `,
+            // KASSE WIDGET
+            kasse: () => `
+                <div class="widget-header">💵 Kasse</div>
+                <div class="widget-content">
+                    <div class="widget-stat">
+                        <span class="widget-stat-label">Kontostand</span>
+                        <span class="widget-stat-value widget-kasse-balance">0 €</span>
+                    </div>
+                </div>
+            `,
+            // TAKTIK WIDGET
+            taktik: () => `
+                <div class="widget-header">⚽ Taktik</div>
+                <div class="widget-content">
+                    <span style="opacity: 0.6; font-size: 12px;">Taktik-Tafel öffnen</span>
+                </div>
+            `,
+            // UPLOAD WIDGET
+            upload: () => `
+                <div class="widget-header">📹 Videos</div>
+                <div class="widget-content" id="widget-upload-content">
+                    <span style="opacity: 0.6; font-size: 12px;">Keine Videos hochgeladen</span>
+                </div>
+            `,
+            // QUICK LINKS WIDGET
+            quick_links: () => `
+                <div class="widget-header">🔗 Schnellzugriffe</div>
+                <div class="widget-content" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <span onclick="switchApp('kader')" style="cursor: pointer; padding: 4px 8px; background: rgba(16,185,129,0.1); border-radius: 6px; font-size: 12px;">👥 Kader</span>
+                    <span onclick="switchApp('kalender')" style="cursor: pointer; padding: 4px 8px; background: rgba(59,130,246,0.1); border-radius: 6px; font-size: 12px;">📅 Kalender</span>
+                    <span onclick="switchApp('taktik')" style="cursor: pointer; padding: 4px 8px; background: rgba(245,158,11,0.1); border-radius: 6px; font-size: 12px;">⚽ Taktik</span>
+                </div>
+            `,
+            // STATS WIDGET
+            stats: () => `
+                <div class="widget-header">📊 Statistiken</div>
+                <div class="widget-content">
+                    <div class="widget-stat">
+                        <span class="widget-stat-label">Spieler</span>
+                        <span class="widget-stat-value widget-stats-players">-</span>
+                    </div>
+                    <div class="widget-stat">
+                        <span class="widget-stat-label">Videos</span>
+                        <span class="widget-stat-value widget-stats-videos">-</span>
+                    </div>
+                </div>
+            `,
+            // UPCOMING WIDGET
+            upcoming: () => `
+                <div class="widget-header">📅 Nächste Spiele</div>
+                <div class="widget-content" id="widget-upcoming-content">
+                    <span style="opacity: 0.6; font-size: 12px;">Keine Spiele geplant</span>
+                </div>
             `
         };
 
