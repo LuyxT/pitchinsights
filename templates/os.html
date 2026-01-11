@@ -5035,7 +5035,7 @@
             <!-- Tab Content: Einladungen -->
             <div id="verwaltung-einladungen" class="verwaltung-content" style="display: none;">
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
-                    <button class="btn-primary" onclick="showCreateInvitationModal()">
+                    <button class="btn-primary" onclick="console.log('Button geklickt!'); showCreateInvitationModal();">
                         + Neue Einladung
                     </button>
                 </div>
@@ -6472,28 +6472,28 @@
 
         async function showCreateInvitationModal() {
             console.log('showCreateInvitationModal aufgerufen');
-            
+
             const modal = document.getElementById('create-invitation-modal');
             const select = document.getElementById('invitation-role');
-            
+
             if (!modal) {
                 console.error('Modal create-invitation-modal nicht gefunden!');
                 alert('Fehler: Modal nicht gefunden');
                 return;
             }
-            
+
             if (!select) {
                 console.error('Select invitation-role nicht gefunden!');
                 alert('Fehler: Select nicht gefunden');
                 return;
             }
-            
+
             // Load roles for dropdown
             try {
                 console.log('Lade Rollen von /api/team/roles...');
                 const response = await fetch('/api/team/roles');
                 console.log('Response status:', response.status);
-                
+
                 const data = await response.json();
                 console.log('Rollen geladen:', data);
 
