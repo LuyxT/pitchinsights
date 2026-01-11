@@ -182,114 +182,18 @@ async def home(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
-# Access-Code für geschützten Login-Bereich
-ACCESS_CODE = "pitch2026"
+# Access-Code für geschützten Login-Bereich (aus Umgebungsvariable oder Fallback)
+ACCESS_CODE = os.environ.get("PITCHINSIGHTS_ACCESS_CODE", "pitch2026")
 
 # ============================================
-# DEV-ONLY: Auto-Login für lokales Testen
+# Production Check
 # ============================================
-IS_PRODUCTION = os.getenv("PITCHINSIGHTS_ENV") == "production"
+IS_PRODUCTION = os.getenv("PITCHINSIGHTS_ENV") == "production" or os.path.exists("/app")
 
 
-@router.get("/dev-login", response_class=HTMLResponse)
-async def dev_auto_login(request: Request, user_id: int = 1):
-    """
-    DEV-ONLY: Automatischer Login ohne Passwort.
-    NUR verfügbar wenn PITCHINSIGHTS_ENV != 'production'
-
-    Beispiel: http://localhost:8000/dev-login?user_id=1
-    """
-    if IS_PRODUCTION:
-        raise HTTPException(status_code=404, detail="Not found")
-
-    # User aus DB laden
-    user = get_user_by_id(user_id)
-    if not user:
-        return HTMLResponse(f"<h1>User {user_id} nicht gefunden</h1><p>Verfügbare User-IDs prüfen in der DB.</p>")
-
-    # Session erstellen
-    response = RedirectResponse(url="/os", status_code=303)
-    session_token = str(uuid.uuid4())
-
-    # Cookie setzen (wie beim normalen Login)
-    response.set_cookie(
-        key="session_token",
-        value=session_token,
-        httponly=True,
-        secure=False,  # Localhost ist nicht HTTPS
-        samesite="lax",
-        max_age=86400 * 7  # 7 Tage
-    )
-
-    # Session in DB speichern
-    with get_db_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("""
-            INSERT INTO sessions (user_id, token, created_at, expires_at, ip_address, user_agent)
-            VALUES (?, ?, datetime('now'), datetime('now', '+7 days'), ?, ?)
-        """, (user_id, session_token, "127.0.0.1", "DevLogin"))
-        db.commit()
-
-    logger.info(
-        f"[DEV] Auto-login für User {user_id} ({user.get('email', 'unknown')})")
-    return response
-
-
-# TEMPORARY: Emergency password reset endpoint
-# DELETE THIS AFTER USE!
-@router.get("/emergency-reset-pw")
-async def emergency_reset_password(email: str = None, new_pw: str = None, secret: str = None, delete: str = None):
-    """
-    Temporärer Notfall-Passwort-Reset oder User löschen.
-    Delete: /emergency-reset-pw?email=tyler@tenger.de&delete=yes&secret=PITCHINSIGHTS2026EMERGENCY
-    """
-    try:
-        RESET_SECRET = "PITCHINSIGHTS2026EMERGENCY"
-
-        if secret != RESET_SECRET:
-            return JSONResponse({"error": "Wrong secret"}, status_code=403)
-
-        if not email:
-            return JSONResponse({"error": "Missing email parameter"})
-
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT id, email FROM users WHERE email = ?", (email,))
-            user = cursor.fetchone()
-
-            if not user:
-                return JSONResponse({"error": f"User {email} not found in database"})
-
-            user_id = user['id']
-
-            # Delete user permanently
-            if delete == "yes":
-                try:
-                    cursor.execute(
-                        "DELETE FROM sessions WHERE user_id = ?", (user_id,))
-                except:
-                    pass
-                cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
-                conn.commit()
-                return JSONResponse({
-                    "success": True,
-                    "message": f"User {email} DELETED - register again now"
-                })
-
-            # Reset password
-            if new_pw:
-                password_hash = bcrypt.hashpw(new_pw.encode(
-                    'utf-8'), bcrypt.gensalt()).decode('utf-8')
-                cursor.execute(
-                    "UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user_id))
-                conn.commit()
-                return JSONResponse({"success": True, "message": f"Password reset for {email}"})
-
-            return JSONResponse({"info": f"User {email} exists. Add delete=yes or new_pw=xxx"})
-    except Exception as e:
-        return JSONResponse({"error": str(e), "type": str(type(e).__name__)})
-
+# ============================================
+# Login/Register Pages
+# ============================================
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request, code: str = None):

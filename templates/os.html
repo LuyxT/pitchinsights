@@ -8176,13 +8176,13 @@
                 // Events aus localStorage laden (wie die App)
                 const storageKey = getUserStorageKey('calendarEvents');
                 const allEvents = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                
+
                 // Nach Woche gruppieren
                 const today = new Date();
                 const dayOfWeek = today.getDay();
                 const monday = new Date(today);
                 monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-                
+
                 const weekEvents = {};
                 for (let i = 0; i < 7; i++) {
                     const currentDay = new Date(monday);
@@ -10244,7 +10244,7 @@
                     // Update sidebar logo
                     const logo = document.querySelector('.logo');
                     if (logo && registeredClub?.name) {
-                        logo.innerHTML = `⚽ ${registeredClub.name}`;
+                        logo.innerHTML = `⚽ ${escapeHtml(registeredClub.name)}`;
                     }
                 }
             } catch (e) {
@@ -10257,7 +10257,7 @@
         function updateAppLogo() {
             const logo = document.getElementById('appLogo');
             if (registeredClub && logo) {
-                logo.innerHTML = `⚽ ${registeredClub.name}`;
+                logo.innerHTML = `⚽ ${escapeHtml(registeredClub.name)}`;
             }
         }
 
@@ -10289,7 +10289,7 @@
                         if (data.team) {
                             const logo = document.getElementById('appLogo');
                             if (logo) {
-                                logo.innerHTML = `⚽ ${data.team.verein}`;
+                                logo.innerHTML = `⚽ ${escapeHtml(data.team.verein)}`;
                             }
                         }
                     }
@@ -10342,7 +10342,7 @@
                     // Logo aktualisieren
                     const logo = document.getElementById('appLogo');
                     if (logo) {
-                        logo.innerHTML = `⚽ ${verein}`;
+                        logo.innerHTML = `⚽ ${escapeHtml(verein)}`;
                     }
 
                     // Seite neu laden für vollständige Aktualisierung
@@ -11247,17 +11247,17 @@
                 const bgColor = isOwn ? 'var(--primary-green)' : '#e0e0e0';
                 const textColor = isOwn ? 'white' : 'black';
 
-                let content = msg.text;
+                let content = escapeHtml(msg.text);
                 if (msg.attachment) {
                     const ext = msg.attachment.name.split('.').pop().toLowerCase();
                     if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
                         content = `<img src="${msg.attachment.data}" style="max-width: 200px; border-radius: 8px; margin-bottom: 4px;">`;
                     } else if (ext === 'pdf') {
-                        content = `<div style="background: #f0f0f0; padding: 8px; border-radius: 4px; margin-bottom: 4px;">📄 ${msg.attachment.name}</div>`;
+                        content = `<div style="background: #f0f0f0; padding: 8px; border-radius: 4px; margin-bottom: 4px;">📄 ${escapeHtml(msg.attachment.name)}</div>`;
                     } else {
-                        content = `<div style="background: #f0f0f0; padding: 8px; border-radius: 4px; margin-bottom: 4px;">📎 ${msg.attachment.name}</div>`;
+                        content = `<div style="background: #f0f0f0; padding: 8px; border-radius: 4px; margin-bottom: 4px;">📎 ${escapeHtml(msg.attachment.name)}</div>`;
                     }
-                    if (msg.text) content += '<div style="margin-top: 4px;">' + msg.text + '</div>';
+                    if (msg.text) content += '<div style="margin-top: 4px;">' + escapeHtml(msg.text) + '</div>';
                 }
 
                 msgDiv.innerHTML = `<div style="align-self: ${alignment}; background: ${bgColor}; color: ${textColor}; padding: 12px 16px; border-radius: 12px; max-width: 60%; word-wrap: break-word;">${content}<div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">${new Date(msg.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</div></div>`;
