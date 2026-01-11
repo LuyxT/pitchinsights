@@ -1542,15 +1542,18 @@ async def update_profile(request: Request):
     # Admin kann wählen welches Profil (Trainer oder Spieler)
     # Erkennung: Anhand der gesendeten Felder
     is_admin = rolle == "admin"
-    
+
     # Prüfen welcher Profiltyp vom Frontend gewählt wurde
-    has_spieler_fields = any(k in data for k in ["groesse", "gewicht", "position", "nebenpositionen", "starker_fuss", "jahrgang"])
-    has_trainer_fields = any(k in data for k in ["spielsystem", "taktische_grundidee", "trainingsschwerpunkte", "bisherige_stationen", "lizenzen"])
-    
+    has_spieler_fields = any(k in data for k in [
+                             "groesse", "gewicht", "position", "nebenpositionen", "starker_fuss", "jahrgang"])
+    has_trainer_fields = any(k in data for k in [
+                             "spielsystem", "taktische_grundidee", "trainingsschwerpunkte", "bisherige_stationen", "lizenzen"])
+
     # Für Admin: Anhand der gesendeten Felder entscheiden
     if is_admin:
         is_spieler = has_spieler_fields and not has_trainer_fields
-        is_trainer = has_trainer_fields or (not has_spieler_fields)  # Default: Trainer
+        is_trainer = has_trainer_fields or (
+            not has_spieler_fields)  # Default: Trainer
     else:
         is_trainer = rolle in ["trainer", "co-trainer"]
         is_spieler = rolle == "spieler"

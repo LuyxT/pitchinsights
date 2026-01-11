@@ -6113,6 +6113,10 @@
                     const isAdmin = rolleLower === 'admin';
                     const isTrainer = rolleLower === 'trainer' || rolleLower === 'co-trainer';
 
+                    console.log('[Profil] Rolle:', data.rolle, '| rolleLower:', rolleLower);
+                    console.log('[Profil] isAdmin:', isAdmin, '| isTrainer:', isTrainer, '| isSpieler:', isSpieler);
+                    console.log('[Profil] trainerCard:', trainerCard, '| spielerCard:', spielerCard);
+
                     // Admin kann Profil-Typ wählen
                     if (isAdmin) {
                         if (profilTypWaehler) profilTypWaehler.style.display = 'block';
@@ -8572,14 +8576,14 @@
             // Rollen-Checks - case-insensitive
             const rolleLower = rolle.toLowerCase();
             const isAdmin = rolleLower === 'admin';
-            
+
             // Admin kann wählen, welches Profil er bearbeitet
             let effektiveRolle = rolleLower;
             if (isAdmin) {
                 const gewaehlterTyp = window.currentProfilTyp || localStorage.getItem('profilTyp') || 'trainer';
                 effektiveRolle = gewaehlterTyp;
             }
-            
+
             const isSpieler = effektiveRolle === 'spieler';
             const isTrainer = ['trainer', 'co-trainer'].includes(effektiveRolle) || (isAdmin && effektiveRolle === 'trainer');
 
