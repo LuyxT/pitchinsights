@@ -188,7 +188,8 @@ ACCESS_CODE = os.environ.get("PITCHINSIGHTS_ACCESS_CODE", "pitch2026")
 # ============================================
 # Production Check
 # ============================================
-IS_PRODUCTION = os.getenv("PITCHINSIGHTS_ENV") == "production" or os.path.exists("/app")
+IS_PRODUCTION = os.getenv(
+    "PITCHINSIGHTS_ENV") == "production" or os.path.exists("/app")
 
 
 # ============================================
