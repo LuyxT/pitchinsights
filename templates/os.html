@@ -8075,7 +8075,7 @@
                 document.querySelectorAll('.widget-kader-training').forEach(el => el.textContent = data.training || '0');
                 document.querySelectorAll('.widget-kader-reha').forEach(el => el.textContent = data.reha || '0');
                 document.querySelectorAll('.widget-kader-ausfall').forEach(el => el.textContent = data.ausfall || '0');
-                
+
                 // Total für andere Widgets
                 const total = (data.fit || 0) + (data.training || 0) + (data.reha || 0) + (data.ausfall || 0);
                 document.querySelectorAll('.widget-stats-players').forEach(el => el.textContent = total);
@@ -10575,13 +10575,19 @@
         async function saveEditPlayer() {
             const id = parseInt(document.getElementById('editPlayerId').value);
             const playerIndex = kaderPlayers.findIndex(p => p.id === id);
-            if (playerIndex === -1) return;
+            
+            console.log('Saving player - ID:', id, 'PlayerIndex:', playerIndex);
+            
+            if (playerIndex === -1) {
+                console.error('Player not found in kaderPlayers array');
+                alert('Spieler nicht gefunden');
+                return;
+            }
 
             const firstname = document.getElementById('editPlayerFirstname').value.trim();
             const lastname = document.getElementById('editPlayerLastname').value.trim();
             const jersey = parseInt(document.getElementById('editPlayerJersey').value);
-            const statusSelect = document.getElementById('editPlayerStatus');
-            const status = statusSelect.options[statusSelect.selectedIndex].text; // Hole den Display-Text (Fit, Training, etc.)
+            const status = document.getElementById('editPlayerStatus').value; // Fit, Training, Reha, Ausfall
             const birthdate = document.getElementById('editPlayerBirthdate').value;
             const country = document.getElementById('editPlayerCountry').value;
             const team = document.getElementById('editPlayerTeam').value;
@@ -10628,6 +10634,8 @@
 
             // An Server senden
             try {
+                console.log('Saving player:', { id, firstname, lastname, jersey, status, positions });
+                
                 const response = await fetch(`/api/players/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -10639,8 +10647,11 @@
                     })
                 });
 
+                console.log('Response status:', response.status);
+
                 if (!response.ok) {
                     const err = await response.json();
+                    console.error('API Error:', err);
                     alert(err.error || 'Fehler beim Speichern');
                     return;
                 }
@@ -10664,12 +10675,13 @@
                 };
 
                 closeEditPlayerModal();
-                await loadPlayers(); // Neu laden von Server
+                await initKaderData(); // Neu laden von Server
+                renderPlayerList();
                 renderCharts();
                 renderDashboardStats();
             } catch (e) {
                 console.error('Fehler beim Speichern:', e);
-                alert('Fehler beim Speichern des Spielers');
+                alert('Netzwerkfehler beim Speichern. Bitte erneut versuchen.');
             }
         }
 
@@ -11703,7 +11715,8 @@
     </div>
 
     <!-- FLOATING ADD WIDGET BUTTON - Always visible -->
-    <button id="floatingAddWidget" class="add-widget-btn" onclick="openWidgetModal()" title="Widget hinzufügen">+</button>
+    <button id="floatingAddWidget" class="add-widget-btn" onclick="openWidgetModal()"
+        title="Widget hinzufügen">+</button>
 
 </body>
 
