@@ -5035,7 +5035,7 @@
             <!-- Tab Content: Einladungen -->
             <div id="verwaltung-einladungen" class="verwaltung-content" style="display: none;">
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
-                    <button class="btn-primary" id="neue-einladung-btn">
+                    <button class="btn-primary" style="position: relative; z-index: 100;" onclick="alert('KLICK!'); document.getElementById('create-invitation-modal').style.display='flex';">
                         + Neue Einladung
                     </button>
                 </div>
@@ -5368,7 +5368,7 @@
         // ========================
         // EVENT DELEGATION FÜR DYNAMISCHE BUTTONS
         // ========================
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             // Neue Einladung Button
             if (e.target && e.target.id === 'neue-einladung-btn') {
                 e.preventDefault();
@@ -6543,12 +6543,12 @@
         async function loadRolesForInvitation() {
             const select = document.getElementById('invitation-role');
             if (!select) return;
-            
+
             try {
                 const response = await fetch('/api/team/roles');
                 const data = await response.json();
                 const roles = data.roles || [];
-                
+
                 if (roles.length > 0) {
                     select.innerHTML = roles.map(r => `<option value="${parseInt(r.id)}">${escapeHtml(r.name)}</option>`).join('');
                 } else {
@@ -6557,7 +6557,7 @@
             } catch (e) {
                 select.innerHTML = '<option value="1">Spieler</option><option value="2">Trainer</option>';
             }
-            
+
             document.getElementById('invitation-max-uses').value = 1;
             document.getElementById('invitation-days').value = 7;
         }
