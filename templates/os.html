@@ -974,11 +974,15 @@
             background: #22c55e;
         }
 
-        .widget-content .status-dot.limited {
+        .widget-content .status-dot.training {
+            background: #3b82f6;
+        }
+
+        .widget-content .status-dot.reha {
             background: #f59e0b;
         }
 
-        .widget-content .status-dot.injured {
+        .widget-content .status-dot.ausfall {
             background: #ef4444;
         }
 
@@ -7665,12 +7669,16 @@
                         <span class="widget-stat-value widget-kader-fit">-</span>
                     </div>
                     <div class="widget-stat">
-                        <span class="widget-stat-label"><span class="status-dot limited"></span>Belastet</span>
-                        <span class="widget-stat-value widget-kader-limited">-</span>
+                        <span class="widget-stat-label"><span class="status-dot training"></span>Training</span>
+                        <span class="widget-stat-value widget-kader-training">-</span>
                     </div>
                     <div class="widget-stat">
-                        <span class="widget-stat-label"><span class="status-dot injured"></span>Verletzt</span>
-                        <span class="widget-stat-value widget-kader-injured">-</span>
+                        <span class="widget-stat-label"><span class="status-dot reha"></span>Reha</span>
+                        <span class="widget-stat-value widget-kader-reha">-</span>
+                    </div>
+                    <div class="widget-stat">
+                        <span class="widget-stat-label"><span class="status-dot ausfall"></span>Ausfall</span>
+                        <span class="widget-stat-value widget-kader-ausfall">-</span>
                     </div>
                 </div>
             `,
@@ -8062,28 +8070,18 @@
                 const data = await response.json();
                 console.log('Kader Stats Daten:', data);
 
-                // Dashboard legacy IDs (falls noch vorhanden)
-                const kaderFit = document.getElementById('kaderFitCount');
-                const kaderLimited = document.getElementById('kaderLimitedCount');
-                const kaderInjured = document.getElementById('kaderInjuredCount');
-
-                if (kaderFit) kaderFit.textContent = data.fit || '0';
-                if (kaderLimited) kaderLimited.textContent = data.belastet || '0';
-                if (kaderInjured) kaderInjured.textContent = data.verletzt || '0';
-
-                // Widgets aktualisieren
+                // Widgets aktualisieren - neue Status
                 document.querySelectorAll('.widget-kader-fit').forEach(el => el.textContent = data.fit || '0');
-                document.querySelectorAll('.widget-kader-limited').forEach(el => el.textContent = data.belastet || '0');
-                document.querySelectorAll('.widget-kader-injured').forEach(el => el.textContent = data.verletzt || '0');
-                document.querySelectorAll('.widget-medizin-injured').forEach(el => el.textContent = data.verletzt || '0');
-                document.querySelectorAll('.widget-medizin-limited').forEach(el => el.textContent = data.belastet || '0');
-                document.querySelectorAll('.widget-stats-players').forEach(el => el.textContent = (data.fit + data.belastet + data.verletzt) || '0');
+                document.querySelectorAll('.widget-kader-training').forEach(el => el.textContent = data.training || '0');
+                document.querySelectorAll('.widget-kader-reha').forEach(el => el.textContent = data.reha || '0');
+                document.querySelectorAll('.widget-kader-ausfall').forEach(el => el.textContent = data.ausfall || '0');
+                
+                // Total für andere Widgets
+                const total = (data.fit || 0) + (data.training || 0) + (data.reha || 0) + (data.ausfall || 0);
+                document.querySelectorAll('.widget-stats-players').forEach(el => el.textContent = total);
 
-                // Medizin stats (same data)
-                const medizinInjured = document.getElementById('medizinInjuredCount');
-                const medizinLimited = document.getElementById('medizinLimitedCount');
-                if (medizinInjured) medizinInjured.textContent = data.verletzt || '0';
-                if (medizinLimited) medizinLimited.textContent = data.belastet || '0';
+                // Medizin stats (Reha + Ausfall)
+                document.querySelectorAll('.widget-medizin-injured').forEach(el => el.textContent = (data.reha || 0) + (data.ausfall || 0));
             } catch (e) {
                 console.error('Fehler beim Laden der Kader-Stats:', e);
             }

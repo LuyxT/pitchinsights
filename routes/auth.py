@@ -3236,7 +3236,7 @@ async def get_player_stats(request: Request):
 
     db_user = get_user_by_id(user["id"])
     if not db_user or not db_user.get("team_id"):
-        return JSONResponse({"fit": 0, "belastet": 0, "verletzt": 0, "total": 0})
+        return JSONResponse({"fit": 0, "training": 0, "reha": 0, "ausfall": 0, "total": 0})
 
     with get_db_connection() as db:
         cursor = db.cursor()
@@ -3244,8 +3244,9 @@ async def get_player_stats(request: Request):
             SELECT 
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'Fit' THEN 1 ELSE 0 END) as fit,
-                SUM(CASE WHEN status IN ('Belastet', 'Angeschlagen') THEN 1 ELSE 0 END) as belastet,
-                SUM(CASE WHEN status IN ('Verletzt', 'Ausfall', 'Reha') THEN 1 ELSE 0 END) as verletzt
+                SUM(CASE WHEN status = 'Training' THEN 1 ELSE 0 END) as training,
+                SUM(CASE WHEN status = 'Reha' THEN 1 ELSE 0 END) as reha,
+                SUM(CASE WHEN status = 'Ausfall' THEN 1 ELSE 0 END) as ausfall
             FROM players
             WHERE team_id = ? AND deleted_at IS NULL
         """, (db_user["team_id"],))
@@ -3254,8 +3255,9 @@ async def get_player_stats(request: Request):
     return JSONResponse({
         "total": row["total"] or 0,
         "fit": row["fit"] or 0,
-        "belastet": row["belastet"] or 0,
-        "verletzt": row["verletzt"] or 0
+        "training": row["training"] or 0,
+        "reha": row["reha"] or 0,
+        "ausfall": row["ausfall"] or 0
     })
 
 
