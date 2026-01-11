@@ -3654,11 +3654,11 @@ async def get_kasse(request: Request):
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
-    
+
     db_user = get_user_by_id(user["id"])
     if not db_user or not db_user.get("team_id"):
         return {"saldo": 0, "transactions": []}
-    
+
     with get_db_connection() as db:
         cursor = db.cursor()
         # Transaktionen laden
@@ -3670,7 +3670,7 @@ async def get_kasse(request: Request):
             LIMIT 50
         """, (db_user["team_id"],))
         transactions = [dict(row) for row in cursor.fetchall()]
-        
+
         # Saldo berechnen
         cursor.execute("""
             SELECT 
@@ -3681,7 +3681,7 @@ async def get_kasse(request: Request):
         """, (db_user["team_id"],))
         totals = cursor.fetchone()
         saldo = (totals["income"] or 0) - (totals["expense"] or 0)
-    
+
     return {"saldo": saldo, "transactions": transactions}
 
 
@@ -3691,26 +3691,26 @@ async def add_kasse_transaction(request: Request):
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
-    
+
     db_user = get_user_by_id(user["id"])
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team zugeordnet"}, status_code=400)
-    
+
     try:
         data = await request.json()
     except:
         return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
-    
+
     amount = data.get("amount", 0)
     trans_type = data.get("type", "expense")
     description = str(data.get("description", ""))[:200]
-    
+
     if not amount or amount <= 0:
         return JSONResponse({"error": "Ungültiger Betrag"}, status_code=400)
-    
+
     if trans_type not in ["income", "expense"]:
         return JSONResponse({"error": "Ungültiger Typ"}, status_code=400)
-    
+
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
@@ -3718,7 +3718,7 @@ async def add_kasse_transaction(request: Request):
             VALUES (?, ?, ?, ?, ?, datetime('now'))
         """, (db_user["team_id"], amount, trans_type, description, user["id"]))
         db.commit()
-    
+
     return {"success": True}
 
 

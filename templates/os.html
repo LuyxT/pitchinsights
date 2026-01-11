@@ -8173,17 +8173,17 @@
                 const response = await fetch('/api/events/week');
                 let weekEvents = {};
                 let allEvents = [];
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     allEvents = data.events || [];
-                    
+
                     // Nach Tag gruppieren (Index 0-6 für Mo-So)
                     const today = new Date();
                     const dayOfWeek = today.getDay();
                     const monday = new Date(today);
                     monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-                    
+
                     for (let i = 0; i < 7; i++) {
                         const currentDay = new Date(monday);
                         currentDay.setDate(monday.getDate() + i);
@@ -8195,12 +8195,12 @@
                     const storageKey = getUserStorageKey('calendarEvents');
                     const storedEvents = JSON.parse(localStorage.getItem(storageKey) || '[]');
                     allEvents = storedEvents;
-                    
+
                     const today = new Date();
                     const dayOfWeek = today.getDay();
                     const monday = new Date(today);
                     monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-                    
+
                     for (let i = 0; i < 7; i++) {
                         const currentDay = new Date(monday);
                         currentDay.setDate(monday.getDate() + i);
@@ -8264,7 +8264,7 @@
                 // Nachrichten aus API laden
                 const response = await fetch('/api/messages?limit=1');
                 let messages = [];
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     messages = data.messages || [];
@@ -8291,7 +8291,7 @@
                         container.innerHTML = '<span style="opacity: 0.6; font-size: 12px;">Keine Nachrichten</span>';
                     }
                 });
-                
+
                 // Ungelesene Nachrichten Badge
                 const unreadResponse = await fetch('/api/messages/unread');
                 if (unreadResponse.ok) {
@@ -8317,7 +8317,7 @@
                 // Kasse aus API laden
                 const response = await fetch('/api/kasse');
                 let saldo = 0;
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     saldo = data.saldo || 0;
@@ -8325,7 +8325,7 @@
                     // Fallback auf localStorage
                     const storageKey = getUserStorageKey('kasseTransactions');
                     const transactions = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                    
+
                     let totalIncome = 0;
                     let totalExpense = 0;
                     transactions.forEach(t => {
@@ -8339,8 +8339,8 @@
                 }
 
                 // Widget aktualisieren
-                document.querySelectorAll('.widget-kasse-saldo').forEach(el => {
-                    el.textContent = saldo.toFixed(2) + '€';
+                document.querySelectorAll('.widget-kasse-balance').forEach(el => {
+                    el.textContent = saldo.toFixed(2) + ' €';
                     el.style.color = saldo >= 0 ? '#22c55e' : '#ef4444';
                 });
             } catch (e) {
@@ -8353,25 +8353,33 @@
             try {
                 // Videos aus API laden
                 const response = await fetch('/api/videos');
-                let videoCount = 0;
-                
+                let videos = [];
+
                 if (response.ok) {
                     const data = await response.json();
-                    videoCount = (data.videos || []).length;
+                    videos = data.videos || [];
                 } else {
                     // Fallback auf localStorage
                     const storageKey = getUserStorageKey('uploadedVideos');
-                    const videos = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                    videoCount = videos.length;
+                    videos = JSON.parse(localStorage.getItem(storageKey) || '[]');
                 }
 
-                document.querySelectorAll('.widget-video-count').forEach(el => {
-                    el.textContent = videoCount;
+                // Upload Widget Content aktualisieren
+                document.querySelectorAll('#widget-upload-content').forEach(container => {
+                    if (videos.length > 0) {
+                        container.innerHTML = `
+                            <div style="font-size: 12px;">
+                                <strong>${videos.length}</strong> Video${videos.length !== 1 ? 's' : ''} hochgeladen
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = '<span style="opacity: 0.6; font-size: 12px;">Keine Videos hochgeladen</span>';
+                    }
                 });
 
                 // Stats Widget
                 document.querySelectorAll('.widget-stats-videos').forEach(el => {
-                    el.textContent = videoCount;
+                    el.textContent = videos.length;
                 });
             } catch (e) {
                 console.error('Fehler beim Laden der Upload-Widget-Daten:', e);
