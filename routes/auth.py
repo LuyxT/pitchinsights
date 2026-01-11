@@ -2973,13 +2973,26 @@ async def join_page(request: Request, token: str):
 
     user = get_current_user(request)
 
-    return templates.TemplateResponse("join.html", {
+    # Beta-Cookie setzen damit Einladungs-User die Access Gate umgehen
+    response = templates.TemplateResponse("join.html", {
         "request": request,
         "token": token,
         "team_name": invitation["team_name"],
         "role_name": invitation["role_name"],
         "logged_in": user is not None
     })
+    
+    # Beta-Zugang gewähren
+    ACCESS_CODE = os.environ.get("PITCHINSIGHTS_ACCESS_CODE", "pitch2026")
+    response.set_cookie(
+        key="beta_access",
+        value=ACCESS_CODE,
+        max_age=86400 * 365,  # 1 Jahr
+        httponly=True,
+        samesite="lax"
+    )
+    
+    return response
 
 
 @router.post("/join/{token}")
