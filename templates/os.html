@@ -5048,8 +5048,10 @@
         </div>
 
         <!-- Create Role Modal -->
-        <div id="create-role-modal" class="modal-overlay" style="display: none; z-index: 9999;" onclick="if(event.target === this) closeModal('create-role-modal')">
-            <div class="modal-content" style="max-width: 600px; max-height: 85vh; overflow-y: auto; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div id="create-role-modal" class="modal-overlay" style="display: none; z-index: 9999;"
+            onclick="if(event.target === this) closeModal('create-role-modal')">
+            <div class="modal-content"
+                style="max-width: 600px; max-height: 85vh; overflow-y: auto; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
                 <h2 style="margin-bottom: 20px;">Neue Rolle erstellen</h2>
                 <div style="margin: 20px 0;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 500;">Rollenname *</label>
@@ -5076,8 +5078,10 @@
         </div>
 
         <!-- Create Invitation Modal -->
-        <div id="create-invitation-modal" class="modal-overlay" style="display: none; z-index: 9999;" onclick="if(event.target === this) closeModal('create-invitation-modal')">
-            <div class="modal-content" style="max-width: 500px; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div id="create-invitation-modal" class="modal-overlay" style="display: none; z-index: 9999;"
+            onclick="if(event.target === this) closeModal('create-invitation-modal')">
+            <div class="modal-content"
+                style="max-width: 500px; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
                 <h2 style="margin-bottom: 20px;">Einladungslink erstellen</h2>
                 <div style="margin: 20px 0;">
                     <label style="display: block; margin-bottom: 8px;">Rolle für eingeladene Person</label>
@@ -5097,8 +5101,10 @@
         </div>
 
         <!-- Invitation Link Modal -->
-        <div id="invitation-link-modal" class="modal-overlay" style="display: none; z-index: 9999;" onclick="if(event.target === this) closeModal('invitation-link-modal')">
-            <div class="modal-content" style="max-width: 500px; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div id="invitation-link-modal" class="modal-overlay" style="display: none; z-index: 9999;"
+            onclick="if(event.target === this) closeModal('invitation-link-modal')">
+            <div class="modal-content"
+                style="max-width: 500px; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
                 <h2 style="margin-bottom: 20px;">✅ Einladungslink erstellt</h2>
                 <div style="margin: 20px 0;">
                     <p style="margin-bottom: 12px;">Teile diesen Link mit der Person:</p>
@@ -5114,8 +5120,10 @@
         </div>
 
         <!-- Edit Permissions Modal -->
-        <div id="edit-permissions-modal" class="modal-overlay" style="display: none; z-index: 9999;" onclick="if(event.target === this) closeModal('edit-permissions-modal')">
-            <div class="modal-content" style="max-width: 600px; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div id="edit-permissions-modal" class="modal-overlay" style="display: none; z-index: 9999;"
+            onclick="if(event.target === this) closeModal('edit-permissions-modal')">
+            <div class="modal-content"
+                style="max-width: 600px; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
                 <h2 style="margin-bottom: 10px;">🔐 Berechtigungen bearbeiten</h2>
                 <p id="edit-permissions-role-name" style="opacity: 0.7; margin-bottom: 20px;"></p>
 
@@ -6463,19 +6471,34 @@
         }
 
         async function showCreateInvitationModal() {
+            console.log('showCreateInvitationModal aufgerufen');
+            
+            const modal = document.getElementById('create-invitation-modal');
+            const select = document.getElementById('invitation-role');
+            
+            if (!modal) {
+                console.error('Modal create-invitation-modal nicht gefunden!');
+                alert('Fehler: Modal nicht gefunden');
+                return;
+            }
+            
+            if (!select) {
+                console.error('Select invitation-role nicht gefunden!');
+                alert('Fehler: Select nicht gefunden');
+                return;
+            }
+            
             // Load roles for dropdown
             try {
+                console.log('Lade Rollen von /api/team/roles...');
                 const response = await fetch('/api/team/roles');
+                console.log('Response status:', response.status);
+                
                 const data = await response.json();
-                
+                console.log('Rollen geladen:', data);
+
                 const roles = data.roles || [];
-                const select = document.getElementById('invitation-role');
-                
-                if (!select) {
-                    console.error('invitation-role select nicht gefunden');
-                    return;
-                }
-                
+
                 if (roles.length === 0) {
                     select.innerHTML = '<option value="">Keine Rollen verfügbar</option>';
                 } else {
@@ -6484,10 +6507,15 @@
 
                 document.getElementById('invitation-max-uses').value = 1;
                 document.getElementById('invitation-days').value = 7;
-                document.getElementById('create-invitation-modal').style.display = 'flex';
+                modal.style.display = 'flex';
+                console.log('Modal geöffnet');
             } catch (error) {
                 console.error('Fehler beim Laden der Rollen:', error);
-                alert('Fehler beim Laden der Rollen: ' + error.message);
+                // Öffne Modal trotzdem mit Fallback
+                select.innerHTML = '<option value="1">Spieler</option><option value="2">Trainer</option>';
+                document.getElementById('invitation-max-uses').value = 1;
+                document.getElementById('invitation-days').value = 7;
+                modal.style.display = 'flex';
             }
         }
 
