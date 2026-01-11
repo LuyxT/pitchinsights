@@ -636,6 +636,16 @@ def _run_migrations(conn):
         ("users", "position", "TEXT DEFAULT ''"),
         ("users", "starker_fuss", "TEXT DEFAULT ''"),
         ("users", "werdegang", "TEXT DEFAULT ''"),
+        # Spieler-spezifische Felder
+        ("users", "nebenpositionen", "TEXT DEFAULT ''"),  # JSON array
+        ("users", "gewicht", "INTEGER NULL"),  # in kg
+        ("users", "jahrgang", "INTEGER NULL"),  # z.B. 2005
+        # Trainer-spezifische Felder
+        ("users", "spielsystem", "TEXT DEFAULT ''"),  # z.B. 4-3-3
+        ("users", "taktische_grundidee", "TEXT DEFAULT ''"),
+        ("users", "trainingsschwerpunkte", "TEXT DEFAULT ''"),
+        ("users", "bisherige_stationen", "TEXT DEFAULT ''"),
+        ("users", "lizenzen", "TEXT DEFAULT ''"),  # z.B. A-Lizenz
         # Player-User Verknüpfung
         ("players", "user_id", "INTEGER NULL"),
         # Audit Log Erweiterungen

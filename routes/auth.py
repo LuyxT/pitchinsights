@@ -1461,8 +1461,8 @@ async def complete_onboarding(request: Request):
 @router.get("/api/profile")
 async def get_profile(request: Request):
     """
-    Profil abrufen.
-    SECURITY: Nur eigene Daten.
+    Profil abrufen - rollenbasiert.
+    SECURITY: Nur eigene Daten, Felder nach Rolle gefiltert.
     """
     user = get_current_user(request)
     if not user:
@@ -1472,95 +1472,168 @@ async def get_profile(request: Request):
     if not db_user:
         return JSONResponse({"error": "Benutzer nicht gefunden"}, status_code=404)
 
-    # SECURITY: Nur erlaubte Felder zurückgeben
-    return {
+    rolle = db_user.get("rolle", "").lower()
+
+    # Basis-Profil für alle Rollen
+    profile = {
         "email": db_user.get("email", ""),
         "vorname": db_user.get("vorname", ""),
         "nachname": db_user.get("nachname", ""),
-        "telefon": db_user.get("telefon", ""),
         "geburtsdatum": db_user.get("geburtsdatum", ""),
-        "groesse": db_user.get("groesse"),
-        "position": db_user.get("position", ""),
-        "starker_fuss": db_user.get("starker_fuss", ""),
+        "verein": db_user.get("verein", ""),
         "werdegang": db_user.get("werdegang", ""),
         "teamname": db_user.get("teamname", ""),
         "rolle": db_user.get("rolle", ""),
-        "verein": db_user.get("verein", ""),
-        "mannschaft": db_user.get("mannschaft", "")
+        "mannschaft": db_user.get("mannschaft", ""),
+        "telefon": db_user.get("telefon", ""),
     }
+
+    # Spieler-spezifische Felder
+    if rolle == "spieler":
+        profile.update({
+            "groesse": db_user.get("groesse"),
+            "gewicht": db_user.get("gewicht"),
+            "position": db_user.get("position", ""),
+            "nebenpositionen": db_user.get("nebenpositionen", ""),
+            "starker_fuss": db_user.get("starker_fuss", ""),
+            "jahrgang": db_user.get("jahrgang"),
+        })
+
+    # Trainer-spezifische Felder
+    elif rolle == "trainer":
+        profile.update({
+            "spielsystem": db_user.get("spielsystem", ""),
+            "taktische_grundidee": db_user.get("taktische_grundidee", ""),
+            "trainingsschwerpunkte": db_user.get("trainingsschwerpunkte", ""),
+            "bisherige_stationen": db_user.get("bisherige_stationen", ""),
+            "lizenzen": db_user.get("lizenzen", ""),
+        })
+
+    return profile
 
 
 @router.post("/api/profile")
 async def update_profile(request: Request):
     """
-    Profil aktualisieren.
-    SECURITY: Input-Validierung, nur erlaubte Felder (Mass Assignment Prevention).
+    Profil aktualisieren - rollenbasiert.
+    SECURITY: Input-Validierung, nur rollenbezogene Felder (Mass Assignment Prevention).
+    Trainer: Nur Trainer-Felder. Spieler: Nur Spieler-Felder.
     """
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user:
+        return JSONResponse({"error": "Benutzer nicht gefunden"}, status_code=404)
 
     try:
         data = await request.json()
     except Exception:
         return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
 
-    # SECURITY: Nur explizit erlaubte Felder (Whitelist)
+    rolle = db_user.get("rolle", "").lower()
+
+    # SECURITY: Basis-Felder (für alle Rollen)
     try:
         vorname = InputValidator.validate_name(
             data.get("vorname", ""), "vorname")
         nachname = InputValidator.validate_name(
             data.get("nachname", ""), "nachname")
-        teamname = InputValidator.validate_team_name(
-            data.get("teamname", ""), "teamname", required=False)
-        rolle = InputValidator.validate_rolle(data.get("rolle", ""))
     except ValidationError as e:
         return JSONResponse({"error": e.message}, status_code=400)
 
-    # Telefon und Geburtsdatum (einfache Validierung)
     telefon = str(data.get("telefon", "")).strip()[:30]
     geburtsdatum = str(data.get("geburtsdatum", "")).strip()[:10] or None
-
-    # Neue Felder: Größe, Position, Starker Fuß, Werdegang
-    groesse = data.get("groesse")
-    if groesse:
-        try:
-            groesse = int(groesse)
-            if groesse < 100 or groesse > 250:
-                groesse = None
-        except (ValueError, TypeError):
-            groesse = None
-
-    position = str(data.get("position", "")).strip()[:50]
-    valid_positions = ["", "Torwart", "Innenverteidiger", "Außenverteidiger", "Defensives Mittelfeld",
-                       "Zentrales Mittelfeld", "Offensives Mittelfeld", "Flügelspieler", "Stürmer"]
-    if position not in valid_positions:
-        position = ""
-
-    starker_fuss = str(data.get("starker_fuss", "")).strip()[:20]
-    if starker_fuss not in ["", "rechts", "links", "beidfuessig"]:
-        starker_fuss = ""
-
-    # Werdegang: Max 2000 Zeichen, wird rechtlich überprüft
     werdegang = str(data.get("werdegang", "")).strip()[:2000]
+
+    # Basis-Update vorbereiten
+    update_fields = {
+        "vorname": vorname,
+        "nachname": nachname,
+        "telefon": telefon,
+        "geburtsdatum": geburtsdatum,
+        "werdegang": werdegang,
+    }
+
+    # Spieler-spezifische Felder
+    if rolle == "spieler":
+        # Größe validieren
+        groesse = data.get("groesse")
+        if groesse:
+            try:
+                groesse = int(groesse)
+                if groesse < 100 or groesse > 250:
+                    groesse = None
+            except (ValueError, TypeError):
+                groesse = None
+        update_fields["groesse"] = groesse
+
+        # Gewicht validieren
+        gewicht = data.get("gewicht")
+        if gewicht:
+            try:
+                gewicht = int(gewicht)
+                if gewicht < 30 or gewicht > 200:
+                    gewicht = None
+            except (ValueError, TypeError):
+                gewicht = None
+        update_fields["gewicht"] = gewicht
+
+        # Position validieren
+        position = str(data.get("position", "")).strip()[:50]
+        valid_positions = ["", "Torwart", "Innenverteidiger", "Außenverteidiger", "Defensives Mittelfeld",
+                           "Zentrales Mittelfeld", "Offensives Mittelfeld", "Flügelspieler", "Stürmer"]
+        if position not in valid_positions:
+            position = ""
+        update_fields["position"] = position
+
+        # Nebenpositionen (JSON array als String)
+        nebenpositionen = str(data.get("nebenpositionen", "")).strip()[:200]
+        update_fields["nebenpositionen"] = nebenpositionen
+
+        # Starker Fuß
+        starker_fuss = str(data.get("starker_fuss", "")).strip()[:20]
+        if starker_fuss not in ["", "rechts", "links", "beidfuessig"]:
+            starker_fuss = ""
+        update_fields["starker_fuss"] = starker_fuss
+
+        # Jahrgang
+        jahrgang = data.get("jahrgang")
+        if jahrgang:
+            try:
+                jahrgang = int(jahrgang)
+                if jahrgang < 1950 or jahrgang > 2025:
+                    jahrgang = None
+            except (ValueError, TypeError):
+                jahrgang = None
+        update_fields["jahrgang"] = jahrgang
+
+    # Trainer-spezifische Felder
+    elif rolle == "trainer":
+        update_fields["spielsystem"] = str(
+            data.get("spielsystem", "")).strip()[:50]
+        update_fields["taktische_grundidee"] = str(
+            data.get("taktische_grundidee", "")).strip()[:1000]
+        update_fields["trainingsschwerpunkte"] = str(
+            data.get("trainingsschwerpunkte", "")).strip()[:500]
+        update_fields["bisherige_stationen"] = str(
+            data.get("bisherige_stationen", "")).strip()[:1000]
+        update_fields["lizenzen"] = str(data.get("lizenzen", "")).strip()[:200]
+
+    # SQL dynamisch bauen
+    set_clause = ", ".join([f"{k} = ?" for k in update_fields.keys()])
+    values = list(update_fields.values())
+    values.append(user["id"])
 
     with get_db_connection() as db:
         cursor = db.cursor()
-        cursor.execute("""
+        cursor.execute(f"""
             UPDATE users SET
-                vorname = ?,
-                nachname = ?,
-                telefon = ?,
-                geburtsdatum = ?,
-                groesse = ?,
-                position = ?,
-                starker_fuss = ?,
-                werdegang = ?,
-                teamname = ?,
-                rolle = ?,
+                {set_clause},
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        """, (vorname, nachname, telefon, geburtsdatum, groesse, position, starker_fuss, werdegang, teamname, rolle, user["id"]))
+        """, values)
         db.commit()
 
     log_audit_event(user["id"], "PROFILE_UPDATED", "user", user["id"])

@@ -3254,7 +3254,7 @@
                 <p class="subtitle">Deine persönlichen Daten verwalten</p>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 1000px;">
-                    <!-- Linke Spalte: Persönliche Daten -->
+                    <!-- Linke Spalte: Basis-Profil -->
                     <div class="profil-card">
                         <div class="profil-avatar" id="profilAvatar">👤</div>
                         <h3 style="text-align: center; margin-bottom: 24px; font-size: 18px;">Persönliche Daten</h3>
@@ -3285,61 +3285,117 @@
                             <input type="date" id="profilGeburtsdatum">
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                            <div class="profil-field">
-                                <label>Größe (cm)</label>
-                                <input type="number" id="profilGroesse" placeholder="z.B. 180" min="100" max="250">
-                            </div>
-                            <div class="profil-field">
-                                <label>Starker Fuß</label>
-                                <select id="profilStarkerFuss">
-                                    <option value="">Bitte wählen</option>
-                                    <option value="rechts">Rechts</option>
-                                    <option value="links">Links</option>
-                                    <option value="beidfuessig">Beidfüßig</option>
-                                </select>
-                            </div>
-                        </div>
-
                         <div class="profil-field">
-                            <label>Position</label>
-                            <select id="profilPosition">
-                                <option value="">Bitte wählen</option>
-                                <option value="Torwart">Torwart</option>
-                                <option value="Innenverteidiger">Innenverteidiger</option>
-                                <option value="Außenverteidiger">Außenverteidiger</option>
-                                <option value="Defensives Mittelfeld">Defensives Mittelfeld</option>
-                                <option value="Zentrales Mittelfeld">Zentrales Mittelfeld</option>
-                                <option value="Offensives Mittelfeld">Offensives Mittelfeld</option>
-                                <option value="Flügelspieler">Flügelspieler</option>
-                                <option value="Stürmer">Stürmer</option>
-                            </select>
+                            <label>Werdegang / Beschreibung</label>
+                            <textarea id="profilWerdegang" placeholder="Beschreibe deinen fußballerischen Werdegang..."
+                                style="width: 100%; min-height: 100px; padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
                         </div>
-
-                        <div class="profil-field">
-                            <label>Werdegang / Karriere</label>
-                            <textarea id="profilWerdegang"
-                                placeholder="Beschreibe deinen fußballerischen Werdegang... (z.B. Jugendvereine, Stationen, Erfolge)"
-                                style="width: 100%; min-height: 120px; padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
-                            <div
-                                style="margin-top: 8px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
-                                <p style="font-size: 11px; color: #ef4444; margin: 0; line-height: 1.5;">
-                                    ⚠️ <strong>Rechtlicher Hinweis:</strong> Alle Angaben im Werdegang werden
-                                    stichprobenartig überprüft.
-                                    Falsche oder irreführende Angaben können rechtliche Konsequenzen nach sich
-                                    ziehen und werden zur Anzeige gebracht.
-                                </p>
-                            </div>
-                        </div>
-
-                        <button onclick="saveProfile()"
-                            style="width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 16px; transition: transform 0.2s;">
-                            💾 Profil speichern
-                        </button>
                     </div>
 
-                    <!-- Rechte Spalte: Team & Kader -->
+                    <!-- Rechte Spalte: Rollenspezifische Daten -->
                     <div>
+                        <!-- SPIELER-PROFIL (nur für Spieler sichtbar) -->
+                        <div class="profil-card spieler-profil" id="spielerProfilCard"
+                            style="margin-bottom: 20px; display: none;">
+                            <h3 style="margin-bottom: 20px; font-size: 18px;">⚽ Spieler-Daten</h3>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div class="profil-field">
+                                    <label>Größe (cm)</label>
+                                    <input type="number" id="profilGroesse" placeholder="z.B. 180" min="100" max="250">
+                                </div>
+                                <div class="profil-field">
+                                    <label>Gewicht (kg)</label>
+                                    <input type="number" id="profilGewicht" placeholder="z.B. 75" min="30" max="200">
+                                </div>
+                            </div>
+
+                            <div class="profil-field">
+                                <label>Position</label>
+                                <select id="profilPosition">
+                                    <option value="">Bitte wählen</option>
+                                    <option value="Torwart">Torwart</option>
+                                    <option value="Innenverteidiger">Innenverteidiger</option>
+                                    <option value="Außenverteidiger">Außenverteidiger</option>
+                                    <option value="Defensives Mittelfeld">Defensives Mittelfeld</option>
+                                    <option value="Zentrales Mittelfeld">Zentrales Mittelfeld</option>
+                                    <option value="Offensives Mittelfeld">Offensives Mittelfeld</option>
+                                    <option value="Flügelspieler">Flügelspieler</option>
+                                    <option value="Stürmer">Stürmer</option>
+                                </select>
+                            </div>
+
+                            <div class="profil-field">
+                                <label>Nebenpositionen</label>
+                                <input type="text" id="profilNebenpositionen" placeholder="z.B. Rechtsaußen, Stürmer">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div class="profil-field">
+                                    <label>Starker Fuß</label>
+                                    <select id="profilStarkerFuss">
+                                        <option value="">Bitte wählen</option>
+                                        <option value="rechts">Rechts</option>
+                                        <option value="links">Links</option>
+                                        <option value="beidfuessig">Beidfüßig</option>
+                                    </select>
+                                </div>
+                                <div class="profil-field">
+                                    <label>Jahrgang</label>
+                                    <input type="number" id="profilJahrgang" placeholder="z.B. 2005" min="1950"
+                                        max="2025">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TRAINER-PROFIL (nur für Trainer sichtbar) -->
+                        <div class="profil-card trainer-profil" id="trainerProfilCard"
+                            style="margin-bottom: 20px; display: none;">
+                            <h3 style="margin-bottom: 20px; font-size: 18px;">🎯 Trainer-Daten</h3>
+
+                            <div class="profil-field">
+                                <label>Bevorzugtes Spielsystem</label>
+                                <select id="profilSpielsystem">
+                                    <option value="">Bitte wählen</option>
+                                    <option value="4-4-2">4-4-2</option>
+                                    <option value="4-3-3">4-3-3</option>
+                                    <option value="4-2-3-1">4-2-3-1</option>
+                                    <option value="3-5-2">3-5-2</option>
+                                    <option value="3-4-3">3-4-3</option>
+                                    <option value="5-3-2">5-3-2</option>
+                                    <option value="4-1-4-1">4-1-4-1</option>
+                                    <option value="Flexibel">Flexibel</option>
+                                </select>
+                            </div>
+
+                            <div class="profil-field">
+                                <label>Taktische Grundidee</label>
+                                <textarea id="profilTaktischeGrundidee"
+                                    placeholder="Beschreibe deine taktische Philosophie..."
+                                    style="width: 100%; min-height: 80px; padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+                            </div>
+
+                            <div class="profil-field">
+                                <label>Trainingsschwerpunkte</label>
+                                <input type="text" id="profilTrainingsschwerpunkte"
+                                    placeholder="z.B. Pressing, Spielaufbau, Standards">
+                            </div>
+
+                            <div class="profil-field">
+                                <label>Bisherige Stationen</label>
+                                <textarea id="profilBisherigeStationen"
+                                    placeholder="Deine bisherigen Vereine als Trainer..."
+                                    style="width: 100%; min-height: 80px; padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+                            </div>
+
+                            <div class="profil-field">
+                                <label>Lizenzen / Ausbildung</label>
+                                <input type="text" id="profilLizenzen"
+                                    placeholder="z.B. B-Lizenz, DFB-Elite-Jugend-Lizenz">
+                            </div>
+                        </div>
+
+                        <!-- Team-Zugehörigkeit -->
                         <div class="profil-card" style="margin-bottom: 20px;">
                             <h3 style="margin-bottom: 20px; font-size: 18px;">⚽ Team-Zugehörigkeit</h3>
 
@@ -3348,28 +3404,17 @@
                             </div>
                         </div>
 
-                        <div class="profil-card" id="profilKaderCard" style="display: none;">
-                            <h3 style="margin-bottom: 20px; font-size: 18px;">👥 Mein Kader-Eintrag</h3>
+                        <!-- Speichern-Button -->
+                        <button onclick="saveProfile()"
+                            style="width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s; margin-bottom: 20px;">
+                            💾 Profil speichern
+                        </button>
 
-                            <div id="profilKaderInfo">
-                                <!-- Wird dynamisch befüllt -->
-                            </div>
-
-                            <div class="profil-kader-link" onclick="switchApp('kader')" style="margin-top: 16px;">
-                                <span style="font-size: 24px;">👥</span>
-                                <div>
-                                    <div style="font-weight: 600;">Zum Kader wechseln</div>
-                                    <div style="font-size: 12px; opacity: 0.7;">Spielerliste anzeigen</div>
-                                </div>
-                                <span style="margin-left: auto;">→</span>
-                            </div>
-                        </div>
-
-                        <div class="profil-card" style="margin-top: 20px; border-color: rgba(239, 68, 68, 0.3);">
+                        <!-- Gefahrenzone -->
+                        <div class="profil-card" style="border-color: rgba(239, 68, 68, 0.3);">
                             <h3 style="margin-bottom: 16px; font-size: 18px; color: #ef4444;">⚠️ Gefahrenzone</h3>
                             <p style="font-size: 13px; color: var(--text-light); opacity: 0.7; margin-bottom: 16px;">
                                 Wenn du dein Konto löschst, werden alle deine Daten unwiderruflich entfernt.
-                                Dein Profil bleibt nicht erhalten.
                             </p>
                             <button onclick="confirmDeleteAccount()"
                                 style="padding: 10px 20px; background: transparent; color: #ef4444; border: 1px solid #ef4444; border-radius: 8px; cursor: pointer; font-size: 14px;">
@@ -6005,41 +6050,72 @@
             }
         });
 
-        // Profil laden - für beide Ansichten (Einstellungen + Mein Profil)
+        // Profil laden - rollenbasiert
         async function loadProfile() {
             try {
                 const response = await fetch('/api/profile');
                 const data = await response.json();
 
                 if (!data.error) {
-                    // Einstellungen-Seite (profile* mit 'e')
+                    const rolle = (data.rolle || '').toLowerCase();
+
+                    // Helper-Funktion
                     const setVal = (id, val) => {
                         const el = document.getElementById(id);
                         if (el) el.value = val || '';
                     };
 
+                    // Einstellungen-Seite (profile* mit 'e')
                     setVal('profileVorname', data.vorname);
                     setVal('profileNachname', data.nachname);
                     setVal('profileEmail', data.email);
                     setVal('profileTeamname', data.teamname);
                     setVal('profileRolle', data.rolle);
 
-                    // Mein Profil-Seite (profil* ohne 'e')
+                    // Basis-Profil (für alle Rollen)
                     setVal('profilVorname', data.vorname);
                     setVal('profilNachname', data.nachname);
                     setVal('profilEmail', data.email);
                     setVal('profilTelefon', data.telefon);
                     setVal('profilGeburtsdatum', data.geburtsdatum);
-                    setVal('profilGroesse', data.groesse);
-                    setVal('profilPosition', data.position);
-                    setVal('profilStarkerFuss', data.starker_fuss);
                     setVal('profilWerdegang', data.werdegang);
+
+                    // Rollenspezifische Cards anzeigen/verstecken
+                    const spielerCard = document.getElementById('spielerProfilCard');
+                    const trainerCard = document.getElementById('trainerProfilCard');
+
+                    if (spielerCard) spielerCard.style.display = 'none';
+                    if (trainerCard) trainerCard.style.display = 'none';
+
+                    // Spieler-spezifische Felder
+                    if (rolle === 'spieler') {
+                        if (spielerCard) spielerCard.style.display = 'block';
+                        setVal('profilGroesse', data.groesse);
+                        setVal('profilGewicht', data.gewicht);
+                        setVal('profilPosition', data.position);
+                        setVal('profilNebenpositionen', data.nebenpositionen);
+                        setVal('profilStarkerFuss', data.starker_fuss);
+                        setVal('profilJahrgang', data.jahrgang);
+                    }
+
+                    // Trainer-spezifische Felder
+                    if (rolle === 'trainer') {
+                        if (trainerCard) trainerCard.style.display = 'block';
+                        setVal('profilSpielsystem', data.spielsystem);
+                        setVal('profilTaktischeGrundidee', data.taktische_grundidee);
+                        setVal('profilTrainingsschwerpunkte', data.trainingsschwerpunkte);
+                        setVal('profilBisherigeStationen', data.bisherige_stationen);
+                        setVal('profilLizenzen', data.lizenzen);
+                    }
 
                     // Avatar aktualisieren
                     const initials = (data.vorname?.charAt(0) || '') + (data.nachname?.charAt(0) || '');
                     if (initials && document.getElementById('profilAvatar')) {
                         document.getElementById('profilAvatar').textContent = initials.toUpperCase();
                     }
+
+                    // Rolle global speichern für saveProfile
+                    window.currentUserRolle = rolle;
                 }
             } catch (error) {
                 console.error('Fehler beim Laden des Profils:', error);
@@ -8378,25 +8454,42 @@
         }
 
         async function saveProfile() {
-            // Unterstützt beide Ansichten: "Mein Profil" (profil*) und "Einstellungen" (profile*)
+            // Rollenbasiertes Speichern
+            const rolle = (window.currentUserRolle || '').toLowerCase();
+
             const getVal = (id1, id2) => {
                 const el1 = document.getElementById(id1);
                 const el2 = document.getElementById(id2);
                 return (el1?.value?.trim() || el2?.value?.trim() || '');
             };
 
+            // Basis-Daten (für alle Rollen)
             const data = {
                 vorname: getVal('profilVorname', 'profileVorname'),
                 nachname: getVal('profilNachname', 'profileNachname'),
                 telefon: document.getElementById('profilTelefon')?.value?.trim() || '',
                 geburtsdatum: document.getElementById('profilGeburtsdatum')?.value || '',
-                groesse: document.getElementById('profilGroesse')?.value || '',
-                position: document.getElementById('profilPosition')?.value || '',
-                starker_fuss: document.getElementById('profilStarkerFuss')?.value || '',
                 werdegang: document.getElementById('profilWerdegang')?.value?.trim() || '',
-                teamname: getVal('profileTeamname', 'profilTeamname'),
-                rolle: getVal('profileRolle', 'profilRolle')
             };
+
+            // Spieler-spezifische Felder
+            if (rolle === 'spieler') {
+                data.groesse = document.getElementById('profilGroesse')?.value || '';
+                data.gewicht = document.getElementById('profilGewicht')?.value || '';
+                data.position = document.getElementById('profilPosition')?.value || '';
+                data.nebenpositionen = document.getElementById('profilNebenpositionen')?.value?.trim() || '';
+                data.starker_fuss = document.getElementById('profilStarkerFuss')?.value || '';
+                data.jahrgang = document.getElementById('profilJahrgang')?.value || '';
+            }
+
+            // Trainer-spezifische Felder
+            if (rolle === 'trainer') {
+                data.spielsystem = document.getElementById('profilSpielsystem')?.value || '';
+                data.taktische_grundidee = document.getElementById('profilTaktischeGrundidee')?.value?.trim() || '';
+                data.trainingsschwerpunkte = document.getElementById('profilTrainingsschwerpunkte')?.value?.trim() || '';
+                data.bisherige_stationen = document.getElementById('profilBisherigeStationen')?.value?.trim() || '';
+                data.lizenzen = document.getElementById('profilLizenzen')?.value?.trim() || '';
+            }
 
             try {
                 const response = await fetch('/api/profile', {
@@ -10629,9 +10722,9 @@
         async function saveEditPlayer() {
             const id = parseInt(document.getElementById('editPlayerId').value);
             const playerIndex = kaderPlayers.findIndex(p => p.id === id);
-            
+
             console.log('Saving player - ID:', id, 'PlayerIndex:', playerIndex);
-            
+
             if (playerIndex === -1) {
                 console.error('Player not found in kaderPlayers array');
                 alert('Spieler nicht gefunden');
@@ -10689,7 +10782,7 @@
             // An Server senden
             try {
                 console.log('Saving player:', { id, firstname, lastname, jersey, status, positions });
-                
+
                 const response = await fetch(`/api/players/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
