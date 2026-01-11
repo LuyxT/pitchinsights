@@ -5102,7 +5102,7 @@
         </div>
 
         <!-- Invitation Link Modal -->
-        <div id="invitation-link-modal" class="modal-overlay" style="display: none; z-index: 9999;"
+        <div id="invitation-link-modal" class="modal-overlay"
             onclick="if(event.target === this) closeModal('invitation-link-modal')">
             <div class="modal-content"
                 style="max-width: 500px; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
@@ -6615,26 +6615,33 @@
             const max_uses = parseInt(document.getElementById('invitation-max-uses').value);
             const days = parseInt(document.getElementById('invitation-days').value);
 
+            if (!role_id) {
+                alert('Bitte wähle eine Rolle aus');
+                return;
+            }
+
             try {
                 const response = await fetch('/api/invitations', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ role_id, max_uses, expires_in_days: days })
+                    body: JSON.stringify({ role_id: parseInt(role_id), max_uses, days_valid: days })
                 });
 
                 const data = await response.json();
+                console.log('Einladung Response:', data);
 
                 if (data.token) {
                     closeModal('create-invitation-modal');
                     const link = `${window.location.origin}/join/${data.token}`;
                     document.getElementById('invitation-link-display').value = link;
-                    document.getElementById('invitation-link-modal').style.display = 'flex';
+                    document.getElementById('invitation-link-modal').classList.add('active');
                     loadInvitations();
                 } else {
-                    alert('Fehler beim Erstellen der Einladung');
+                    alert('Fehler: ' + (data.error || 'Einladung konnte nicht erstellt werden'));
                 }
             } catch (error) {
                 console.error('Fehler:', error);
+                alert('Netzwerkfehler beim Erstellen der Einladung');
             }
         }
 
