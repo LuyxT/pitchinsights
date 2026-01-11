@@ -6087,8 +6087,12 @@
                     if (spielerCard) spielerCard.style.display = 'none';
                     if (trainerCard) trainerCard.style.display = 'none';
 
+                    // Rollen-Checks (Admin = Trainer)
+                    const isSpieler = rolle === 'spieler';
+                    const isTrainer = ['trainer', 'admin', 'co-trainer'].includes(rolle);
+
                     // Spieler-spezifische Felder
-                    if (rolle === 'spieler') {
+                    if (isSpieler) {
                         if (spielerCard) spielerCard.style.display = 'block';
                         setVal('profilGroesse', data.groesse);
                         setVal('profilGewicht', data.gewicht);
@@ -6098,8 +6102,8 @@
                         setVal('profilJahrgang', data.jahrgang);
                     }
 
-                    // Trainer-spezifische Felder
-                    if (rolle === 'trainer') {
+                    // Trainer-spezifische Felder (inkl. Admin, Co-Trainer)
+                    if (isTrainer) {
                         if (trainerCard) trainerCard.style.display = 'block';
                         setVal('profilSpielsystem', data.spielsystem);
                         setVal('profilTaktischeGrundidee', data.taktische_grundidee);
@@ -8473,7 +8477,11 @@
             };
 
             // Spieler-spezifische Felder
-            if (rolle === 'spieler') {
+            // Rollen-Checks (Admin = Trainer)
+            const isSpieler = rolle === 'spieler';
+            const isTrainer = ['trainer', 'admin', 'co-trainer'].includes(rolle);
+
+            if (isSpieler) {
                 data.groesse = document.getElementById('profilGroesse')?.value || '';
                 data.gewicht = document.getElementById('profilGewicht')?.value || '';
                 data.position = document.getElementById('profilPosition')?.value || '';
@@ -8482,8 +8490,8 @@
                 data.jahrgang = document.getElementById('profilJahrgang')?.value || '';
             }
 
-            // Trainer-spezifische Felder
-            if (rolle === 'trainer') {
+            // Trainer-spezifische Felder (inkl. Admin, Co-Trainer)
+            if (isTrainer) {
                 data.spielsystem = document.getElementById('profilSpielsystem')?.value || '';
                 data.taktische_grundidee = document.getElementById('profilTaktischeGrundidee')?.value?.trim() || '';
                 data.trainingsschwerpunkte = document.getElementById('profilTrainingsschwerpunkte')?.value?.trim() || '';

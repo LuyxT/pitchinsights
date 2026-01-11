@@ -1474,6 +1474,10 @@ async def get_profile(request: Request):
 
     rolle = db_user.get("rolle", "").lower()
 
+    # Admin wird als Trainer behandelt (typischerweise sind Admins Trainer)
+    is_trainer = rolle in ["trainer", "admin", "co-trainer"]
+    is_spieler = rolle == "spieler"
+
     # Basis-Profil für alle Rollen
     profile = {
         "email": db_user.get("email", ""),
@@ -1489,7 +1493,7 @@ async def get_profile(request: Request):
     }
 
     # Spieler-spezifische Felder
-    if rolle == "spieler":
+    if is_spieler:
         profile.update({
             "groesse": db_user.get("groesse"),
             "gewicht": db_user.get("gewicht"),
@@ -1499,8 +1503,8 @@ async def get_profile(request: Request):
             "jahrgang": db_user.get("jahrgang"),
         })
 
-    # Trainer-spezifische Felder
-    elif rolle == "trainer":
+    # Trainer-spezifische Felder (inkl. Admin, Co-Trainer)
+    elif is_trainer:
         profile.update({
             "spielsystem": db_user.get("spielsystem", ""),
             "taktische_grundidee": db_user.get("taktische_grundidee", ""),
@@ -1534,6 +1538,10 @@ async def update_profile(request: Request):
 
     rolle = db_user.get("rolle", "").lower()
 
+    # Admin wird als Trainer behandelt (typischerweise sind Admins Trainer)
+    is_trainer = rolle in ["trainer", "admin", "co-trainer"]
+    is_spieler = rolle == "spieler"
+
     # SECURITY: Basis-Felder (für alle Rollen)
     try:
         vorname = InputValidator.validate_name(
@@ -1557,7 +1565,7 @@ async def update_profile(request: Request):
     }
 
     # Spieler-spezifische Felder
-    if rolle == "spieler":
+    if is_spieler:
         # Größe validieren
         groesse = data.get("groesse")
         if groesse:
@@ -1609,8 +1617,8 @@ async def update_profile(request: Request):
                 jahrgang = None
         update_fields["jahrgang"] = jahrgang
 
-    # Trainer-spezifische Felder
-    elif rolle == "trainer":
+    # Trainer-spezifische Felder (inkl. Admin, Co-Trainer)
+    elif is_trainer:
         update_fields["spielsystem"] = str(
             data.get("spielsystem", "")).strip()[:50]
         update_fields["taktische_grundidee"] = str(
