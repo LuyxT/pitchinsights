@@ -3298,6 +3298,24 @@
 
                     <!-- Rechte Spalte: Rollenspezifische Daten -->
                     <div>
+                        <!-- TEAM MANAGER (nur Hauptadmin) -->
+                        <div class="profil-card" id="teamManagerCard" style="margin-bottom: 20px; display: none;">
+                            <h3 style="margin-bottom: 12px; font-size: 18px;">🏟️ Mannschaften</h3>
+                            <div id="teamList"
+                                style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+                                <span style="opacity: 0.7; font-size: 13px;">Lade Mannschaften...</span>
+                            </div>
+                            <div id="teamCreateSection">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Neue Mannschaft</label>
+                                <input type="text" id="newMannschaftName" class="input-field"
+                                    placeholder="z.B. U19 / 2. Herren">
+                                <button class="btn-primary" style="margin-top: 12px;"
+                                    onclick="createAdditionalTeam()">Mannschaft anlegen</button>
+                                <div id="teamCreateError"
+                                    style="margin-top: 10px; font-size: 12px; color: #ef4444; display: none;"></div>
+                            </div>
+                        </div>
+
                         <!-- PROFIL-TYP WÄHLER (für Admin sichtbar) -->
                         <div class="profil-card" id="profilTypWaehler" style="margin-bottom: 20px; display: none;">
                             <h3 style="margin-bottom: 16px; font-size: 18px;">🎭 Profil-Typ</h3>
@@ -6119,12 +6137,14 @@
                 const teamResponse = await fetch('/api/team/info');
                 let teamRolle = '';
                 let isTeamAdmin = false;
+                let teamInfo = null;
 
                 if (teamResponse.ok) {
-                    const teamData = await teamResponse.json();
-                    teamRolle = (teamData.role_name || '').toLowerCase();
-                    isTeamAdmin = teamData.is_admin || false;
-                    console.log('[Profil] Team-Rolle:', teamData.role_name, '| isAdmin:', isTeamAdmin);
+                    teamInfo = await teamResponse.json();
+                    teamRolle = (teamInfo.role_name || '').toLowerCase();
+                    isTeamAdmin = teamInfo.is_admin || false;
+                    console.log('[Profil] Team-Rolle:', teamInfo.role_name, '| isAdmin:', isTeamAdmin);
+                    loadTeamManager(teamInfo);
                 }
 
                 const response = await fetch('/api/profile');
@@ -6225,6 +6245,93 @@
 
             } catch (error) {
                 console.error('Fehler beim Laden des Profils:', error);
+            }
+        }
+
+        async function loadTeamManager(teamInfo) {
+            const card = document.getElementById('teamManagerCard');
+            if (!card) return;
+
+            if (!teamInfo || !teamInfo.has_team || !teamInfo.is_primary_admin) {
+                card.style.display = 'none';
+                return;
+            }
+
+            card.style.display = 'block';
+            const list = document.getElementById('teamList');
+            const activeTeamId = teamInfo.team_id;
+
+            try {
+                const response = await fetch('/api/teams');
+                const data = await response.json();
+                const teams = data.teams || [];
+                if (!teams.length) {
+                    list.innerHTML = '<span style="opacity: 0.7; font-size: 13px;">Keine Mannschaften gefunden.</span>';
+                    return;
+                }
+
+                list.innerHTML = teams.map(team => {
+                    const isActive = team.id === activeTeamId;
+                    const label = team.mannschaft || team.name || 'Mannschaft';
+                    return `
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: 10px;">
+                            <div>
+                                <div style="font-weight: 600;">${escapeHtml(label)}</div>
+                                <div style="font-size: 12px; opacity: 0.7;">${escapeHtml(team.verein || '')}</div>
+                            </div>
+                            ${isActive ? '<span style="font-size: 12px; color: #22c55e; font-weight: 600;">Aktiv</span>'
+                            : `<button class="btn-secondary" onclick="switchTeam(${team.id})">Wechseln</button>`}
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                list.innerHTML = '<span style="opacity: 0.7; font-size: 13px;">Teams konnten nicht geladen werden.</span>';
+            }
+        }
+
+        async function createAdditionalTeam() {
+            const input = document.getElementById('newMannschaftName');
+            const errorEl = document.getElementById('teamCreateError');
+            if (!input || !errorEl) return;
+
+            const mannschaft = input.value.trim();
+            if (!mannschaft) {
+                errorEl.textContent = 'Bitte gib einen Mannschaftsnamen ein.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/team/create/additional', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mannschaft })
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    window.location.reload();
+                } else {
+                    errorEl.textContent = data.error || 'Fehler beim Anlegen der Mannschaft.';
+                    errorEl.style.display = 'block';
+                }
+            } catch (e) {
+                errorEl.textContent = 'Netzwerkfehler. Bitte versuche es erneut.';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        async function switchTeam(teamId) {
+            try {
+                const response = await fetch('/api/teams/switch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ team_id: teamId })
+                });
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error('Teamwechsel fehlgeschlagen', e);
             }
         }
 

@@ -151,7 +151,7 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
 
         logging.info(
             f"[AUTH] Authentication successful for user_id={data.get('id')}")
-        return {"email": data["email"], "id": data["id"]}
+        return {"email": data["email"], "id": data["id"], "active_team_id": data.get("team_id")}
 
     except SignatureExpired:
         logger.info("Session token expired")
@@ -171,9 +171,11 @@ def create_session_token(user: Dict[str, Any], request: Request) -> str:
     """
     client_ip = get_client_ip(request)
 
+    team_id = user.get("team_id") if user.get("team_id") is not None else user.get("active_team_id")
     return serializer.dumps({
         "email": user["email"],
         "id": user["id"],
+        "team_id": team_id,
         "ip_hash": get_ip_hash(client_ip) if SecurityConfig.SESSION_BIND_IP else None,
         "fp": get_request_fingerprint(request),
         "iat": datetime.utcnow().isoformat()  # Issued At
@@ -205,6 +207,28 @@ def require_auth(request: Request) -> Dict[str, Any]:
     if not user:
         raise HTTPException(status_code=401, detail="Nicht authentifiziert")
     return user
+
+
+def get_active_team_id(request: Request, db_user: Dict[str, Any]) -> Optional[int]:
+    """
+    Ermittelt aktives Team aus Session (falls Mitglied), sonst Standard-Team.
+    SECURITY: Team-Zugehörigkeit serverseitig prüfen.
+    """
+    session_team_id = None
+    user = get_current_user(request)
+    if user:
+        session_team_id = user.get("active_team_id")
+
+    if session_team_id:
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?
+            """, (session_team_id, db_user["id"]))
+            if cursor.fetchone():
+                return session_team_id
+
+    return db_user.get("team_id")
 
 
 # ============================================
@@ -1693,7 +1717,7 @@ async def get_team_info(request: Request):
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
-            SELECT u.*, r.name as role_name, t.name as team_name, t.verein, t.mannschaft
+            SELECT u.*, r.name as role_name, t.name as team_name, t.verein, t.mannschaft, t.admin_user_id
             FROM users u
             LEFT JOIN roles r ON u.role_id = r.id
             LEFT JOIN teams t ON u.team_id = t.id
@@ -1713,6 +1737,7 @@ async def get_team_info(request: Request):
     return {
         "has_team": True,
         "is_admin": bool(user_data["is_admin"]),
+        "is_primary_admin": bool(user_data["admin_user_id"] == user["id"]),
         "team_id": user_data["team_id"],
         "team_name": user_data["team_name"],
         "verein": user_data["verein"],
@@ -1725,6 +1750,71 @@ async def get_team_info(request: Request):
             for p in permissions
         }
     }
+
+
+@router.get("/api/teams")
+async def list_teams(request: Request):
+    """
+    Teams des Users abrufen (für Teamwechsel).
+    SECURITY: Nur Teams, in denen der User Mitglied ist.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"teams": []}, status_code=401)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT t.id, t.name, t.verein, t.mannschaft, t.admin_user_id
+            FROM team_members tm
+            JOIN teams t ON tm.team_id = t.id
+            WHERE tm.user_id = ? AND t.deleted_at IS NULL
+            ORDER BY t.created_at ASC
+        """, (user["id"],))
+        teams = [dict(row) for row in cursor.fetchall()]
+
+    return {"teams": teams}
+
+
+@router.post("/api/teams/switch")
+async def switch_team(request: Request):
+    """
+    Aktives Team wechseln.
+    SECURITY: Nur eigene Teams, Session-Token neu ausstellen.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
+
+    team_id = data.get("team_id")
+    if not team_id:
+        return JSONResponse({"error": "Team erforderlich"}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT role_id FROM team_members WHERE team_id = ? AND user_id = ?
+        """, (team_id, user["id"]))
+        role_row = cursor.fetchone()
+        if not role_row:
+            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+        cursor.execute("""
+            UPDATE users SET team_id = ?, role_id = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (team_id, role_row["role_id"], user["id"]))
+        db.commit()
+
+    token = create_session_token(
+        {"email": user["email"], "id": user["id"], "team_id": team_id}, request)
+    response = JSONResponse({"success": True, "team_id": team_id})
+    set_session_cookie(response, token)
+    return response
 
 
 @router.post("/api/team/create")
@@ -1771,6 +1861,65 @@ async def create_team_api(request: Request):
     log_audit_event(user["id"], "TEAM_CREATED", "team", team_id)
 
     return {"success": True, "team_id": team_id}
+
+
+@router.post("/api/team/create/additional")
+async def create_additional_team(request: Request):
+    """
+    Neue Mannschaft fuer bestehenden Verein anlegen.
+    SECURITY: Nur Hauptadmin (admin_user_id) des aktiven Teams.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
+
+    try:
+        mannschaft = InputValidator.validate_team_name(
+            data.get("mannschaft", ""), "mannschaft", required=True)
+    except ValidationError as e:
+        return JSONResponse({"error": e.message}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT id, verein, admin_user_id FROM teams
+            WHERE id = ? AND deleted_at IS NULL
+        """, (db_user["team_id"],))
+        team_row = cursor.fetchone()
+        if not team_row:
+            return JSONResponse({"error": "Team nicht gefunden"}, status_code=404)
+
+        if team_row["admin_user_id"] != user["id"]:
+            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+        verein = team_row["verein"] or ""
+
+        cursor.execute("""
+            SELECT 1 FROM teams
+            WHERE LOWER(verein) = LOWER(?) AND LOWER(mannschaft) = LOWER(?)
+            AND deleted_at IS NULL
+            LIMIT 1
+        """, (verein, mannschaft))
+        if cursor.fetchone():
+            return JSONResponse({"error": "Mannschaft existiert bereits."}, status_code=400)
+
+    team_id = create_team(verein, mannschaft, user["id"])
+    log_audit_event(user["id"], "TEAM_CREATED_ADDITIONAL", "team", team_id)
+
+    token = create_session_token(
+        {"email": user["email"], "id": user["id"], "team_id": team_id}, request)
+    response = JSONResponse({"success": True, "team_id": team_id})
+    set_session_cookie(response, token)
+    return response
 
 
 @router.get("/api/team/status")
