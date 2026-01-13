@@ -10584,6 +10584,14 @@
                 const teamDisplayName = userTeamInfo.mannschaft || userTeamInfo.team_name || 'Mein Team';
                 const vereinName = userTeamInfo.verein ? `${userTeamInfo.verein} - ` : '';
 
+                if (kaderTeams.length === 0) {
+                    kaderTeams = [{
+                        id: userTeamInfo.team_id || 'team',
+                        name: teamDisplayName
+                    }];
+                    localStorage.setItem('kaderTeams', JSON.stringify(kaderTeams));
+                }
+
                 const teamOption = document.createElement('option');
                 teamOption.value = 'team';
                 teamOption.textContent = `${vereinName}${teamDisplayName}`;
