@@ -1021,17 +1021,24 @@ def use_invitation(token: str, user_id: int) -> Dict[str, Any]:
         if cursor.fetchone():
             return {"success": False, "error": "Du bist bereits Mitglied dieses Teams"}
 
+        # Rolle serverseitig festschreiben (Spieler fuer Einladungsbeitritt)
+        cursor.execute("""
+            SELECT id FROM roles WHERE team_id = ? AND LOWER(name) = 'spieler'
+        """, (invitation["team_id"],))
+        player_role = cursor.fetchone()
+        role_id = player_role["id"] if player_role else invitation["role_id"]
+
         # Team beitreten
         cursor.execute("""
             INSERT INTO team_members (team_id, user_id, role_id)
             VALUES (?, ?, ?)
-        """, (invitation["team_id"], user_id, invitation["role_id"]))
+        """, (invitation["team_id"], user_id, role_id))
 
         # User aktualisieren
         cursor.execute("""
             UPDATE users SET team_id = ?, role_id = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        """, (invitation["team_id"], invitation["role_id"], user_id))
+        """, (invitation["team_id"], role_id, user_id))
 
         # Nutzung erhöhen
         cursor.execute("""

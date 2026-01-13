@@ -63,6 +63,45 @@ serializer = URLSafeTimedSerializer(SecurityConfig.SECRET_KEY)
 # Helper Functions
 # ============================================
 
+STAFF_ROLE_NAMES = {
+    "admin",
+    "trainer",
+    "co-trainer",
+    "torwarttrainer",
+    "athletiktrainer",
+    "scout",
+    "analyst",
+    "physio",
+}
+
+
+def get_user_role_name(db_user: Dict[str, Any]) -> str:
+    """
+    Ermittelt den Rollennamen eines Users aus roles Tabelle (Fallback: users.rolle).
+    SECURITY: Rollenermittlung serverseitig.
+    """
+    role_name = ""
+    role_id = db_user.get("role_id")
+    if role_id:
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT name FROM roles WHERE id = ?", (role_id,))
+            role_row = cursor.fetchone()
+            if role_row:
+                role_name = role_row["name"]
+
+    if not role_name:
+        role_name = db_user.get("rolle", "")
+
+    return str(role_name).lower()
+
+
+def is_staff_user(db_user: Dict[str, Any]) -> bool:
+    """Trainer/Staff Rollen für schreibende Team-Funktionen."""
+    if db_user.get("is_admin"):
+        return True
+    return get_user_role_name(db_user) in STAFF_ROLE_NAMES
+
 def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
     """
     Authentifiziert User anhand des Session-Cookies.
@@ -856,10 +895,16 @@ async def register(
         if invitation_data:
             # Mit Einladung: Direkt Team zuweisen und Onboarding überspringen
             # SECURITY: Bei Einladung ist Zahlung nicht erforderlich (Team-Mitglied)
+            # SECURITY: Rolle serverseitig festschreiben (Spieler für Einladungs-Registrierung)
+            cursor.execute("""
+                SELECT id FROM roles WHERE team_id = ? AND LOWER(name) = 'spieler'
+            """, (invitation_data["team_id"],))
+            player_role = cursor.fetchone()
+            role_id = player_role["id"] if player_role else invitation_data["role_id"]
             cursor.execute("""
                 INSERT INTO users (email, password_hash, team_id, role_id, onboarding_complete, is_active, payment_status)
                 VALUES (?, ?, ?, ?, 1, 1, 'paid')
-            """, (email, password_hash, invitation_data["team_id"], invitation_data["role_id"]))
+            """, (email, password_hash, invitation_data["team_id"], role_id))
             user_id = cursor.lastrowid
 
             # Einladung als benutzt markieren
@@ -881,48 +926,24 @@ async def register(
             response = RedirectResponse(url="/dashboard", status_code=303)
             set_session_cookie(response, token)
         else:
-            # Prüfe Promo-Code für kostenlosen Zugang
-            valid_promo_codes = ["Admin100", "ADMIN100",
-                                 "admin100"]  # Case-insensitive check
-            has_valid_promo = promo_code and promo_code.strip() in valid_promo_codes
-
-            if has_valid_promo:
-                # Mit gültigem Promo-Code: Kostenloser Zugang
-                cursor.execute("""
-                    INSERT INTO users (email, password_hash, onboarding_complete, is_active, payment_status)
-                    VALUES (?, ?, 0, 1, 'paid')
-                """, (email, password_hash))
-                user_id = cursor.lastrowid
-                db.commit()
-
-                log_audit_event(user_id, "USER_REGISTERED_WITH_PROMO",
-                                "user", user_id, f"promo_code={promo_code.strip()}", client_ip)
-                logger.info(
-                    f"New user registered with promo code: user_id={user_id}, email={email}, promo={promo_code.strip()}")
-
-                # Auto-Login zum Onboarding
-                token = create_session_token(
-                    {"email": email, "id": user_id}, request)
-                response = RedirectResponse(url="/onboarding", status_code=303)
-                set_session_cookie(response, token)
-                return response
-
-            # Ohne Promo-Code: User erstellen mit payment_status='pending'
-            # User muss zuerst bezahlen bevor er Zugang bekommt
+            # Pilotphase: Kostenloser Zugang ohne Paywall
             cursor.execute("""
                 INSERT INTO users (email, password_hash, onboarding_complete, is_active, payment_status)
-                VALUES (?, ?, 0, 0, 'pending')
+                VALUES (?, ?, 0, 1, 'paid')
             """, (email, password_hash))
             user_id = cursor.lastrowid
             db.commit()
-
-            log_audit_event(user_id, "USER_REGISTERED_PENDING_PAYMENT",
+            log_audit_event(user_id, "USER_REGISTERED_FREE_PILOT",
                             "user", user_id, None, client_ip)
             logger.info(
-                f"New user registered (pending payment): user_id={user_id}, email={email}")
+                f"New user registered (free pilot): user_id={user_id}, email={email}")
 
-            # Redirect zur Zahlungsanweisungs-Seite
-            return RedirectResponse(url="/payment/pending", status_code=303)
+            # Auto-Login zum Onboarding
+            token = create_session_token(
+                {"email": email, "id": user_id}, request)
+            response = RedirectResponse(url="/onboarding", status_code=303)
+            set_session_cookie(response, token)
+            return response
 
     return response
 
@@ -1253,19 +1274,16 @@ async def dashboard(request: Request):
     if not db_user:
         return RedirectResponse(url="/login", status_code=303)
 
-    # SECURITY: User ohne Bezahlung hat keinen Zugang
-    payment_status = db_user.get("payment_status", "unpaid")
-    if payment_status not in ("paid",):
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request,
-             "error": "Dein Account ist noch nicht freigeschaltet. Bitte schließe die Zahlung ab.",
-             "csrf_token": generate_csrf_token("login_form")}
-        )
-
     # Onboarding-Status prüfen
     if not db_user.get("onboarding_complete"):
         return RedirectResponse(url="/onboarding", status_code=303)
+
+    role_name = get_user_role_name(db_user)
+    if role_name == "spieler" and not db_user.get("is_admin"):
+        return templates.TemplateResponse(
+            "player.html",
+            {"request": request, "user": user}
+        )
 
     return templates.TemplateResponse(
         "os.html",
@@ -2378,6 +2396,8 @@ async def stream_video(request: Request, video_id: int):
     db_user = get_user_by_id(user["id"])
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
+    if not is_staff_user(db_user):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
     with get_db_connection() as db:
         cursor = db.cursor()
@@ -2978,7 +2998,7 @@ async def join_page(request: Request, token: str):
         "request": request,
         "token": token,
         "team_name": invitation["team_name"],
-        "role_name": invitation["role_name"],
+        "role_name": "Spieler",
         "logged_in": user is not None
     })
 
@@ -3371,8 +3391,8 @@ async def create_event(request: Request):
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
-            INSERT INTO calendar_events (team_id, title, description, event_type, event_date, start_time, end_time, location, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO calendar_events (team_id, title, description, event_type, event_date, start_time, end_time, location, created_by, visibility)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'team')
         """, (db_user["team_id"], title, description, event_type, event_date, start_time, end_time, location, user["id"]))
         db.commit()
         event_id = cursor.lastrowid
@@ -3390,6 +3410,8 @@ async def delete_event(request: Request, event_id: int):
     db_user = get_user_by_id(user["id"])
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
+    if not is_staff_user(db_user):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
     with get_db_connection() as db:
         cursor = db.cursor()
@@ -3439,6 +3461,201 @@ async def get_week_events(request: Request):
             week[day_index].append(event)
 
     return JSONResponse({"events": events, "week": week})
+
+
+# ============================================
+# API Endpoints - Player View (Mobile)
+# ============================================
+
+@router.get("/api/player/next-events")
+async def get_player_next_events(request: Request):
+    """Naechste Training/Spiel Events fuer Spieler."""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"events": []}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"events": []})
+
+    staff_roles = sorted(STAFF_ROLE_NAMES)
+    placeholders = ",".join("?" * len(staff_roles))
+    today = datetime.utcnow().date().isoformat()
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute(f"""
+            SELECT e.id, e.title, e.event_type, e.event_date, e.start_time, e.end_time, e.location,
+                   r.status as rsvp_status
+            FROM calendar_events e
+            LEFT JOIN event_rsvps r ON r.event_id = e.id AND r.user_id = ?
+            LEFT JOIN users u ON e.created_by = u.id
+            LEFT JOIN roles ro ON u.role_id = ro.id
+            WHERE e.team_id = ?
+              AND e.deleted_at IS NULL
+              AND e.event_type IN ('training', 'match')
+              AND e.event_date >= ?
+              AND (
+                    e.visibility = 'team'
+                    OR e.created_by IS NULL
+                    OR (e.visibility = 'private' AND LOWER(ro.name) IN ({placeholders}))
+                  )
+            ORDER BY e.event_date, e.start_time
+            LIMIT 5
+        """, [user["id"], db_user["team_id"], today, *staff_roles])
+        events = [dict(row) for row in cursor.fetchall()]
+
+    return JSONResponse({"events": events})
+
+
+@router.post("/api/player/rsvp")
+async def set_player_rsvp(request: Request):
+    """Zu- und Absage fuer Team-Events."""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    if get_user_role_name(db_user) != "spieler" and not db_user.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungueltige Daten"}, status_code=400)
+
+    event_id = data.get("event_id")
+    status = str(data.get("status", "")).lower().strip()
+    if status not in ("yes", "no", "maybe"):
+        return JSONResponse({"error": "Ungueltiger Status"}, status_code=400)
+
+    staff_roles = sorted(STAFF_ROLE_NAMES)
+    placeholders = ",".join("?" * len(staff_roles))
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute(f"""
+            SELECT e.id
+            FROM calendar_events e
+            LEFT JOIN users u ON e.created_by = u.id
+            LEFT JOIN roles ro ON u.role_id = ro.id
+            WHERE e.id = ? AND e.team_id = ? AND e.deleted_at IS NULL
+              AND e.event_type IN ('training', 'match')
+              AND (
+                    e.visibility = 'team'
+                    OR e.created_by IS NULL
+                    OR (e.visibility = 'private' AND LOWER(ro.name) IN ({placeholders}))
+                  )
+        """, [event_id, db_user["team_id"], *staff_roles])
+        event_row = cursor.fetchone()
+        if not event_row:
+            return JSONResponse({"error": "Event nicht gefunden"}, status_code=404)
+
+        cursor.execute("""
+            INSERT INTO event_rsvps (event_id, user_id, status)
+            VALUES (?, ?, ?)
+            ON CONFLICT(event_id, user_id)
+            DO UPDATE SET status = excluded.status, updated_at = CURRENT_TIMESTAMP
+        """, (event_id, user["id"], status))
+        db.commit()
+
+    return JSONResponse({"success": True, "status": status})
+
+
+@router.get("/api/player/calendar")
+async def get_player_calendar(request: Request):
+    """Kalender fuer Spieler: Team-Events + private Termine."""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"events": []}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"events": []})
+
+    staff_roles = sorted(STAFF_ROLE_NAMES)
+    placeholders = ",".join("?" * len(staff_roles))
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute(f"""
+            SELECT e.id, e.title, e.event_type, e.event_date, e.start_time, e.end_time, e.location,
+                   e.visibility, e.created_by
+            FROM calendar_events e
+            LEFT JOIN users u ON e.created_by = u.id
+            LEFT JOIN roles ro ON u.role_id = ro.id
+            WHERE e.team_id = ? AND e.deleted_at IS NULL
+              AND (
+                    e.visibility = 'team'
+                    OR e.created_by IS NULL
+                    OR (e.visibility = 'private' AND LOWER(ro.name) IN ({placeholders}))
+                    OR (e.visibility = 'private' AND e.created_by = ?)
+                  )
+            ORDER BY e.event_date, e.start_time
+            LIMIT 200
+        """, [db_user["team_id"], *staff_roles, user["id"]])
+        rows = cursor.fetchall()
+
+    events = []
+    for row in rows:
+        item = dict(row)
+        item["scope"] = "private" if item["visibility"] == "private" and item["created_by"] == user["id"] else "team"
+        events.append(item)
+
+    return JSONResponse({"events": events})
+
+
+@router.post("/api/player/calendar")
+async def create_player_private_event(request: Request):
+    """Privaten Termin fuer Spieler erstellen."""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    if get_user_role_name(db_user) != "spieler" and not db_user.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungueltige Daten"}, status_code=400)
+
+    title = str(data.get("title", "")).strip()[:200]
+    if not title:
+        return JSONResponse({"error": "Titel erforderlich"}, status_code=400)
+
+    event_date = str(data.get("date", data.get("event_date", ""))).strip()[:10]
+    if not event_date:
+        return JSONResponse({"error": "Datum erforderlich"}, status_code=400)
+
+    event_type = str(data.get("type", data.get("event_type", "training"))).strip()
+    if event_type not in ("training", "match", "meeting", "other"):
+        event_type = "other"
+
+    description = str(data.get("description", "")).strip()[:1000]
+    start_time = str(data.get("start_time", data.get("time", ""))).strip()[:8] or None
+    end_time = str(data.get("end_time", "")).strip()[:8] or None
+    location = str(data.get("location", "")).strip()[:200]
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO calendar_events (team_id, title, description, event_type, event_date,
+                                         start_time, end_time, location, created_by, visibility)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'private')
+        """, (db_user["team_id"], title, description, event_type, event_date,
+              start_time, end_time, location, user["id"]))
+        db.commit()
+        event_id = cursor.lastrowid
+
+    return JSONResponse({"success": True, "id": event_id})
 
 
 # ============================================
