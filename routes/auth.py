@@ -2263,6 +2263,7 @@ async def get_invitations(request: Request):
 # Erlaubte Video-Formate und Max-Größe
 ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.webm', '.mkv'}
 MAX_VIDEO_SIZE = 500 * 1024 * 1024  # 500 MB
+TEAM_VIDEO_QUOTA = 5 * 1024 * 1024 * 1024  # 5 GB pro Mannschaft
 
 
 def get_video_upload_dir():
@@ -2303,6 +2304,19 @@ async def upload_video(
 
     if file_size > MAX_VIDEO_SIZE:
         return JSONResponse({"error": "Video zu groß (max. 500 MB)"}, status_code=400)
+
+    # SECURITY: Team-Quota prüfen (nur nicht-gelöschte Videos)
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT COALESCE(SUM(file_size), 0) as total_size
+            FROM videos
+            WHERE team_id = ? AND deleted_at IS NULL
+        """, (db_user["team_id"],))
+        total_size = cursor.fetchone()["total_size"] or 0
+
+    if total_size + file_size > TEAM_VIDEO_QUOTA:
+        return JSONResponse({"error": "Team-Speicherlimit erreicht (max. 5 GB)."}, status_code=400)
 
     # SECURITY: Sicherer Dateiname
     safe_filename = f"{uuid.uuid4().hex}{ext}"
