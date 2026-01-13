@@ -3291,6 +3291,45 @@ async def delete_player(request: Request, player_id: int):
     return JSONResponse({"success": True})
 
 
+@router.delete("/api/players/cleanup-dummy")
+async def cleanup_dummy_players(request: Request):
+    """
+    Dummy-Spieler entfernen (Soft Delete).
+    SECURITY: Nur Admins.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    if not db_user.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+    dummy_names = ["Max Müller", "John Schmidt", "Tom Klaus", "Chris Davis"]
+    placeholders = ",".join("?" * len(dummy_names))
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute(f"""
+            UPDATE players
+            SET deleted_at = CURRENT_TIMESTAMP
+            WHERE team_id = ?
+              AND deleted_at IS NULL
+              AND user_id IS NULL
+              AND name IN ({placeholders})
+              AND (email IS NULL OR email = '')
+              AND (telefon IS NULL OR telefon = '')
+              AND (notizen IS NULL OR notizen = '')
+        """, [db_user["team_id"], *dummy_names])
+        db.commit()
+        deleted = cursor.rowcount
+
+    return JSONResponse({"success": True, "deleted": deleted})
+
+
 @router.get("/api/players/stats")
 async def get_player_stats(request: Request):
     """Spieler-Statistiken für Dashboard."""
