@@ -5049,7 +5049,7 @@
         </div>
 
         <!-- Create Role Modal -->
-        <div id="create-role-modal" class="modal-overlay" style="display: none; z-index: 9999;"
+        <div id="create-role-modal" class="modal-overlay" style="z-index: 9999;"
             onclick="if(event.target === this) closeModal('create-role-modal')">
             <div class="modal-content"
                 style="max-width: 600px; max-height: 85vh; overflow-y: auto; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
@@ -5121,7 +5121,7 @@
         </div>
 
         <!-- Edit Permissions Modal -->
-        <div id="edit-permissions-modal" class="modal-overlay" style="display: none; z-index: 9999;"
+        <div id="edit-permissions-modal" class="modal-overlay" style="z-index: 9999;"
             onclick="if(event.target === this) closeModal('edit-permissions-modal')">
             <div class="modal-content"
                 style="max-width: 600px; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
@@ -6488,7 +6488,7 @@
                     </label>
                 `).join('');
 
-            document.getElementById('create-role-modal').style.display = 'flex';
+            document.getElementById('create-role-modal').classList.add('active');
         }
 
         async function showCreateInvitationModal() {
@@ -6767,7 +6767,7 @@
                 }).join('');
 
                 // Modal öffnen
-                document.getElementById('edit-permissions-modal').style.display = 'flex';
+                document.getElementById('edit-permissions-modal').classList.add('active');
 
             } catch (error) {
                 console.error('Fehler:', error);
