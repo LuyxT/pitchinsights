@@ -1361,6 +1361,16 @@ async def complete_onboarding(request: Request):
         user_data = cursor.fetchone()
 
         if not user_data or not user_data["team_id"]:
+            # Verein/Mannschaft doppelt? -> neue Mannschaft erzwingen
+            cursor.execute("""
+                SELECT 1 FROM teams
+                WHERE LOWER(verein) = LOWER(?) AND LOWER(mannschaft) = LOWER(?)
+                AND deleted_at IS NULL
+                LIMIT 1
+            """, (verein, mannschaft))
+            if cursor.fetchone():
+                return JSONResponse({"error": "Verein existiert bereits. Bitte eine neue Mannschaft anlegen."}, status_code=400)
+
             # Neues Team erstellen
             team_id = create_team(verein, mannschaft, user["id"])
 
@@ -1744,6 +1754,18 @@ async def create_team_api(request: Request):
             data.get("mannschaft", ""), "mannschaft", required=True)
     except ValidationError as e:
         return JSONResponse({"error": e.message}, status_code=400)
+
+    # Verein/Mannschaft doppelt? -> neue Mannschaft erzwingen
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT 1 FROM teams
+            WHERE LOWER(verein) = LOWER(?) AND LOWER(mannschaft) = LOWER(?)
+            AND deleted_at IS NULL
+            LIMIT 1
+        """, (verein, mannschaft))
+        if cursor.fetchone():
+            return JSONResponse({"error": "Verein existiert bereits. Bitte eine neue Mannschaft anlegen."}, status_code=400)
 
     team_id = create_team(verein, mannschaft, user["id"])
     log_audit_event(user["id"], "TEAM_CREATED", "team", team_id)
