@@ -1001,10 +1001,14 @@
             cursor: pointer;
             box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
             transition: all 0.3s;
-            display: flex !important;
+            display: none !important;
             align-items: center;
             justify-content: center;
             z-index: 99999 !important;
+        }
+
+        .add-widget-btn.is-visible {
+            display: flex !important;
         }
 
         .add-widget-btn:hover {
@@ -6067,7 +6071,7 @@
             const addBtn = document.getElementById('floatingAddWidget');
             if (!addBtn) return;
             const show = activeApp === 'home';
-            addBtn.style.display = show ? 'flex' : 'none';
+            addBtn.classList.toggle('is-visible', show);
         }
 
         // Alias für Legacy-Code
