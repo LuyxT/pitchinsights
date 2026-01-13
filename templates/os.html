@@ -10529,42 +10529,8 @@
                     }
                 }
 
-                // Keine Spieler in der DB - erstelle Default-Spieler
-                const defaultPlayers = [
-                    { name: 'Max Müller', position: 'torwart', trikotnummer: 1, status: 'Fit' },
-                    { name: 'John Schmidt', position: 'abwehr', trikotnummer: 4, status: 'Fit' },
-                    { name: 'Tom Klaus', position: 'mittelfeld', trikotnummer: 8, status: 'Belastet' },
-                    { name: 'Chris Davis', position: 'sturm', trikotnummer: 9, status: 'Verletzt' }
-                ];
-
-                for (const player of defaultPlayers) {
-                    try {
-                        await fetch('/api/players', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(player)
-                        });
-                    } catch (e) {
-                        console.log('Fehler beim Erstellen des Default-Spielers:', e);
-                    }
-                }
-
-                // Lade nochmal nach dem Erstellen
-                const refreshResponse = await fetch('/api/players');
-                if (refreshResponse.ok) {
-                    const refreshData = await refreshResponse.json();
-                    kaderPlayers = (refreshData.players || []).map(p => ({
-                        id: p.id,
-                        firstname: p.name.split(' ')[0] || p.name,
-                        lastname: p.name.split(' ').slice(1).join(' ') || '',
-                        position: p.position || 'mittelfeld',
-                        jersey: p.trikotnummer || 0,
-                        status: (p.status || 'Fit').toLowerCase(),
-                        email: p.email || '',
-                        phone: p.telefon || '',
-                        notes: p.notizen || ''
-                    }));
-                }
+                // Keine Spieler in der DB
+                kaderPlayers = [];
                 return;
             } catch (e) {
                 console.log('API nicht verfügbar, nutze localStorage');
@@ -10572,15 +10538,6 @@
 
             // Fallback: localStorage
             kaderPlayers = JSON.parse(localStorage.getItem('kaderPlayers') || '[]');
-            if (kaderPlayers.length === 0) {
-                kaderPlayers = [
-                    { id: 1, firstname: 'Max', lastname: 'Müller', position: 'torwart', jersey: 1, status: 'fit' },
-                    { id: 2, firstname: 'John', lastname: 'Schmidt', position: 'abwehr', jersey: 4, status: 'fit' },
-                    { id: 3, firstname: 'Tom', lastname: 'Klaus', position: 'mittelfeld', jersey: 8, status: 'training' },
-                    { id: 4, firstname: 'Chris', lastname: 'Davis', position: 'sturm', jersey: 9, status: 'reha' }
-                ];
-                localStorage.setItem('kaderPlayers', JSON.stringify(kaderPlayers));
-            }
         }
 
         // Initialisierung beim Laden
