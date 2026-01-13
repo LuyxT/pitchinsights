@@ -11475,11 +11475,13 @@
             currentSize: 4,
             isDrawing: false,
             drawHistory: [],
+            actionHistory: [],
             currentPath: [],
             shapeStart: null,
             ownPlayers: [],
             opponentPlayers: [],
             draggedPlayer: null,
+            dragStart: null,
             kaderData: [],
             initialized: false
         };
@@ -11644,6 +11646,14 @@
             renderTaktikPlayers();
         }
 
+        function findTaktikPlayerById(id) {
+            if (!id) return null;
+            if (id.startsWith('own')) {
+                return taktikState.ownPlayers.find(function (p) { return p.id === id; }) || null;
+            }
+            return taktikState.opponentPlayers.find(function (p) { return p.id === id; }) || null;
+        }
+
         function renderTaktikPlayers() {
             document.querySelectorAll('.player-marker').forEach(function (el) { el.remove(); });
 
@@ -11706,7 +11716,11 @@
             const el = e.target.closest('.player-marker');
             if (!el) return;
 
+            const player = findTaktikPlayerById(el.dataset.id);
             taktikState.draggedPlayer = { element: el, id: el.dataset.id };
+            if (player) {
+                taktikState.dragStart = { id: player.id, x: player.x, y: player.y };
+            }
             el.classList.add('dragging');
 
             document.addEventListener('mousemove', onTaktikDrag);
@@ -11739,9 +11753,23 @@
 
         function endTaktikDrag() {
             if (taktikState.draggedPlayer) {
+                const player = findTaktikPlayerById(taktikState.draggedPlayer.id);
+                if (player && taktikState.dragStart) {
+                    const moved = Math.abs(player.x - taktikState.dragStart.x) > 0.0001 ||
+                        Math.abs(player.y - taktikState.dragStart.y) > 0.0001;
+                    if (moved) {
+                        taktikState.actionHistory.push({
+                            type: 'move',
+                            id: player.id,
+                            from: { x: taktikState.dragStart.x, y: taktikState.dragStart.y },
+                            to: { x: player.x, y: player.y }
+                        });
+                    }
+                }
                 taktikState.draggedPlayer.element.classList.remove('dragging');
                 taktikState.draggedPlayer = null;
             }
+            taktikState.dragStart = null;
             document.removeEventListener('mousemove', onTaktikDrag);
             document.removeEventListener('mouseup', endTaktikDrag);
             document.removeEventListener('touchmove', onTaktikDrag);
@@ -11845,6 +11873,7 @@
                     end: { x: x, y: y }
                 });
                 taktikState.shapeStart = null;
+                taktikState.actionHistory.push({ type: 'draw' });
             } else if (taktikState.currentPath.length > 0) {
                 taktikState.drawHistory.push({
                     tool: taktikState.currentDrawTool,
@@ -11852,6 +11881,7 @@
                     size: taktikState.currentSize,
                     path: taktikState.currentPath.slice()
                 });
+                taktikState.actionHistory.push({ type: 'draw' });
             }
 
             taktikState.drawCtx.globalCompositeOperation = 'source-over';
@@ -11909,16 +11939,30 @@
         }
 
         function taktikUndo() {
-            if (taktikState.drawHistory.length > 0) {
-                taktikState.drawHistory.pop();
-                redrawTaktikAll();
+            if (taktikState.actionHistory.length === 0) return;
+            const lastAction = taktikState.actionHistory.pop();
+            if (lastAction.type === 'draw') {
+                if (taktikState.drawHistory.length > 0) {
+                    taktikState.drawHistory.pop();
+                    redrawTaktikAll();
+                }
+                return;
+            }
+            if (lastAction.type === 'move') {
+                const player = findTaktikPlayerById(lastAction.id);
+                if (player) {
+                    player.x = lastAction.from.x;
+                    player.y = lastAction.from.y;
+                    repositionTaktikPlayers();
+                }
             }
         }
 
         function taktikClearAll() {
-            if (taktikState.drawHistory.length === 0) return;
             if (confirm('Alle Zeichnungen löschen?')) {
                 taktikState.drawHistory = [];
+                taktikState.actionHistory = [];
+                createTaktikPlayers();
                 redrawTaktikAll();
             }
         }
