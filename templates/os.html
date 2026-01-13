@@ -5589,6 +5589,7 @@
             saveAppConfig(config);
             renderSidebar();
             renderHomeGrid();
+            updateAddWidgetVisibility('home');
             renderAppStore();
         }
 
@@ -6014,6 +6015,7 @@
 
             appElement.classList.add('active');
             console.log('Active class added to:', appName);
+            updateAddWidgetVisibility(appName);
 
             // Sidebar-Item aktivieren
             const sidebarItem = document.querySelector(`.app-item[onclick*="'${appName}'"]`);
@@ -6059,6 +6061,13 @@
                     loadSharedClips();
                 }, 100);
             }
+        }
+
+        function updateAddWidgetVisibility(activeApp) {
+            const addBtn = document.getElementById('floatingAddWidget');
+            if (!addBtn) return;
+            const show = activeApp === 'home';
+            addBtn.style.display = show ? 'flex' : 'none';
         }
 
         // Alias für Legacy-Code
@@ -12174,7 +12183,7 @@
         </div>
     </div>
 
-    <!-- FLOATING ADD WIDGET BUTTON - Always visible -->
+    <!-- FLOATING ADD WIDGET BUTTON - Home only -->
     <button id="floatingAddWidget" class="add-widget-btn" onclick="openWidgetModal()"
         title="Widget hinzufügen">+</button>
 
