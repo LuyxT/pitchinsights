@@ -3206,8 +3206,6 @@ async def join_team(request: Request, token: str):
     SECURITY: Token-Validierung, User muss eingeloggt sein.
     """
     user = get_current_user(request)
-    if not user:
-        return RedirectResponse(url=f"/login?redirect=/join/{token}", status_code=303)
 
     try:
         token = InputValidator.validate_token(token)
@@ -3216,6 +3214,167 @@ async def join_team(request: Request, token: str):
             "login.html",
             {"request": request, "error": "Ungültiger Einladungslink"}
         )
+    if not user:
+        # Registrierung über Einladungslink
+        invitation_info = None
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT i.*, t.name as team_name, r.name as role_name
+                FROM invitations i
+                JOIN teams t ON i.team_id = t.id
+                LEFT JOIN roles r ON i.role_id = r.id
+                WHERE i.token = ? AND i.is_active = 1
+            """, (token,))
+            invitation_info = cursor.fetchone()
+
+        if not invitation_info:
+            return templates.TemplateResponse(
+                "join.html",
+                {"request": request, "error": "Einladung ist ungültig oder abgelaufen", "token": token, "logged_in": False}
+            )
+
+        try:
+            form_data = await request.form()
+        except Exception:
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request, "error": "Ungültige Anfrage"}
+            )
+
+        email = str(form_data.get("email", "")).strip()
+        password = str(form_data.get("password", "")).strip()
+        password_confirm = str(form_data.get("password_confirm", "")).strip()
+
+        if not email or not password:
+        return templates.TemplateResponse(
+            "join.html",
+                {"request": request, "error": "E-Mail und Passwort erforderlich", "token": token, "logged_in": False,
+                 "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+            )
+
+        if password != password_confirm:
+        return templates.TemplateResponse(
+            "join.html",
+                {"request": request, "error": "Passwörter stimmen nicht überein", "token": token, "logged_in": False,
+                 "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+            )
+
+        # Input-Validierung
+        try:
+            email = InputValidator.validate_email(email)
+            password = InputValidator.validate_password(password)
+        except ValidationError as e:
+            return templates.TemplateResponse(
+                "join.html",
+                {"request": request, "error": e.message, "token": token, "logged_in": False,
+                 "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+            )
+
+        # SECURITY: Prüfe auf häufig geleakte/schwache Passwörter
+        if is_common_password(password):
+            return templates.TemplateResponse(
+                "join.html",
+                {"request": request, "error": "Dieses Passwort ist zu häufig verwendet", "token": token, "logged_in": False,
+                 "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+            )
+
+        is_strong, _ = is_password_strong_enough(password, min_entropy=50.0)
+        if not is_strong:
+            return templates.TemplateResponse(
+                "join.html",
+                {"request": request, "error": "Passwort ist nicht komplex genug", "token": token, "logged_in": False,
+                 "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+            )
+
+        try:
+            is_pwned, _ = check_password_pwned_sync(password)
+            if is_pwned:
+                return templates.TemplateResponse(
+                    "join.html",
+                    {"request": request, "error": "Passwort wurde in Datenlecks gefunden", "token": token, "logged_in": False,
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                )
+        except Exception:
+            pass
+
+    if not user:
+        invitation = invitation_info
+        with get_db_connection() as db:
+            cursor = db.cursor()
+
+            if not invitation:
+                return templates.TemplateResponse(
+                    "join.html",
+                    {"request": request, "error": "Einladung ist ungültig oder abgelaufen", "token": token, "logged_in": False,
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                )
+
+            if invitation["expires_at"]:
+                expires = datetime.fromisoformat(invitation["expires_at"])
+                if expires < datetime.now():
+                    return templates.TemplateResponse(
+                        "join.html",
+                        {"request": request, "error": "Einladung abgelaufen", "token": token, "logged_in": False,
+                         "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                    )
+
+            uses_key = "uses_count" if "uses_count" in invitation.keys() else "uses"
+            if invitation.get("max_uses") and invitation.get(uses_key, 0) >= invitation["max_uses"]:
+                return templates.TemplateResponse(
+                    "join.html",
+                    {"request": request, "error": "Einladungslimit erreicht", "token": token, "logged_in": False,
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                )
+
+            cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+            if cursor.fetchone():
+                return templates.TemplateResponse(
+                    "join.html",
+                    {"request": request, "error": "E-Mail ist bereits registriert. Bitte einloggen.", "token": token, "logged_in": False,
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                )
+
+            cursor.execute("""
+                SELECT id FROM roles WHERE team_id = ? AND LOWER(name) = 'spieler'
+            """, (invitation["team_id"],))
+            player_role = cursor.fetchone()
+            role_id = player_role["id"] if player_role else invitation["role_id"]
+
+            peppered_password = f"{password}{SecurityConfig.PASSWORD_PEPPER}"
+            password_hash = bcrypt.hashpw(
+                peppered_password.encode('utf-8'),
+                bcrypt.gensalt(rounds=12)
+            ).decode('utf-8')
+
+            cursor.execute("""
+                INSERT INTO users (email, password_hash, team_id, role_id, onboarding_complete, is_active, payment_status)
+                VALUES (?, ?, ?, ?, 1, 1, 'paid')
+            """, (email, password_hash, invitation["team_id"], role_id))
+            user_id = cursor.lastrowid
+
+            cursor.execute("""
+                INSERT INTO team_members (team_id, user_id, role_id)
+                VALUES (?, ?, ?)
+            """, (invitation["team_id"], user_id, role_id))
+
+            # Einladung als benutzt markieren
+            if "uses_count" in invitation.keys():
+                cursor.execute("""
+                    UPDATE invitations SET uses_count = uses_count + 1 WHERE token = ?
+                """, (token,))
+            else:
+                cursor.execute("""
+                    UPDATE invitations SET uses = uses + 1 WHERE token = ?
+                """, (token,))
+
+            db.commit()
+
+        token_value = create_session_token(
+            {"email": email, "id": user_id, "team_id": invitation["team_id"]}, request)
+        response = RedirectResponse(url="/dashboard", status_code=303)
+        set_session_cookie(response, token_value)
+        return response
 
     result = use_invitation(token, user["id"])
 
