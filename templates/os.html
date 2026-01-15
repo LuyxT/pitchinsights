@@ -3956,6 +3956,16 @@
                         </select>
                     </div>
 
+                    <!-- Account Verknüpfung -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-size: 12px; opacity: 0.7; display: block; margin-bottom: 4px;">
+                            Account verknüpfen
+                        </label>
+                        <select id="editPlayerUser"
+                            style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box; width: 100%;">
+                        </select>
+                    </div>
+
                     <!-- Positionen (Mehrfachauswahl) -->
                     <div style="margin-bottom: 16px;">
                         <label style="font-size: 12px; opacity: 0.7; display: block; margin-bottom: 8px;">Positionen
@@ -10631,6 +10641,7 @@
         });
 
         let kaderPlayers = [];
+        let teamMembersCache = [];
         let kaderTeams = JSON.parse(localStorage.getItem('kaderTeams') || '[]');
         let selectedTeamFilter = 'all';
         let statusChart = null;
@@ -10652,7 +10663,8 @@
                             status: (p.status || 'Fit').toLowerCase(),
                             email: p.email || '',
                             phone: p.telefon || '',
-                            notes: p.notizen || ''
+                            notes: p.notizen || '',
+                            user_id: p.user_id || null
                         }));
                         return;
                     }
@@ -10754,6 +10766,45 @@
             // Alle Spieler gehören zum Team des Benutzers
             // (Backend filtert bereits nach team_id)
             return kaderPlayers;
+        }
+
+        async function loadTeamMembersForKader() {
+            try {
+                const response = await fetch('/api/team/members');
+                if (!response.ok) {
+                    teamMembersCache = [];
+                    return;
+                }
+                const data = await response.json();
+                teamMembersCache = (data.members || []).filter(m => {
+                    return (m.role_name || '').toLowerCase() === 'spieler';
+                });
+            } catch (e) {
+                teamMembersCache = [];
+            }
+        }
+
+        function buildKaderMemberOptions(currentUserId) {
+            const select = document.getElementById('editPlayerUser');
+            if (!select) return;
+
+            const linkedUserIds = new Set(
+                kaderPlayers.filter(p => p.user_id).map(p => parseInt(p.user_id, 10))
+            );
+            const options = teamMembersCache.filter(m => {
+                return !linkedUserIds.has(parseInt(m.id, 10)) || parseInt(m.id, 10) === parseInt(currentUserId || 0, 10);
+            });
+
+            select.innerHTML = `
+                <option value="">Kein Account verknüpft</option>
+                ${options.map(m => {
+                    const name = `${m.vorname || ''} ${m.nachname || ''}`.trim() || m.email;
+                    return `<option value="${parseInt(m.id, 10)}">${escapeHtml(name)} (${escapeHtml(m.email)})</option>`;
+                }).join('')}
+            `;
+            if (currentUserId) {
+                select.value = String(currentUserId);
+            }
         }
 
         function updatePlayerCount() {
@@ -11075,7 +11126,7 @@
         }
 
         // EDIT PLAYER FUNKTIONEN
-        function openEditPlayerModal(id) {
+        async function openEditPlayerModal(id) {
             const player = kaderPlayers.find(p => p.id === id);
             if (!player) return;
 
@@ -11108,6 +11159,11 @@
                 cb.checked = player.positions && player.positions.includes(cb.value);
             });
 
+            if (!teamMembersCache || teamMembersCache.length === 0) {
+                await loadTeamMembersForKader();
+            }
+            buildKaderMemberOptions(player.user_id);
+
             document.getElementById('editPlayerModal').classList.add('active');
         }
 
@@ -11136,6 +11192,8 @@
             const team = document.getElementById('editPlayerTeam').value;
             const height = document.getElementById('editPlayerHeight').value;
             const weight = document.getElementById('editPlayerWeight').value;
+            const userIdValue = document.getElementById('editPlayerUser')?.value || '';
+            const linkedUserId = userIdValue ? parseInt(userIdValue, 10) : null;
 
             // Positionen sammeln
             const positionCheckboxes = document.querySelectorAll('input[name="editPositions"]:checked');
@@ -11186,7 +11244,8 @@
                         name: `${firstname} ${lastname}`,
                         position: positions.join(', '),
                         trikotnummer: jersey,
-                        status: status
+                        status: status,
+                        user_id: linkedUserId
                     })
                 });
 
@@ -11214,7 +11273,8 @@
                     country,
                     team,
                     height,
-                    weight
+                    weight,
+                    user_id: linkedUserId || null
                 };
 
                 closeEditPlayerModal();

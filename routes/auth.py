@@ -3774,6 +3774,7 @@ async def update_player(request: Request, player_id: int):
 
         updates = []
         params = []
+        link_user_id = None
 
         if "name" in data:
             updates.append("name = ?")
@@ -3801,12 +3802,74 @@ async def update_player(request: Request, player_id: int):
         if "notizen" in data:
             updates.append("notizen = ?")
             params.append(str(data["notizen"]).strip()[:1000])
+        if "user_id" in data:
+            raw_user_id = data.get("user_id")
+            if raw_user_id in (None, "", 0, "0"):
+                updates.append("user_id = NULL")
+                link_user_id = None
+            else:
+                try:
+                    link_user_id = int(raw_user_id)
+                except (ValueError, TypeError):
+                    return JSONResponse({"error": "Ungültiger Nutzer"}, status_code=400)
+
+                cursor.execute("""
+                    SELECT u.id, u.email, r.name as role_name
+                    FROM users u
+                    LEFT JOIN roles r ON u.role_id = r.id
+                    WHERE u.id = ? AND u.team_id = ? AND u.is_active = 1
+                """, (link_user_id, db_user["team_id"]))
+                user_row = cursor.fetchone()
+                if not user_row:
+                    return JSONResponse({"error": "Nutzer nicht gefunden"}, status_code=404)
+
+                role_name = (user_row["role_name"] or "").strip().lower()
+                if role_name != "spieler" and not db_user.get("is_admin"):
+                    return JSONResponse({"error": "Nur Spieler-Accounts können verknüpft werden"}, status_code=400)
+
+                cursor.execute("""
+                    SELECT id FROM players
+                    WHERE user_id = ? AND team_id = ? AND deleted_at IS NULL AND id != ?
+                """, (link_user_id, db_user["team_id"], player_id))
+                if cursor.fetchone():
+                    return JSONResponse({"error": "Account ist bereits einem anderen Spieler zugeordnet"}, status_code=400)
+
+                updates.append("user_id = ?")
+                params.append(link_user_id)
 
         if updates:
             updates.append("updated_at = CURRENT_TIMESTAMP")
             params.append(player_id)
             cursor.execute(
                 f"UPDATE players SET {', '.join(updates)} WHERE id = ?", params)
+            if link_user_id:
+                cursor.execute("""
+                    SELECT name, position, telefon, geburtsdatum, email
+                    FROM players
+                    WHERE id = ? AND team_id = ? AND deleted_at IS NULL
+                """, (player_id, db_user["team_id"]))
+                player_row = cursor.fetchone()
+                if player_row:
+                    name = (player_row["name"] or "").strip()
+                    name_parts = name.split()
+                    vorname = name_parts[0] if name_parts else ""
+                    nachname = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+                    cursor.execute("""
+                        UPDATE users SET
+                            vorname = CASE WHEN vorname IS NULL OR vorname = '' THEN ? ELSE vorname END,
+                            nachname = CASE WHEN nachname IS NULL OR nachname = '' THEN ? ELSE nachname END,
+                            position = ?,
+                            telefon = CASE WHEN telefon IS NULL OR telefon = '' THEN ? ELSE telefon END,
+                            geburtsdatum = COALESCE(geburtsdatum, ?),
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (vorname, nachname, player_row["position"] or "",
+                          player_row["telefon"] or "", player_row["geburtsdatum"], link_user_id))
+                    cursor.execute("""
+                        UPDATE players
+                        SET email = COALESCE(NULLIF(email, ''), ?), updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ? AND team_id = ?
+                    """, (user_row["email"], player_id, db_user["team_id"]))
             db.commit()
 
     return JSONResponse({"success": True})
