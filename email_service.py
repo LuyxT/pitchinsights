@@ -268,3 +268,43 @@ def send_2fa_enabled_notification(email: str) -> bool:
     """
 
     return send_email(email, "🛡️ 2FA wurde aktiviert", html_body)
+
+
+def send_activation_email(email: str, verification_url: str) -> bool:
+    """
+    Sendet Aktivierungslink nach Registrierung.
+    """
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }}
+            .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 12px 12px; text-align: center; }}
+            .button {{ display: inline-block; padding: 12px 20px; background: #22c55e; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; }}
+            .footer {{ color: #6c757d; font-size: 12px; margin-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>✅ Account aktivieren</h1>
+            </div>
+            <div class="content">
+                <p>Bitte bestätige deine E-Mail-Adresse, um deinen Account zu aktivieren.</p>
+                <p><a class="button" href="{verification_url}">E-Mail bestätigen</a></p>
+                <p style="font-size: 12px; color: #6c757d; margin-top: 16px;">Falls der Button nicht funktioniert, öffne diesen Link im Browser:<br>{verification_url}</p>
+                <div class="footer">
+                    <p>Diese E-Mail wurde automatisch von PitchInsights gesendet.</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    text_body = f"Bitte bestätige deine E-Mail-Adresse: {verification_url}"
+
+    return send_email(email, "✅ Bitte bestätige deine E-Mail", html_body, text_body)

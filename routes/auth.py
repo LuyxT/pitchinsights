@@ -8,6 +8,7 @@ import os
 import logging
 import uuid
 import shutil
+import secrets
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 
@@ -37,7 +38,7 @@ from security import (
 from database import (
     get_db, get_db_connection, create_team, create_invitation, use_invitation,
     record_login_attempt, is_login_blocked, clear_login_attempts,
-    get_user_by_email, get_user_by_id, update_last_login,
+    get_user_by_email, get_user_by_email_any, get_user_by_id, update_last_login,
     log_audit_event, soft_delete_user, verify_user_is_team_admin,
     verify_user_team_access,
     # 2FA Database Functions
@@ -46,7 +47,7 @@ from database import (
 )
 from email_service import (
     send_login_notification, send_password_changed_notification,
-    send_2fa_enabled_notification, EmailConfig
+    send_2fa_enabled_notification, send_activation_email, EmailConfig
 )
 
 router = APIRouter()
@@ -101,6 +102,28 @@ def is_staff_user(db_user: Dict[str, Any]) -> bool:
     if db_user.get("is_admin"):
         return True
     return get_user_role_name(db_user) in STAFF_ROLE_NAMES
+
+
+def create_email_verification(user_id: int, email: str, request: Request) -> bool:
+    """
+    Erstellt Verifikations-Token und verschickt Aktivierungs-Mail.
+    """
+    if not EmailConfig.is_configured():
+        return False
+
+    token = secrets.token_urlsafe(32)
+    expires_at = (datetime.now() + timedelta(days=2)).isoformat()
+    verify_url = f"{request.base_url}verify-email/{token}"
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO email_verifications (user_id, token, expires_at)
+            VALUES (?, ?, ?)
+        """, (user_id, token, expires_at))
+        db.commit()
+
+    return send_activation_email(email, verify_url)
 
 def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
     """
@@ -303,6 +326,65 @@ async def player_login_page(request: Request, redirect: str = None):
     return templates.TemplateResponse(
         "login.html",
         {"request": request, "error": None, "csrf_token": csrf_token, "mode": "player", "redirect": redirect}
+    )
+
+
+@router.get("/verify-email/{token}", response_class=HTMLResponse)
+async def verify_email(request: Request, token: str):
+    """E-Mail-Adresse verifizieren."""
+    try:
+        token = InputValidator.validate_token(token)
+    except ValidationError:
+        csrf_token = generate_csrf_token("login_form")
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": "Ungültiger Verifikationslink.", "csrf_token": csrf_token}
+        )
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT ev.id, ev.user_id, ev.expires_at, ev.used_at, u.email
+            FROM email_verifications ev
+            JOIN users u ON ev.user_id = u.id
+            WHERE ev.token = ?
+        """, (token,))
+        row = cursor.fetchone()
+
+        if not row:
+            csrf_token = generate_csrf_token("login_form")
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request, "error": "Verifikationslink ungültig.", "csrf_token": csrf_token}
+            )
+
+        if row["used_at"]:
+            csrf_token = generate_csrf_token("login_form")
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request, "success": "E-Mail bereits bestätigt. Du kannst dich einloggen.", "csrf_token": csrf_token}
+            )
+
+        expires = datetime.fromisoformat(row["expires_at"])
+        if expires < datetime.now():
+            csrf_token = generate_csrf_token("login_form")
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request, "error": "Verifikationslink abgelaufen.", "csrf_token": csrf_token}
+            )
+
+        cursor.execute("""
+            UPDATE users SET is_active = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+        """, (row["user_id"],))
+        cursor.execute("""
+            UPDATE email_verifications SET used_at = CURRENT_TIMESTAMP WHERE id = ?
+        """, (row["id"],))
+        db.commit()
+
+    csrf_token = generate_csrf_token("login_form")
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request, "success": "E-Mail bestätigt. Du kannst dich jetzt einloggen.", "csrf_token": csrf_token}
     )
 
 
@@ -591,6 +673,14 @@ async def login(
     # Verwende einen echten Work Factor 12 Hash für realistische Timing
     DUMMY_HASH = b"$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4JQ5kUOIgUfGHVzy"
     if not user:
+        inactive_user = get_user_by_email_any(email)
+        if inactive_user and not inactive_user.get("is_active"):
+            new_csrf = generate_csrf_token("login_form")
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request, "error": "Bitte bestätige zuerst deine E-Mail-Adresse.",
+                 "csrf_token": new_csrf, "mode": mode, "redirect": redirect}
+            )
         logging.warning(f"[LOGIN DEBUG] User not found in database: {email}")
         bcrypt.checkpw(b"timing_attack_prevention_dummy_password", DUMMY_HASH)
         record_login_attempt(email, client_ip, False)
@@ -953,7 +1043,7 @@ async def register(
             role_id = player_role["id"] if player_role else invitation_data["role_id"]
             cursor.execute("""
                 INSERT INTO users (email, password_hash, team_id, role_id, onboarding_complete, is_active, payment_status)
-                VALUES (?, ?, ?, ?, 1, 1, 'paid')
+                VALUES (?, ?, ?, ?, 1, 0, 'paid')
             """, (email, password_hash, invitation_data["team_id"], role_id))
             user_id = cursor.lastrowid
 
@@ -970,16 +1060,26 @@ async def register(
             logger.info(
                 f"New user registered with invitation: user_id={user_id}, team_id={invitation_data['team_id']}")
 
-            # Auto-Login und direkt zum Dashboard
-            token = create_session_token(
-                {"email": email, "id": user_id}, request)
-            response = RedirectResponse(url="/dashboard", status_code=303)
-            set_session_cookie(response, token)
+            sent = create_email_verification(user_id, email, request)
+            if not sent:
+                new_csrf = generate_csrf_token("register_form")
+                return templates.TemplateResponse(
+                    "register.html",
+                    {"request": request, "error": "Aktivierungs-E-Mail konnte nicht gesendet werden.",
+                     "csrf_token": new_csrf}
+                )
+
+            new_csrf = generate_csrf_token("register_form")
+            response = templates.TemplateResponse(
+                "register.html",
+                {"request": request, "success": "Bitte bestätige deine E-Mail, um den Account zu aktivieren.",
+                 "csrf_token": new_csrf}
+            )
         else:
             # Pilotphase: Kostenloser Zugang ohne Paywall
             cursor.execute("""
                 INSERT INTO users (email, password_hash, onboarding_complete, is_active, payment_status)
-                VALUES (?, ?, 0, 1, 'paid')
+                VALUES (?, ?, 0, 0, 'paid')
             """, (email, password_hash))
             user_id = cursor.lastrowid
             db.commit()
@@ -988,11 +1088,21 @@ async def register(
             logger.info(
                 f"New user registered (free pilot): user_id={user_id}, email={email}")
 
-            # Auto-Login zum Onboarding
-            token = create_session_token(
-                {"email": email, "id": user_id}, request)
-            response = RedirectResponse(url="/onboarding", status_code=303)
-            set_session_cookie(response, token)
+            sent = create_email_verification(user_id, email, request)
+            if not sent:
+                new_csrf = generate_csrf_token("register_form")
+                return templates.TemplateResponse(
+                    "register.html",
+                    {"request": request, "error": "Aktivierungs-E-Mail konnte nicht gesendet werden.",
+                     "csrf_token": new_csrf}
+                )
+
+            new_csrf = generate_csrf_token("register_form")
+            response = templates.TemplateResponse(
+                "register.html",
+                {"request": request, "success": "Bitte bestätige deine E-Mail, um den Account zu aktivieren.",
+                 "csrf_token": new_csrf}
+            )
             return response
 
     return response
@@ -3529,7 +3639,7 @@ async def join_team(request: Request, token: str):
 
                 cursor.execute("""
                     INSERT INTO users (email, password_hash, team_id, role_id, onboarding_complete, is_active, payment_status, vorname, nachname, position, telefon, geburtsdatum)
-                    VALUES (?, ?, ?, ?, 1, 1, 'paid', ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, 1, 0, 'paid', ?, ?, ?, ?, ?)
                 """, (email, password_hash, invitation["team_id"], role_id, vorname, nachname,
                       player_row["position"] or "", player_row["telefon"] or "", player_row["geburtsdatum"]))
                 user_id = cursor.lastrowid
@@ -3565,11 +3675,21 @@ async def join_team(request: Request, token: str):
 
                 db.commit()
 
-            token_value = create_session_token(
-                {"email": email, "id": user_id, "team_id": invitation["team_id"]}, request)
-            response = RedirectResponse(url="/dashboard", status_code=303)
-            set_session_cookie(response, token_value)
-            return response
+            sent = create_email_verification(user_id, email, request)
+            if not sent:
+                return templates.TemplateResponse(
+                    "join.html",
+                    {"request": request, "error": "Aktivierungs-E-Mail konnte nicht gesendet werden.",
+                     "token": token, "logged_in": False, "team_name": invitation_info["team_name"],
+                     "role_name": "Spieler", "available_players": available_players}
+                )
+
+            return templates.TemplateResponse(
+                "join.html",
+                {"request": request, "success": "Bitte bestätige deine E-Mail, um den Account zu aktivieren.",
+                 "token": token, "logged_in": False, "team_name": invitation_info["team_name"],
+                 "role_name": "Spieler", "available_players": available_players}
+            )
 
         result = use_invitation(token, user["id"])
 
@@ -3924,6 +4044,29 @@ async def update_player(request: Request, player_id: int):
                         SET email = COALESCE(NULLIF(email, ''), ?), updated_at = CURRENT_TIMESTAMP
                         WHERE id = ? AND team_id = ?
                     """, (user_row["email"], player_id, db_user["team_id"]))
+            else:
+                cursor.execute("""
+                    SELECT user_id, name, position, telefon, geburtsdatum
+                    FROM players
+                    WHERE id = ? AND team_id = ? AND deleted_at IS NULL
+                """, (player_id, db_user["team_id"]))
+                row = cursor.fetchone()
+                if row and row["user_id"]:
+                    name = (row["name"] or "").strip()
+                    name_parts = name.split()
+                    vorname = name_parts[0] if name_parts else ""
+                    nachname = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+                    cursor.execute("""
+                        UPDATE users SET
+                            vorname = ?,
+                            nachname = ?,
+                            position = ?,
+                            telefon = ?,
+                            geburtsdatum = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (vorname, nachname, row["position"] or "",
+                          row["telefon"] or "", row["geburtsdatum"], row["user_id"]))
             db.commit()
 
     return JSONResponse({"success": True})
@@ -4057,11 +4200,15 @@ async def get_events(request: Request):
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
-            SELECT id, title, description, event_type, event_date, start_time, end_time, location, visibility
+            SELECT id, title, description, event_type, event_date, start_time, end_time, location, visibility,
+                   (SELECT COUNT(*) FROM event_rsvps WHERE event_id = calendar_events.id AND status = 'yes') as rsvp_yes,
+                   (SELECT COUNT(*) FROM event_rsvps WHERE event_id = calendar_events.id AND status = 'no') as rsvp_no,
+                   (SELECT COUNT(*) FROM event_rsvps WHERE event_id = calendar_events.id AND status = 'maybe') as rsvp_maybe,
+                   (SELECT status FROM event_rsvps WHERE event_id = calendar_events.id AND user_id = ?) as my_rsvp
             FROM calendar_events
             WHERE team_id = ? AND deleted_at IS NULL
             ORDER BY event_date, start_time
-        """, (db_user["team_id"],))
+        """, (user["id"], db_user["team_id"]))
         events = [dict(row) for row in cursor.fetchall()]
 
         if events:
@@ -4081,6 +4228,11 @@ async def get_events(request: Request):
 
     for event in events:
         event["roster_user_ids"] = roster_map.get(event["id"], [])
+        event["rsvp_summary"] = {
+            "yes": event.get("rsvp_yes", 0) or 0,
+            "no": event.get("rsvp_no", 0) or 0,
+            "maybe": event.get("rsvp_maybe", 0) or 0
+        }
 
     return JSONResponse({"events": events})
 
@@ -4586,21 +4738,23 @@ async def get_messages(request: Request, limit: int = 50, before_id: int = None)
                        u.vorname || ' ' || u.nachname as sender_name
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
-                WHERE m.team_id = ? AND m.recipient_id IS NULL AND m.deleted_at IS NULL
+                WHERE m.team_id = ? AND m.deleted_at IS NULL
+                AND (m.recipient_id IS NULL OR m.recipient_id = ? OR m.sender_id = ?)
                 AND m.id < ?
                 ORDER BY m.created_at DESC
                 LIMIT ?
-            """, (db_user["team_id"], before_id, limit + 1))
+            """, (db_user["team_id"], user["id"], user["id"], before_id, limit + 1))
         else:
             cursor.execute("""
                 SELECT m.id, m.content, m.created_at, m.sender_id,
                        u.vorname || ' ' || u.nachname as sender_name
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
-                WHERE m.team_id = ? AND m.recipient_id IS NULL AND m.deleted_at IS NULL
+                WHERE m.team_id = ? AND m.deleted_at IS NULL
+                AND (m.recipient_id IS NULL OR m.recipient_id = ? OR m.sender_id = ?)
                 ORDER BY m.created_at DESC
                 LIMIT ?
-            """, (db_user["team_id"], limit + 1))
+            """, (db_user["team_id"], user["id"], user["id"], limit + 1))
 
         rows = cursor.fetchall()
         has_more = len(rows) > limit

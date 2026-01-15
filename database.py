@@ -122,6 +122,25 @@ def init_db():
             )
         """)
 
+        # E-Mail Verifizierung
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS email_verifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                token TEXT UNIQUE NOT NULL CHECK(length(token) >= 20),
+                expires_at TIMESTAMP NOT NULL,
+                used_at TIMESTAMP NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_email_verifications_token
+            ON email_verifications(token)
+        """)
+
         # Index für schnelle Email-Lookups
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE deleted_at IS NULL
@@ -823,6 +842,21 @@ def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
         cursor.execute("""
             SELECT * FROM users 
             WHERE email = ? AND is_active = 1 AND deleted_at IS NULL
+        """, (email.lower(),))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
+def get_user_by_email_any(email: str) -> Optional[Dict[str, Any]]:
+    """
+    Holt User per Email, auch wenn nicht aktiv.
+    SECURITY: Nur nicht-gelöschte User.
+    """
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM users 
+            WHERE email = ? AND deleted_at IS NULL
         """, (email.lower(),))
         row = cursor.fetchone()
         return dict(row) if row else None

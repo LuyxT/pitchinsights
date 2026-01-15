@@ -9769,7 +9769,9 @@
                 location: e.location || '',
                 notes: e.description || '',
                 visibility: e.visibility || 'team',
-                roster_user_ids: e.roster_user_ids || []
+                roster_user_ids: e.roster_user_ids || [],
+                rsvp_summary: e.rsvp_summary || { yes: 0, no: 0, maybe: 0 },
+                my_rsvp: e.my_rsvp || ''
             }));
         }
 
@@ -10090,10 +10092,11 @@
                 // RSVP-Info für Team-Events
                 const isTeamEvent = event.visibility === 'team';
                 const rsvps = event.rsvps || {};
-                const yesCount = Object.values(rsvps).filter(r => r === 'yes').length;
-                const noCount = Object.values(rsvps).filter(r => r === 'no').length;
-                const maybeCount = Object.values(rsvps).filter(r => r === 'maybe').length;
-                const myRsvp = rsvps[`user_${currentUserId}`] || '';
+                const summary = event.rsvp_summary || null;
+                const yesCount = summary ? summary.yes : Object.values(rsvps).filter(r => r === 'yes').length;
+                const noCount = summary ? summary.no : Object.values(rsvps).filter(r => r === 'no').length;
+                const maybeCount = summary ? summary.maybe : Object.values(rsvps).filter(r => r === 'maybe').length;
+                const myRsvp = event.my_rsvp || rsvps[`user_${currentUserId}`] || '';
 
                 let rsvpHtml = '';
                 if (isTeamEvent) {

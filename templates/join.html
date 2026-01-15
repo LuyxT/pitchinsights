@@ -210,6 +210,9 @@
             {% if error %}
             <div class="error-message">{{ error }}</div>
             {% endif %}
+            {% if success %}
+            <div class="success-message">{{ success }}</div>
+            {% endif %}
 
             {% if logged_in %}
             <!-- User ist bereits eingeloggt - nur beitreten -->
