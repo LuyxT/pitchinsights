@@ -10858,6 +10858,7 @@
             }
             // Dashboard Stats nach Kader-Init aktualisieren
             renderDashboardStats();
+            loadMessengerData();
         });
 
         let userTeamInfo = null;
@@ -11572,57 +11573,27 @@
         // MESSENGER FUNKTIONEN
         let currentChat = null;
         let currentAttachment = null;
+        let currentChatPeerId = null;
 
         function loadMessengerData() {
             const container = document.getElementById('messengerContacts');
+            if (!container) return;
             let html = '';
 
-            // Team-Chat
-            const teamConv = JSON.parse(localStorage.getItem('team_chat') || '{"messages":[]}');
-            const teamLastMsg = teamConv.messages[teamConv.messages.length - 1]?.text || 'Keine Nachrichten';
-            const teamUnread = teamConv.unread || 0;
-            const isTeamActive = currentChat === 'team_chat' ? 'background: var(--primary-green); color: white;' : '';
-
-            html += `<div onclick="selectChat('team_chat', '👥 Team')" style="padding: 12px; border-bottom: 1px solid var(--border-light); cursor: pointer; ${isTeamActive}">
+            const isTeamActive = currentChat === 'team' ? 'background: var(--primary-green); color: white;' : '';
+            html += `<div onclick="selectChat('team', '👥 Team')" style="padding: 12px; border-bottom: 1px solid var(--border-light); cursor: pointer; ${isTeamActive}">
                 <div style="font-weight: 600; font-size: 13px;">👥 Team Chat</div>
-                <div style="font-size: 12px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${teamLastMsg.substring(0, 30)}</div>
-                ${teamUnread > 0 ? `<div style="margin-top: 4px; display: inline-block; background: #ff4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 600;">${teamUnread}</div>` : ''}
             </div>`;
 
-            // Spieler-Chats
-            if (kaderPlayers && kaderPlayers.length > 0) {
+            const linkedPlayers = (kaderPlayers || []).filter(p => p.user_id);
+            if (linkedPlayers.length > 0) {
                 html += '<div style="font-size: 12px; font-weight: 600; opacity: 0.6; padding: 12px 12px 4px 12px; margin-top: 8px;">SPIELER</div>';
-                kaderPlayers.forEach(player => {
+                linkedPlayers.forEach(player => {
                     const playerName = player.name || `${player.firstname} ${player.lastname}`;
-                    const convKey = `chat_${player.id}`;
-                    const conv = JSON.parse(localStorage.getItem(convKey) || '{"messages":[]}');
-                    const lastMsg = conv.messages[conv.messages.length - 1]?.text || 'Keine Nachrichten';
-                    const unread = conv.unread || 0;
+                    const convKey = `chat_${player.user_id}`;
                     const isActive = currentChat === convKey ? 'background: var(--primary-green); color: white;' : '';
-
                     html += `<div onclick="selectChat('${convKey}', '${playerName}')" style="padding: 12px; border-bottom: 1px solid var(--border-light); cursor: pointer; ${isActive}">
                         <div style="font-weight: 600; font-size: 13px;">${playerName}</div>
-                        <div style="font-size: 12px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lastMsg.substring(0, 30)}</div>
-                        ${unread > 0 ? `<div style="margin-top: 4px; display: inline-block; background: #ff4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 600;">${unread}</div>` : ''}
-                    </div>`;
-                });
-            }
-
-            // Gruppen
-            const groups = JSON.parse(localStorage.getItem('messengerGroups') || '[]');
-            if (groups.length > 0) {
-                html += '<div style="font-size: 12px; font-weight: 600; opacity: 0.6; padding: 12px 12px 4px 12px; margin-top: 8px;">GRUPPEN</div>';
-                groups.forEach(group => {
-                    const convKey = `group_${group.id}`;
-                    const conv = JSON.parse(localStorage.getItem(convKey) || '{"messages":[]}');
-                    const lastMsg = conv.messages[conv.messages.length - 1]?.text || 'Keine Nachrichten';
-                    const unread = conv.unread || 0;
-                    const isActive = currentChat === convKey ? 'background: var(--primary-green); color: white;' : '';
-
-                    html += `<div onclick="selectChat('${convKey}', '${group.name}')" style="padding: 12px; border-bottom: 1px solid var(--border-light); cursor: pointer; ${isActive}">
-                        <div style="font-weight: 600; font-size: 13px;">👥 ${group.name}</div>
-                        <div style="font-size: 12px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lastMsg.substring(0, 30)}</div>
-                        ${unread > 0 ? `<div style="margin-top: 4px; display: inline-block; background: #ff4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 600;">${unread}</div>` : ''}
                     </div>`;
                 });
             }
@@ -11630,50 +11601,53 @@
             container.innerHTML = html || '<div style="padding: 12px; text-align: center; opacity: 0.5; font-size: 12px;">Keine Kontakte</div>';
         }
 
-        function selectChat(convKey, contactName) {
+        async function selectChat(convKey, contactName) {
             currentChat = convKey;
-            const conv = JSON.parse(localStorage.getItem(convKey) || '{"messages":[]}');
-            conv.unread = 0;
-            localStorage.setItem(convKey, JSON.stringify(conv));
+            currentChatPeerId = null;
 
-            document.getElementById('messengerHeader').innerHTML = `<span>${contactName}</span><button id="deleteConvBtn" onclick="deleteConversation()" style="padding: 6px 12px; background: #ff4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Löschen</button>`;
+            if (convKey.startsWith('chat_')) {
+                currentChatPeerId = parseInt(convKey.replace('chat_', ''), 10);
+            }
+
+            document.getElementById('messengerHeader').innerHTML = `<span>${contactName}</span>`;
             document.getElementById('messengerInput').disabled = false;
 
-            renderMessages();
+            await renderMessages();
             loadMessengerData();
         }
 
-        function renderMessages() {
+        async function renderMessages() {
             const chatArea = document.getElementById('messengerChat');
-            const conv = JSON.parse(localStorage.getItem(currentChat) || '{"messages":[]}');
+            let messages = [];
 
-            if (!conv.messages || conv.messages.length === 0) {
+            if (currentChat === 'team') {
+                messages = await loadMessagesFromAPI();
+            } else if (currentChatPeerId) {
+                try {
+                    const response = await fetch(`/api/messages?scope=direct&peer_id=${currentChatPeerId}`);
+                    const data = await response.json();
+                    messages = data.messages || [];
+                } catch (e) {
+                    messages = [];
+                }
+            }
+
+            if (!messages.length) {
                 chatArea.innerHTML = '<div style="text-align: center; opacity: 0.5; margin: auto;">Keine Nachrichten noch</div>';
                 return;
             }
 
             chatArea.innerHTML = '';
-            conv.messages.forEach(msg => {
+            messages.forEach(msg => {
                 const msgDiv = document.createElement('div');
-                const isOwn = msg.own === true;
+                const isOwn = msg.sender_id === currentUserId;
                 const alignment = isOwn ? 'flex-end' : 'flex-start';
                 const bgColor = isOwn ? 'var(--primary-green)' : '#e0e0e0';
                 const textColor = isOwn ? 'white' : 'black';
 
-                let content = escapeHtml(msg.text);
-                if (msg.attachment) {
-                    const ext = msg.attachment.name.split('.').pop().toLowerCase();
-                    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
-                        content = `<img src="${msg.attachment.data}" style="max-width: 200px; border-radius: 8px; margin-bottom: 4px;">`;
-                    } else if (ext === 'pdf') {
-                        content = `<div style="background: #f0f0f0; padding: 8px; border-radius: 4px; margin-bottom: 4px;">📄 ${escapeHtml(msg.attachment.name)}</div>`;
-                    } else {
-                        content = `<div style="background: #f0f0f0; padding: 8px; border-radius: 4px; margin-bottom: 4px;">📎 ${escapeHtml(msg.attachment.name)}</div>`;
-                    }
-                    if (msg.text) content += '<div style="margin-top: 4px;">' + escapeHtml(msg.text) + '</div>';
-                }
-
-                msgDiv.innerHTML = `<div style="align-self: ${alignment}; background: ${bgColor}; color: ${textColor}; padding: 12px 16px; border-radius: 12px; max-width: 60%; word-wrap: break-word;">${content}<div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">${new Date(msg.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</div></div>`;
+                const content = escapeHtml(msg.content || '');
+                const timestamp = msg.created_at ? new Date(msg.created_at) : new Date();
+                msgDiv.innerHTML = `<div style="align-self: ${alignment}; background: ${bgColor}; color: ${textColor}; padding: 12px 16px; border-radius: 12px; max-width: 60%; word-wrap: break-word;">${content}<div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">${timestamp.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</div></div>`;
                 chatArea.appendChild(msgDiv);
             });
             chatArea.scrollTop = chatArea.scrollHeight;
@@ -11703,32 +11677,26 @@
             document.getElementById('messengerFileInput').value = '';
         }
 
-        function sendMessage() {
+        async function sendMessage() {
             if (!currentChat) return;
             const input = document.getElementById('messengerInput');
             if (!input.value.trim() && !currentAttachment) return;
 
-            const conv = JSON.parse(localStorage.getItem(currentChat) || '{"messages":[]}');
-            const msg = {
-                text: input.value.trim(),
-                own: true,
-                timestamp: new Date().toISOString(),
-                attachment: currentAttachment
-            };
-
-            if (!conv.messages) conv.messages = [];
-            conv.messages.push(msg);
-            localStorage.setItem(currentChat, JSON.stringify(conv));
-
-            input.value = '';
-            clearAttachment();
-            renderMessages();
+            const content = input.value.trim();
+            const recipientId = currentChatPeerId || null;
+            const ok = await sendMessageToAPI(content, recipientId);
+            if (ok) {
+                input.value = '';
+                clearAttachment();
+                await renderMessages();
+            } else {
+                alert('Nachricht konnte nicht gesendet werden');
+            }
         }
 
         function deleteConversation() {
-            if (!currentChat || !confirm('Chat wirklich löschen?')) return;
-            localStorage.removeItem(currentChat);
             currentChat = null;
+            currentChatPeerId = null;
             document.getElementById('messengerHeader').innerHTML = '<span>Wähle einen Kontakt</span>';
             document.getElementById('messengerInput').disabled = true;
             document.getElementById('messengerChat').innerHTML = '<div style="text-align: center; opacity: 0.5; margin: auto;">Wähle einen Chat</div>';
