@@ -2034,7 +2034,7 @@ async def get_team_members(request: Request):
 
         # SECURITY: Nur Members des eigenen Teams
         cursor.execute("""
-            SELECT u.id, u.email, u.vorname, u.nachname, r.name as role_name, r.id as role_id, tm.joined_at
+            SELECT u.id, u.email, u.vorname, u.nachname, u.is_admin, r.name as role_name, r.id as role_id, tm.joined_at
             FROM team_members tm
             JOIN users u ON tm.user_id = u.id
             JOIN roles r ON tm.role_id = r.id
@@ -2052,7 +2052,8 @@ async def get_team_members(request: Request):
                 "nachname": m["nachname"] or "",
                 "role_name": m["role_name"],
                 "role_id": m["role_id"],
-                "joined_at": m["joined_at"]
+                "joined_at": m["joined_at"],
+                "is_admin": bool(m["is_admin"])
             }
             for m in members
         ]
@@ -2383,7 +2384,7 @@ async def update_member_role(request: Request, member_id: int):
 async def remove_member(request: Request, member_id: int):
     """
     Mitglied entfernen.
-    SECURITY: Nur Admin, nicht sich selbst, nur eigenes Team.
+    SECURITY: Admin und Trainer/Staff, nicht sich selbst, nur eigenes Team.
     """
     user = get_current_user(request)
     if not user:
@@ -2396,23 +2397,46 @@ async def remove_member(request: Request, member_id: int):
     with get_db_connection() as db:
         cursor = db.cursor()
 
-        cursor.execute(
-            "SELECT team_id, is_admin FROM users WHERE id = ? AND is_active = 1",
-            (user["id"],)
-        )
+        cursor.execute("""
+            SELECT u.team_id, u.is_admin, r.name as role_name
+            FROM users u
+            LEFT JOIN roles r ON u.role_id = r.id
+            WHERE u.id = ? AND u.is_active = 1
+        """, (user["id"],))
         user_data = cursor.fetchone()
 
-        if not user_data or not user_data["is_admin"]:
+        if not user_data:
+            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+        staff_roles = ["Admin", "Trainer", "Co-Trainer", "Torwarttrainer",
+                       "Betreuer", "Physio", "Jugendleiter", "Vorstand"]
+        role_name = (user_data["role_name"] or "").strip()
+        is_admin = bool(user_data["is_admin"]) or role_name == "Admin"
+
+        if not is_admin and role_name not in staff_roles:
             return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
         # SECURITY: IDOR Prevention
         cursor.execute("""
-            SELECT tm.id FROM team_members tm
+            SELECT tm.id, u.is_admin, r.name as role_name
+            FROM team_members tm
+            JOIN users u ON tm.user_id = u.id
+            LEFT JOIN roles r ON tm.role_id = r.id
             WHERE tm.user_id = ? AND tm.team_id = ?
         """, (member_id, user_data["team_id"]))
 
-        if not cursor.fetchone():
+        target = cursor.fetchone()
+        if not target:
             return JSONResponse({"error": "Mitglied nicht gefunden"}, status_code=404)
+
+        target_role = (target["role_name"] or "").strip()
+        target_is_admin = bool(target["is_admin"]) or target_role == "Admin"
+
+        if not is_admin:
+            if target_is_admin or target_role in staff_roles:
+                return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+            if target_role != "Spieler":
+                return JSONResponse({"error": "Nur Spieler können entfernt werden"}, status_code=403)
 
         cursor.execute(
             "DELETE FROM team_members WHERE user_id = ? AND team_id = ?",
@@ -2422,6 +2446,11 @@ async def remove_member(request: Request, member_id: int):
             "UPDATE users SET team_id = NULL, role_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
             (member_id,)
         )
+        cursor.execute("""
+            UPDATE players
+            SET user_id = NULL, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ? AND team_id = ? AND deleted_at IS NULL
+        """, (member_id, user_data["team_id"]))
         db.commit()
 
     log_audit_event(user["id"], "MEMBER_REMOVED", "user", member_id)

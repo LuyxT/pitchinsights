@@ -5534,6 +5534,7 @@
         // Benutzer-Berechtigungen (werden beim Laden gesetzt)
         let userPermissions = null;
         let isTeamAdmin = false;
+        let isTeamStaff = false;
 
         async function loadUserPermissions() {
             try {
@@ -5543,17 +5544,22 @@
                 if (data.has_team) {
                     userPermissions = data.permissions || {};
                     isTeamAdmin = data.is_admin || false;
+                    const staffRoles = ['Admin', 'Trainer', 'Co-Trainer', 'Torwarttrainer', 'Betreuer', 'Physio', 'Jugendleiter', 'Vorstand'];
+                    const roleName = (data.role_name || '').trim();
+                    isTeamStaff = staffRoles.includes(roleName);
                 } else {
                     // Kein Team = alle Apps erlaubt (für Admins/Ersteller)
                     userPermissions = null;
                     isTeamAdmin = true;
+                    isTeamStaff = true;
                 }
 
-                console.log('User permissions loaded:', userPermissions, 'isAdmin:', isTeamAdmin);
+                console.log('User permissions loaded:', userPermissions, 'isAdmin:', isTeamAdmin, 'isStaff:', isTeamStaff);
             } catch (error) {
                 console.error('Fehler beim Laden der Berechtigungen:', error);
                 userPermissions = null;
                 isTeamAdmin = true;
+                isTeamStaff = true;
             }
         }
 
@@ -6489,6 +6495,7 @@
 
                 const container = document.getElementById('team-members-list');
 
+                const canManageMembers = isTeamAdmin || isTeamStaff;
                 if (data.members && data.members.length > 0) {
                     container.innerHTML = data.members.map(m => `
                             <div class="member-card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--card-light); border-radius: 12px; border: 1px solid var(--border-light);">
@@ -6506,8 +6513,8 @@
                                         ${escapeHtml(m.role_name) || 'Keine Rolle'}
                                     </span>
                                     ${m.is_admin ? '<span style="font-size: 10px; opacity: 0.5;">Admin</span>' : `
-                                        <button onclick="changeMemberRole(${parseInt(m.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;">✏️</button>
-                                        <button onclick="removeMember(${parseInt(m.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;">🗑️</button>
+                                        ${isTeamAdmin ? `<button onclick="changeMemberRole(${parseInt(m.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;">✏️</button>` : ''}
+                                        ${canManageMembers ? `<button onclick="removeMember(${parseInt(m.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;">🗑️</button>` : ''}
                                     `}
                                 </div>
                             </div>
