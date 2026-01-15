@@ -3247,15 +3247,15 @@ async def join_team(request: Request, token: str):
         password_confirm = str(form_data.get("password_confirm", "")).strip()
 
         if not email or not password:
-        return templates.TemplateResponse(
-            "join.html",
+            return templates.TemplateResponse(
+                "join.html",
                 {"request": request, "error": "E-Mail und Passwort erforderlich", "token": token, "logged_in": False,
                  "team_name": invitation_info["team_name"], "role_name": "Spieler"}
             )
 
         if password != password_confirm:
-        return templates.TemplateResponse(
-            "join.html",
+            return templates.TemplateResponse(
+                "join.html",
                 {"request": request, "error": "Passwörter stimmen nicht überein", "token": token, "logged_in": False,
                  "team_name": invitation_info["team_name"], "role_name": "Spieler"}
             )
