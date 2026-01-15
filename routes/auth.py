@@ -4379,35 +4379,27 @@ async def get_player_next_events(request: Request):
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"events": []})
 
-    staff_roles = sorted(STAFF_ROLE_NAMES)
-    placeholders = ",".join("?" * len(staff_roles))
     today = datetime.utcnow().date().isoformat()
 
     with get_db_connection() as db:
         cursor = db.cursor()
-        cursor.execute(f"""
+        cursor.execute("""
             SELECT e.id, e.title, e.event_type, e.event_date, e.start_time, e.end_time, e.location,
                    r.status as rsvp_status
             FROM calendar_events e
             LEFT JOIN event_rsvps r ON r.event_id = e.id AND r.user_id = ?
-            LEFT JOIN users u ON e.created_by = u.id
-            LEFT JOIN roles ro ON u.role_id = ro.id
             WHERE e.team_id = ?
               AND e.deleted_at IS NULL
               AND e.event_type IN ('training', 'match')
               AND e.event_date >= ?
-              AND (
-                    e.visibility = 'team'
-                    OR e.created_by IS NULL
-                    OR (e.visibility = 'private' AND LOWER(ro.name) IN ({placeholders}))
-                  )
+              AND e.visibility = 'team'
               AND (
                     NOT EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id)
                     OR EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id AND er.user_id = ?)
                   )
             ORDER BY e.event_date, e.start_time
             LIMIT 5
-        """, [user["id"], db_user["team_id"], today, *staff_roles, user["id"]])
+        """, [user["id"], db_user["team_id"], today, user["id"]])
         events = [dict(row) for row in cursor.fetchall()]
 
     return JSONResponse({"events": events})
@@ -4437,24 +4429,15 @@ async def set_player_rsvp(request: Request):
     if status not in ("yes", "no", "maybe"):
         return JSONResponse({"error": "Ungueltiger Status"}, status_code=400)
 
-    staff_roles = sorted(STAFF_ROLE_NAMES)
-    placeholders = ",".join("?" * len(staff_roles))
-
     with get_db_connection() as db:
         cursor = db.cursor()
-        cursor.execute(f"""
+        cursor.execute("""
             SELECT e.id
             FROM calendar_events e
-            LEFT JOIN users u ON e.created_by = u.id
-            LEFT JOIN roles ro ON u.role_id = ro.id
             WHERE e.id = ? AND e.team_id = ? AND e.deleted_at IS NULL
               AND e.event_type IN ('training', 'match')
-              AND (
-                    e.visibility = 'team'
-                    OR e.created_by IS NULL
-                    OR (e.visibility = 'private' AND LOWER(ro.name) IN ({placeholders}))
-                  )
-        """, [event_id, db_user["team_id"], *staff_roles])
+              AND e.visibility = 'team'
+        """, [event_id, db_user["team_id"]])
         event_row = cursor.fetchone()
         if not event_row:
             return JSONResponse({"error": "Event nicht gefunden"}, status_code=404)
@@ -4492,37 +4475,27 @@ async def get_player_calendar(request: Request):
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"events": []})
 
-    staff_roles = sorted(STAFF_ROLE_NAMES)
-    placeholders = ",".join("?" * len(staff_roles))
-
     with get_db_connection() as db:
         cursor = db.cursor()
-        cursor.execute(f"""
+        cursor.execute("""
             SELECT e.id, e.title, e.event_type, e.event_date, e.start_time, e.end_time, e.location,
                    e.visibility, e.created_by
             FROM calendar_events e
-            LEFT JOIN users u ON e.created_by = u.id
-            LEFT JOIN roles ro ON u.role_id = ro.id
             WHERE e.team_id = ? AND e.deleted_at IS NULL
-              AND (
-                    e.visibility = 'team'
-                    OR e.created_by IS NULL
-                    OR (e.visibility = 'private' AND LOWER(ro.name) IN ({placeholders}))
-                    OR (e.visibility = 'private' AND e.created_by = ?)
-                  )
+              AND e.visibility = 'team'
               AND (
                     NOT EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id)
                     OR EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id AND er.user_id = ?)
                   )
             ORDER BY e.event_date, e.start_time
             LIMIT 200
-        """, [db_user["team_id"], *staff_roles, user["id"], user["id"]])
+        """, [db_user["team_id"], user["id"]])
         rows = cursor.fetchall()
 
     events = []
     for row in rows:
         item = dict(row)
-        item["scope"] = "private" if item["visibility"] == "private" and item["created_by"] == user["id"] else "team"
+        item["scope"] = "team"
         events.append(item)
 
     return JSONResponse({"events": events})
