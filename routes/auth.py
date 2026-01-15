@@ -3643,7 +3643,12 @@ async def get_players(request: Request):
                 WHERE team_id = ? AND deleted_at IS NULL
                 ORDER BY trikotnummer, name
             """, (db_user["team_id"],))
-            players = [dict(row) for row in cursor.fetchall()]
+            players = []
+            for row in cursor.fetchall():
+                player = dict(row)
+                if player.get("status") == "Belastet":
+                    player["status"] = "Training"
+                players.append(player)
         else:
             # Spieler/Eltern sehen nur sich selbst (verknüpft über user_id)
             cursor.execute("""
@@ -3651,7 +3656,12 @@ async def get_players(request: Request):
                 FROM players
                 WHERE team_id = ? AND user_id = ? AND deleted_at IS NULL
             """, (db_user["team_id"], user["id"]))
-            players = [dict(row) for row in cursor.fetchall()]
+            players = []
+            for row in cursor.fetchall():
+                player = dict(row)
+                if player.get("status") == "Belastet":
+                    player["status"] = "Training"
+                players.append(player)
 
     return JSONResponse({"players": players})
 
@@ -3713,6 +3723,8 @@ async def create_player(request: Request):
             trikotnummer = None
 
     status = str(data.get("status", "Fit")).strip()
+    if status == "Training":
+        status = "Belastet"
     if status not in ("Fit", "Belastet", "Angeschlagen", "Verletzt", "Reha", "Ausfall"):
         status = "Fit"
 
@@ -3790,7 +3802,9 @@ async def update_player(request: Request, player_id: int):
                 params.append(None)
         if "status" in data:
             status = str(data["status"]).strip()
-            if status in ("Fit", "Training", "Reha", "Ausfall"):
+            if status == "Training":
+                status = "Belastet"
+            if status in ("Fit", "Belastet", "Angeschlagen", "Verletzt", "Reha", "Ausfall"):
                 updates.append("status = ?")
                 params.append(status)
         if "email" in data:
