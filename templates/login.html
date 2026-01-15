@@ -259,6 +259,12 @@
 
             <form method="POST" action="/login">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                {% if mode %}
+                <input type="hidden" name="mode" value="{{ mode }}">
+                {% endif %}
+                {% if redirect %}
+                <input type="hidden" name="redirect" value="{{ redirect }}">
+                {% endif %}
                 <!-- SECURITY: Honeypot fields - hidden from real users, filled by bots -->
                 <div style="position: absolute; left: -9999px; opacity: 0; height: 0; width: 0; overflow: hidden;"
                     aria-hidden="true">
@@ -284,7 +290,11 @@
             </div>
 
             <div class="register-link">
+                {% if mode == 'player' %}
+                Spieler-Account nur per Einladungslink.
+                {% else %}
                 Noch kein Account? <a href="/register">Jetzt registrieren</a>
+                {% endif %}
             </div>
 
             <div class="features">
