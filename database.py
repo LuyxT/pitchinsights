@@ -456,6 +456,26 @@ def init_db():
             ON event_rsvps(event_id)
         """)
 
+        # Event Kader Tabelle (wer darf zu-/absagen)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS event_roster (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                
+                FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(event_id, user_id)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_event_roster_event
+            ON event_roster(event_id)
+        """)
+
         # Messenger-Nachrichten Tabelle
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS messages (

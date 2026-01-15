@@ -4057,12 +4057,30 @@ async def get_events(request: Request):
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
-            SELECT id, title, description, event_type, event_date, start_time, end_time, location
+            SELECT id, title, description, event_type, event_date, start_time, end_time, location, visibility
             FROM calendar_events
             WHERE team_id = ? AND deleted_at IS NULL
             ORDER BY event_date, start_time
         """, (db_user["team_id"],))
         events = [dict(row) for row in cursor.fetchall()]
+
+        if events:
+            event_ids = [e["id"] for e in events]
+            placeholders = ",".join("?" * len(event_ids))
+            cursor.execute(f"""
+                SELECT event_id, user_id FROM event_roster
+                WHERE event_id IN ({placeholders})
+            """, event_ids)
+            roster_rows = cursor.fetchall()
+        else:
+            roster_rows = []
+
+    roster_map = {}
+    for row in roster_rows:
+        roster_map.setdefault(row["event_id"], []).append(row["user_id"])
+
+    for event in events:
+        event["roster_user_ids"] = roster_map.get(event["id"], [])
 
     return JSONResponse({"events": events})
 
@@ -4077,6 +4095,8 @@ async def create_event(request: Request):
     db_user = get_user_by_id(user["id"])
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
+    if not is_staff_user(db_user):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
     try:
         data = await request.json()
@@ -4096,22 +4116,97 @@ async def create_event(request: Request):
     if event_type not in ("training", "match", "meeting", "other"):
         event_type = "other"
 
-    description = str(data.get("description", "")).strip()[:1000]
+    description = str(data.get("description", data.get("notes", ""))).strip()[:1000]
     start_time = str(data.get("start_time", data.get("time", ""))).strip()[
         :8] or None
     end_time = str(data.get("end_time", "")).strip()[:8] or None
     location = str(data.get("location", "")).strip()[:200]
+    visibility = str(data.get("visibility", "team")).strip()
+    if visibility not in ("private", "team"):
+        visibility = "team"
 
+    repeat = str(data.get("repeat", "none")).strip().lower()
+    if repeat not in ("none", "weekly", "monthly"):
+        repeat = "none"
+    repeat_until = str(data.get("repeat_until", "")).strip()[:10] or None
+
+    roster_user_ids = data.get("roster_user_ids") or []
+    if not isinstance(roster_user_ids, list):
+        roster_user_ids = []
+    roster_user_ids = [
+        int(uid) for uid in roster_user_ids
+        if isinstance(uid, (int, str)) and str(uid).isdigit()
+    ]
+
+    if event_type == "match" and roster_user_ids:
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            placeholders = ",".join("?" * len(roster_user_ids))
+            cursor.execute(f"""
+                SELECT u.id
+                FROM users u
+                LEFT JOIN roles r ON u.role_id = r.id
+                WHERE u.team_id = ? AND u.is_active = 1
+                  AND u.id IN ({placeholders})
+                  AND LOWER(COALESCE(r.name, u.rolle)) = 'spieler'
+            """, (db_user["team_id"], *roster_user_ids))
+            allowed_ids = {row["id"] for row in cursor.fetchall()}
+        roster_user_ids = [uid for uid in roster_user_ids if uid in allowed_ids]
+    else:
+        roster_user_ids = []
+
+    def add_months(date_value: datetime.date, months: int) -> datetime.date:
+        month = date_value.month - 1 + months
+        year = date_value.year + month // 12
+        month = month % 12 + 1
+        day = min(date_value.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28,
+                                   31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+        return datetime.date(year, month, day)
+
+    try:
+        start_date_obj = datetime.strptime(event_date, "%Y-%m-%d").date()
+    except ValueError:
+        return JSONResponse({"error": "Ungültiges Datum"}, status_code=400)
+
+    end_date_obj = None
+    if repeat_until:
+        try:
+            end_date_obj = datetime.strptime(repeat_until, "%Y-%m-%d").date()
+        except ValueError:
+            return JSONResponse({"error": "Ungültiges Wiederholungsdatum"}, status_code=400)
+
+    dates_to_create = [start_date_obj]
+    if repeat != "none" and end_date_obj and end_date_obj >= start_date_obj:
+        max_occurrences = 52 if repeat == "weekly" else 24
+        current = start_date_obj
+        for _ in range(max_occurrences - 1):
+            if repeat == "weekly":
+                current = current + timedelta(weeks=1)
+            else:
+                current = add_months(current, 1)
+            if current > end_date_obj:
+                break
+            dates_to_create.append(current)
+
+    created_ids = []
     with get_db_connection() as db:
         cursor = db.cursor()
-        cursor.execute("""
-            INSERT INTO calendar_events (team_id, title, description, event_type, event_date, start_time, end_time, location, created_by, visibility)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'team')
-        """, (db_user["team_id"], title, description, event_type, event_date, start_time, end_time, location, user["id"]))
+        for date_obj in dates_to_create:
+            cursor.execute("""
+                INSERT INTO calendar_events (team_id, title, description, event_type, event_date, start_time, end_time, location, created_by, visibility)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (db_user["team_id"], title, description, event_type,
+                  date_obj.strftime("%Y-%m-%d"), start_time, end_time, location, user["id"], visibility))
+            event_id = cursor.lastrowid
+            created_ids.append(event_id)
+            if roster_user_ids:
+                cursor.executemany("""
+                    INSERT OR IGNORE INTO event_roster (event_id, user_id)
+                    VALUES (?, ?)
+                """, [(event_id, uid) for uid in roster_user_ids])
         db.commit()
-        event_id = cursor.lastrowid
 
-    return JSONResponse({"success": True, "id": event_id})
+    return JSONResponse({"success": True, "id": created_ids[0] if created_ids else None, "created_ids": created_ids})
 
 
 @router.delete("/api/events/{event_id}")
@@ -4133,6 +4228,98 @@ async def delete_event(request: Request, event_id: int):
             UPDATE calendar_events SET deleted_at = CURRENT_TIMESTAMP
             WHERE id = ? AND team_id = ? AND deleted_at IS NULL
         """, (event_id, db_user["team_id"]))
+        db.commit()
+
+    return JSONResponse({"success": True})
+
+
+@router.put("/api/events/{event_id}")
+async def update_event(request: Request, event_id: int):
+    """Event bearbeiten."""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+    if not is_staff_user(db_user):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Daten"}, status_code=400)
+
+    title = str(data.get("title", "")).strip()[:200]
+    if not title:
+        return JSONResponse({"error": "Titel erforderlich"}, status_code=400)
+
+    event_date = str(data.get("date", data.get("event_date", ""))).strip()[:10]
+    if not event_date:
+        return JSONResponse({"error": "Datum erforderlich"}, status_code=400)
+
+    event_type = str(data.get("type", data.get("event_type", "training"))).strip()
+    if event_type not in ("training", "match", "meeting", "other"):
+        event_type = "other"
+
+    description = str(data.get("description", data.get("notes", ""))).strip()[:1000]
+    start_time = str(data.get("start_time", data.get("time", ""))).strip()[:8] or None
+    end_time = str(data.get("end_time", "")).strip()[:8] or None
+    location = str(data.get("location", "")).strip()[:200]
+    visibility = str(data.get("visibility", "team")).strip()
+    if visibility not in ("private", "team"):
+        visibility = "team"
+
+    roster_user_ids = data.get("roster_user_ids") or []
+    if not isinstance(roster_user_ids, list):
+        roster_user_ids = []
+    roster_user_ids = [
+        int(uid) for uid in roster_user_ids
+        if isinstance(uid, (int, str)) and str(uid).isdigit()
+    ]
+
+    if event_type == "match" and roster_user_ids:
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            placeholders = ",".join("?" * len(roster_user_ids))
+            cursor.execute(f"""
+                SELECT u.id
+                FROM users u
+                LEFT JOIN roles r ON u.role_id = r.id
+                WHERE u.team_id = ? AND u.is_active = 1
+                  AND u.id IN ({placeholders})
+                  AND LOWER(COALESCE(r.name, u.rolle)) = 'spieler'
+            """, (db_user["team_id"], *roster_user_ids))
+            allowed_ids = {row["id"] for row in cursor.fetchall()}
+        roster_user_ids = [uid for uid in roster_user_ids if uid in allowed_ids]
+    else:
+        roster_user_ids = []
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT id FROM calendar_events
+            WHERE id = ? AND team_id = ? AND deleted_at IS NULL
+        """, (event_id, db_user["team_id"]))
+        if not cursor.fetchone():
+            return JSONResponse({"error": "Event nicht gefunden"}, status_code=404)
+
+        cursor.execute("""
+            UPDATE calendar_events
+            SET title = ?, description = ?, event_type = ?, event_date = ?, start_time = ?, end_time = ?, location = ?,
+                visibility = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND team_id = ?
+        """, (title, description, event_type, event_date, start_time, end_time,
+              location, visibility, event_id, db_user["team_id"]))
+
+        cursor.execute("DELETE FROM event_roster WHERE event_id = ?", (event_id,))
+        if roster_user_ids:
+            cursor.executemany("""
+                INSERT OR IGNORE INTO event_roster (event_id, user_id)
+                VALUES (?, ?)
+            """, [(event_id, uid) for uid in roster_user_ids])
+
         db.commit()
 
     return JSONResponse({"success": True})
@@ -4214,9 +4401,13 @@ async def get_player_next_events(request: Request):
                     OR e.created_by IS NULL
                     OR (e.visibility = 'private' AND LOWER(ro.name) IN ({placeholders}))
                   )
+              AND (
+                    NOT EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id)
+                    OR EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id AND er.user_id = ?)
+                  )
             ORDER BY e.event_date, e.start_time
             LIMIT 5
-        """, [user["id"], db_user["team_id"], today, *staff_roles])
+        """, [user["id"], db_user["team_id"], today, *staff_roles, user["id"]])
         events = [dict(row) for row in cursor.fetchall()]
 
     return JSONResponse({"events": events})
@@ -4269,6 +4460,17 @@ async def set_player_rsvp(request: Request):
             return JSONResponse({"error": "Event nicht gefunden"}, status_code=404)
 
         cursor.execute("""
+            SELECT 1 FROM event_roster WHERE event_id = ?
+        """, (event_id,))
+        roster_exists = cursor.fetchone() is not None
+        if roster_exists:
+            cursor.execute("""
+                SELECT 1 FROM event_roster WHERE event_id = ? AND user_id = ?
+            """, (event_id, user["id"]))
+            if not cursor.fetchone():
+                return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+        cursor.execute("""
             INSERT INTO event_rsvps (event_id, user_id, status)
             VALUES (?, ?, ?)
             ON CONFLICT(event_id, user_id)
@@ -4308,9 +4510,13 @@ async def get_player_calendar(request: Request):
                     OR (e.visibility = 'private' AND LOWER(ro.name) IN ({placeholders}))
                     OR (e.visibility = 'private' AND e.created_by = ?)
                   )
+              AND (
+                    NOT EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id)
+                    OR EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id AND er.user_id = ?)
+                  )
             ORDER BY e.event_date, e.start_time
             LIMIT 200
-        """, [db_user["team_id"], *staff_roles, user["id"]])
+        """, [db_user["team_id"], *staff_roles, user["id"], user["id"]])
         rows = cursor.fetchall()
 
     events = []

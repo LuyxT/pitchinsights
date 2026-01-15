@@ -4133,6 +4133,25 @@
                             </select>
                         </div>
 
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div>
+                                <label
+                                    style="font-size: 13px; font-weight: 600; color: #666; display: block; margin-bottom: 6px;">Wiederholen</label>
+                                <select id="eventRepeat"
+                                    style="width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                                    <option value="none">Nein</option>
+                                    <option value="weekly">Wöchentlich</option>
+                                    <option value="monthly">Monatlich</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    style="font-size: 13px; font-weight: 600; color: #666; display: block; margin-bottom: 6px;">Bis</label>
+                                <input type="date" id="eventRepeatUntil"
+                                    style="width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                            </div>
+                        </div>
+
                         <div>
                             <label
                                 style="font-size: 13px; font-weight: 600; color: #666; display: block; margin-bottom: 6px;">Ort</label>
@@ -4175,6 +4194,15 @@
                                 style="font-size: 13px; font-weight: 600; color: #666; display: block; margin-bottom: 6px;">Notizen</label>
                             <textarea id="eventNotes" rows="3" placeholder="Zusätzliche Informationen..."
                                 style="width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"></textarea>
+                        </div>
+
+                        <div id="matchRosterSection" style="display: none;">
+                            <label
+                                style="font-size: 13px; font-weight: 600; color: #666; display: block; margin-bottom: 6px;">Spielkader (nur diese Spieler können zu-/absagen)</label>
+                            <div id="matchRosterList"
+                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 180px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 12px; opacity: 0.7;">Keine Spieler mit Account verfügbar.</div>
+                            </div>
                         </div>
                     </div>
 
@@ -9731,13 +9759,41 @@
             return `${year}-${month}-${day}`;
         }
 
-        function initializeCalendar() {
-            console.log('initializeCalendar aufgerufen');
-            const storageKey = getUserStorageKey('calendarEvents');
-            const stored = localStorage.getItem(storageKey);
-            if (stored) {
+        function mapApiEventsToCalendar(events) {
+            return events.map(e => ({
+                id: e.id,
+                date: e.event_date || '',
+                title: e.title || '',
+                type: e.event_type || 'training',
+                time: e.start_time || '',
+                location: e.location || '',
+                notes: e.description || '',
+                visibility: e.visibility || 'team',
+                roster_user_ids: e.roster_user_ids || []
+            }));
+        }
+
+        async function refreshCalendarEvents() {
+            const apiEvents = await loadEventsFromAPI();
+            if (apiEvents.length > 0) {
                 calendarEvents.length = 0;
-                calendarEvents.push(...JSON.parse(stored));
+                calendarEvents.push(...mapApiEventsToCalendar(apiEvents));
+                saveEventsToStorage();
+                return true;
+            }
+            return false;
+        }
+
+        async function initializeCalendar() {
+            console.log('initializeCalendar aufgerufen');
+            const fromApi = await refreshCalendarEvents();
+            if (!fromApi) {
+                const storageKey = getUserStorageKey('calendarEvents');
+                const stored = localStorage.getItem(storageKey);
+                if (stored) {
+                    calendarEvents.length = 0;
+                    calendarEvents.push(...JSON.parse(stored));
+                }
             }
             console.log('Rufe renderCalendar auf...');
             renderCalendar();
@@ -9751,9 +9807,16 @@
 
         function deleteEvent(eventIndex) {
             if (confirm('Event wirklich löschen?')) {
-                calendarEvents.splice(eventIndex, 1);
-                saveEventsToStorage();
-                renderCalendar();
+                const event = calendarEvents[eventIndex];
+                if (!event) return;
+                const removeAction = (async () => {
+                    if (event.id) {
+                        await deleteEventAPI(event.id);
+                    }
+                    await refreshCalendarEvents();
+                    renderCalendar();
+                });
+                removeAction();
             }
         }
 
@@ -9772,11 +9835,15 @@
             document.getElementById('eventDate').value = dateStr || '';
             document.getElementById('eventTime').value = time || '';
             document.getElementById('eventType').value = 'training';
+            document.getElementById('eventRepeat').value = 'none';
+            document.getElementById('eventRepeatUntil').value = '';
             document.getElementById('eventLocation').value = '';
             document.getElementById('eventNotes').value = '';
             document.getElementById('eventVisibilityPrivate').checked = true;
             document.getElementById('eventVisibilityTeam').checked = false;
             updateVisibilityStyle();
+            updateMatchRosterVisibility();
+            renderMatchRoster([]);
             document.getElementById('eventModalTitle').textContent = 'Neues Event';
 
             modal.style.display = 'flex';
@@ -9794,6 +9861,47 @@
                 teamLabel.style.background = !privateChecked ? 'rgba(52, 199, 89, 0.1)' : 'transparent';
             }
         }
+
+        function updateMatchRosterVisibility() {
+            const type = document.getElementById('eventType')?.value || 'training';
+            const section = document.getElementById('matchRosterSection');
+            if (section) {
+                section.style.display = type === 'match' ? 'block' : 'none';
+            }
+        }
+
+        function renderMatchRoster(selectedIds = []) {
+            const list = document.getElementById('matchRosterList');
+            if (!list) return;
+
+            const linkedPlayers = kaderPlayers.filter(p => p.user_id);
+            if (linkedPlayers.length === 0) {
+                list.innerHTML = '<div style="font-size: 12px; opacity: 0.7;">Keine Spieler mit Account verfügbar.</div>';
+                return;
+            }
+
+            list.innerHTML = linkedPlayers.map(player => {
+                const name = `${player.firstname || ''} ${player.lastname || ''}`.trim() || player.email || 'Spieler';
+                const isChecked = selectedIds.includes(player.user_id);
+                return `
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+                        <input type="checkbox" class="match-roster-checkbox" value="${parseInt(player.user_id, 10)}" ${isChecked ? 'checked' : ''}>
+                        <span>${escapeHtml(name)}</span>
+                    </label>
+                `;
+            }).join('');
+        }
+
+        function getSelectedMatchRoster() {
+            return Array.from(document.querySelectorAll('.match-roster-checkbox:checked'))
+                .map(cb => parseInt(cb.value, 10))
+                .filter(id => !Number.isNaN(id));
+        }
+
+        document.getElementById('eventType')?.addEventListener('change', () => {
+            updateMatchRosterVisibility();
+            renderMatchRoster(getSelectedMatchRoster());
+        });
 
         function closeEventModal() {
             const modal = document.getElementById('eventModalOverlay');
@@ -9831,6 +9939,9 @@
             const location = document.getElementById('eventLocation').value.trim();
             const notes = document.getElementById('eventNotes').value.trim();
             const visibility = document.querySelector('input[name="eventVisibility"]:checked')?.value || 'private';
+            const repeat = document.getElementById('eventRepeat').value;
+            const repeatUntil = document.getElementById('eventRepeatUntil').value;
+            const rosterUserIds = type === 'match' ? getSelectedMatchRoster() : [];
 
             if (!title) {
                 alert('Bitte einen Titel eingeben');
@@ -9838,6 +9949,10 @@
             }
             if (!dateStr) {
                 alert('Bitte ein Datum auswählen');
+                return;
+            }
+            if (repeat !== 'none' && !repeatUntil) {
+                alert('Bitte ein Enddatum für die Wiederholung wählen');
                 return;
             }
 
@@ -9852,22 +9967,53 @@
                 location: location || '',
                 notes: notes || '',
                 visibility: visibility,
-                rsvps: {}
+                rsvps: {},
+                repeat: repeat,
+                repeat_until: repeatUntil,
+                roster_user_ids: rosterUserIds
             };
 
             if (editIndex !== '' && editIndex !== undefined && editIndex !== null) {
-                // Bearbeiten - RSVPs beibehalten
                 const idx = parseInt(editIndex);
                 eventData.rsvps = calendarEvents[idx].rsvps || {};
-                calendarEvents[idx] = eventData;
-            } else {
-                // Neuer Event
-                calendarEvents.push(eventData);
+                eventData.id = calendarEvents[idx].id;
             }
 
-            saveEventsToStorage();
-            closeEventModal();
-            renderCalendar();
+            const saveAction = (async () => {
+                let response;
+                if (eventData.id) {
+                    response = await fetch(`/api/events/${eventData.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(eventData)
+                    });
+                } else {
+                    response = await fetch('/api/events', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(eventData)
+                    });
+                }
+
+                if (!response.ok) {
+                    let message = 'Fehler beim Speichern';
+                    try {
+                        const err = await response.json();
+                        message = err.error || message;
+                    } catch (e) {
+                        const text = await response.text();
+                        if (text) message = text.slice(0, 200);
+                    }
+                    alert(message);
+                    return;
+                }
+
+                await refreshCalendarEvents();
+                closeEventModal();
+                renderCalendar();
+            });
+
+            saveAction();
         }
 
         function editEvent(eventIndex) {
@@ -9881,6 +10027,8 @@
             document.getElementById('eventDate').value = event.date || '';
             document.getElementById('eventTime').value = event.time || '';
             document.getElementById('eventType').value = event.type || 'training';
+            document.getElementById('eventRepeat').value = 'none';
+            document.getElementById('eventRepeatUntil').value = '';
             document.getElementById('eventLocation').value = event.location || '';
             document.getElementById('eventNotes').value = event.notes || '';
 
@@ -9889,6 +10037,8 @@
             document.getElementById('eventVisibilityPrivate').checked = (visibility === 'private');
             document.getElementById('eventVisibilityTeam').checked = (visibility === 'team');
             updateVisibilityStyle();
+            updateMatchRosterVisibility();
+            renderMatchRoster(event.roster_user_ids || []);
 
             document.getElementById('eventModalTitle').textContent = 'Event bearbeiten';
 
@@ -10441,7 +10591,7 @@
 
             renderSidebar();
             renderHomeGrid();
-            initializeCalendar();
+            await initializeCalendar();
             populateKaderTeamSelect();
             renderCharts();
             renderTeamsList();
@@ -11653,7 +11803,7 @@
 
             renderSidebar();
             renderHomeGrid();
-            initializeCalendar();
+            await initializeCalendar();
             populateKaderTeamSelect();
             renderCharts();
             renderTeamsList();
