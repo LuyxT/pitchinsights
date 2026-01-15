@@ -227,6 +227,23 @@
                     <input type="text" name="username" required placeholder="Dein Benutzername">
                 </div>
                 <div class="form-group">
+                    <label>Kader-Eintrag auswählen</label>
+                    {% if available_players and available_players|length > 0 %}
+                    <select name="player_id" required style="width: 100%; padding: 14px 16px; background: rgba(44, 44, 46, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: #fff; font-size: 16px;">
+                        <option value="" disabled selected>Bitte auswählen</option>
+                        {% for p in available_players %}
+                        <option value="{{ p.id }}">
+                            {{ p.name }}{% if p.trikotnummer %} #{{ p.trikotnummer }}{% endif %}{% if p.position %} · {{ p.position }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                    <div class="error-message" style="margin-bottom: 0;">
+                        Kein freier Kader-Eintrag verfügbar. Bitte zuerst im Kader anlegen.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
                     <label>E-Mail</label>
                     <input type="email" name="email" required placeholder="deine@email.de">
                 </div>
@@ -238,7 +255,7 @@
                     <label>Passwort bestätigen</label>
                     <input type="password" name="password_confirm" required placeholder="Passwort wiederholen">
                 </div>
-                <button type="submit" class="btn-primary">
+                <button type="submit" class="btn-primary" {% if not available_players or available_players|length == 0 %}disabled style="opacity: 0.6; cursor: not-allowed;"{% endif %}>
                     Registrieren & beitreten
                 </button>
             </form>

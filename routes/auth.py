@@ -1491,10 +1491,22 @@ async def get_profile(request: Request):
 
     # Spieler-spezifische Felder (für Spieler UND Admin)
     if is_spieler:
+        player_position = db_user.get("position", "")
+        if db_user.get("team_id"):
+            with get_db_connection() as db:
+                cursor = db.cursor()
+                cursor.execute("""
+                    SELECT position FROM players
+                    WHERE user_id = ? AND team_id = ? AND deleted_at IS NULL
+                    LIMIT 1
+                """, (user["id"], db_user.get("team_id")))
+                player_row = cursor.fetchone()
+                if player_row and player_row["position"] is not None:
+                    player_position = player_row["position"]
         profile.update({
             "groesse": db_user.get("groesse"),
             "gewicht": db_user.get("gewicht"),
-            "position": db_user.get("position", ""),
+            "position": player_position,
             "nebenpositionen": db_user.get("nebenpositionen", ""),
             "starker_fuss": db_user.get("starker_fuss", ""),
             "jahrgang": db_user.get("jahrgang"),
@@ -1591,6 +1603,17 @@ async def update_profile(request: Request):
 
     # Spieler-spezifische Felder
     if is_spieler:
+        player_entry = None
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT id, name, position
+                FROM players
+                WHERE user_id = ? AND team_id = ? AND deleted_at IS NULL
+                LIMIT 1
+            """, (user["id"], db_user.get("team_id")))
+            player_entry = cursor.fetchone()
+
         # Größe validieren
         groesse = data.get("groesse")
         if groesse:
@@ -1613,13 +1636,11 @@ async def update_profile(request: Request):
                 gewicht = None
         update_fields["gewicht"] = gewicht
 
-        # Position validieren
-        position = str(data.get("position", "")).strip()[:50]
-        valid_positions = ["", "Torwart", "Innenverteidiger", "Außenverteidiger", "Defensives Mittelfeld",
-                           "Zentrales Mittelfeld", "Offensives Mittelfeld", "Flügelspieler", "Stürmer"]
-        if position not in valid_positions:
-            position = ""
-        update_fields["position"] = position
+        # Position ist für Spieler gesperrt (nur Kader-Eintrag)
+        locked_position = db_user.get("position", "")
+        if player_entry and player_entry["position"] is not None:
+            locked_position = player_entry["position"]
+        update_fields["position"] = locked_position
 
         # Nebenpositionen (JSON array als String)
         nebenpositionen = str(data.get("nebenpositionen", "")).strip()[:200]
@@ -1667,6 +1688,14 @@ async def update_profile(request: Request):
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         """, values)
+        if is_spieler:
+            full_name = f"{vorname} {nachname}".strip()
+            cursor.execute("""
+                UPDATE players
+                SET name = ?, email = ?, telefon = ?, geburtsdatum = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ? AND team_id = ? AND deleted_at IS NULL
+            """, (full_name, db_user.get("email", ""), telefon, geburtsdatum,
+                  user["id"], db_user.get("team_id")))
         db.commit()
 
     log_audit_event(user["id"], "PROFILE_UPDATED", "user", user["id"])
@@ -3216,6 +3245,19 @@ async def join_page(request: Request, token: str):
         )
 
     user = get_current_user(request)
+    available_players = []
+    try:
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT id, name, position, trikotnummer
+                FROM players
+                WHERE team_id = ? AND user_id IS NULL AND deleted_at IS NULL
+                ORDER BY name
+            """, (invitation["team_id"],))
+            available_players = [dict(row) for row in cursor.fetchall()]
+    except Exception:
+        available_players = []
 
     # Beta-Cookie setzen damit Einladungs-User die Access Gate umgehen
     response = templates.TemplateResponse("join.html", {
@@ -3223,7 +3265,8 @@ async def join_page(request: Request, token: str):
         "token": token,
         "team_name": invitation["team_name"],
         "role_name": "Spieler",
-        "logged_in": user is not None
+        "logged_in": user is not None,
+        "available_players": available_players
     })
 
     # Beta-Zugang gewähren - Cookie-Wert muss "verified" sein
@@ -3286,19 +3329,40 @@ async def join_team(request: Request, token: str):
             email = str(form_data.get("email", "")).strip()
             password = str(form_data.get("password", "")).strip()
             password_confirm = str(form_data.get("password_confirm", "")).strip()
+            player_id_raw = str(form_data.get("player_id", "")).strip()
+
+            with get_db_connection() as db:
+                cursor = db.cursor()
+                cursor.execute("""
+                    SELECT id, name, position, telefon, geburtsdatum, email
+                    FROM players
+                    WHERE team_id = ? AND user_id IS NULL AND deleted_at IS NULL
+                    ORDER BY name
+                """, (invitation_info["team_id"],))
+                available_players = [dict(row) for row in cursor.fetchall()]
+
+            if not available_players:
+                return templates.TemplateResponse(
+                    "join.html",
+                    {"request": request, "error": "Bitte zuerst im Kader anlegen. Es gibt keinen freien Spieler-Eintrag.",
+                     "token": token, "logged_in": False, "team_name": invitation_info["team_name"],
+                     "role_name": "Spieler", "available_players": available_players}
+                )
 
             if not email or not password:
                 return templates.TemplateResponse(
                     "join.html",
                     {"request": request, "error": "E-Mail und Passwort erforderlich", "token": token, "logged_in": False,
-                     "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                     "available_players": available_players}
                 )
 
             if password != password_confirm:
                 return templates.TemplateResponse(
                     "join.html",
                     {"request": request, "error": "Passwörter stimmen nicht überein", "token": token, "logged_in": False,
-                     "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                     "available_players": available_players}
                 )
 
             # Input-Validierung
@@ -3309,7 +3373,8 @@ async def join_team(request: Request, token: str):
                 return templates.TemplateResponse(
                     "join.html",
                     {"request": request, "error": e.message, "token": token, "logged_in": False,
-                     "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                     "available_players": available_players}
                 )
 
             # SECURITY: Prüfe auf häufig geleakte/schwache Passwörter
@@ -3317,7 +3382,8 @@ async def join_team(request: Request, token: str):
                 return templates.TemplateResponse(
                     "join.html",
                     {"request": request, "error": "Dieses Passwort ist zu häufig verwendet", "token": token, "logged_in": False,
-                     "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                     "available_players": available_players}
                 )
 
             is_strong, _ = is_password_strong_enough(password, min_entropy=50.0)
@@ -3325,7 +3391,8 @@ async def join_team(request: Request, token: str):
                 return templates.TemplateResponse(
                     "join.html",
                     {"request": request, "error": "Passwort ist nicht komplex genug", "token": token, "logged_in": False,
-                     "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                     "available_players": available_players}
                 )
 
             try:
@@ -3334,10 +3401,29 @@ async def join_team(request: Request, token: str):
                     return templates.TemplateResponse(
                         "join.html",
                         {"request": request, "error": "Passwort wurde in Datenlecks gefunden", "token": token, "logged_in": False,
-                         "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                         "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                         "available_players": available_players}
                     )
             except Exception:
                 pass
+
+            if not player_id_raw:
+                return templates.TemplateResponse(
+                    "join.html",
+                    {"request": request, "error": "Bitte wähle deinen Kader-Eintrag.", "token": token, "logged_in": False,
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                     "available_players": available_players}
+                )
+
+            try:
+                player_id = InputValidator.validate_positive_int(player_id_raw, "player_id", max_value=100000000)
+            except ValidationError:
+                return templates.TemplateResponse(
+                    "join.html",
+                    {"request": request, "error": "Ungültiger Kader-Eintrag.", "token": token, "logged_in": False,
+                     "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                     "available_players": available_players}
+                )
 
             invitation = invitation_info
             with get_db_connection() as db:
@@ -3350,13 +3436,15 @@ async def join_team(request: Request, token: str):
                         return templates.TemplateResponse(
                             "join.html",
                             {"request": request, "error": "Einladung ungültig", "token": token, "logged_in": False,
-                             "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                             "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                             "available_players": available_players}
                         )
                     if expires < datetime.now():
                         return templates.TemplateResponse(
                             "join.html",
                             {"request": request, "error": "Einladung abgelaufen", "token": token, "logged_in": False,
-                             "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                             "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                             "available_players": available_players}
                         )
 
                 uses_key = "uses_count" if "uses_count" in invitation.keys() else "uses"
@@ -3366,7 +3454,8 @@ async def join_team(request: Request, token: str):
                     return templates.TemplateResponse(
                         "join.html",
                         {"request": request, "error": "Einladungslimit erreicht", "token": token, "logged_in": False,
-                         "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                         "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                         "available_players": available_players}
                     )
 
                 cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
@@ -3374,7 +3463,8 @@ async def join_team(request: Request, token: str):
                     return templates.TemplateResponse(
                         "join.html",
                         {"request": request, "error": "E-Mail ist bereits registriert. Bitte einloggen.", "token": token, "logged_in": False,
-                         "team_name": invitation_info["team_name"], "role_name": "Spieler"}
+                         "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                         "available_players": available_players}
                     )
 
                 cursor.execute("""
@@ -3383,6 +3473,25 @@ async def join_team(request: Request, token: str):
                 player_role = cursor.fetchone()
                 role_id = player_role["id"] if player_role else invitation["role_id"]
 
+                cursor.execute("""
+                    SELECT id, name, position, telefon, geburtsdatum, email
+                    FROM players
+                    WHERE id = ? AND team_id = ? AND user_id IS NULL AND deleted_at IS NULL
+                """, (player_id, invitation["team_id"]))
+                player_row = cursor.fetchone()
+                if not player_row:
+                    return templates.TemplateResponse(
+                        "join.html",
+                        {"request": request, "error": "Der ausgewählte Kader-Eintrag ist nicht verfügbar.", "token": token,
+                         "logged_in": False, "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                         "available_players": available_players}
+                    )
+
+                player_name = (player_row["name"] or "").strip()
+                name_parts = player_name.split()
+                vorname = name_parts[0] if name_parts else ""
+                nachname = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+
                 peppered_password = f"{password}{SecurityConfig.PASSWORD_PEPPER}"
                 password_hash = bcrypt.hashpw(
                     peppered_password.encode('utf-8'),
@@ -3390,15 +3499,30 @@ async def join_team(request: Request, token: str):
                 ).decode('utf-8')
 
                 cursor.execute("""
-                    INSERT INTO users (email, password_hash, team_id, role_id, onboarding_complete, is_active, payment_status)
-                    VALUES (?, ?, ?, ?, 1, 1, 'paid')
-                """, (email, password_hash, invitation["team_id"], role_id))
+                    INSERT INTO users (email, password_hash, team_id, role_id, onboarding_complete, is_active, payment_status, vorname, nachname, position, telefon, geburtsdatum)
+                    VALUES (?, ?, ?, ?, 1, 1, 'paid', ?, ?, ?, ?, ?)
+                """, (email, password_hash, invitation["team_id"], role_id, vorname, nachname,
+                      player_row["position"] or "", player_row["telefon"] or "", player_row["geburtsdatum"]))
                 user_id = cursor.lastrowid
 
                 cursor.execute("""
                     INSERT INTO team_members (team_id, user_id, role_id)
                     VALUES (?, ?, ?)
                 """, (invitation["team_id"], user_id, role_id))
+
+                cursor.execute("""
+                    UPDATE players
+                    SET user_id = ?, email = COALESCE(NULLIF(email, ''), ?), updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ? AND user_id IS NULL
+                """, (user_id, email, player_id))
+
+                if cursor.rowcount == 0:
+                    return templates.TemplateResponse(
+                        "join.html",
+                        {"request": request, "error": "Der Kader-Eintrag wurde bereits vergeben.", "token": token,
+                         "logged_in": False, "team_name": invitation_info["team_name"], "role_name": "Spieler",
+                         "available_players": available_players}
+                    )
 
                 # Einladung als benutzt markieren
                 if "uses_count" in invitation.keys():
