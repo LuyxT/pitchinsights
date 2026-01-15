@@ -366,7 +366,18 @@
 
             <section class="view" id="view-messenger">
                 <div class="card">
-                    <h2>Messenger</h2>
+                    <div class="card-header">
+                        <h2>Messenger</h2>
+                        <div class="chat-switch">
+                            <button class="btn btn-ghost active" data-scope="team" type="button">Teamchat</button>
+                            <button class="btn btn-ghost" data-scope="trainer" type="button">Trainerchat</button>
+                        </div>
+                    </div>
+                    <div id="trainerSelectRow" style="display: none; margin-bottom: 12px;">
+                        <select id="trainerSelect" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(44, 44, 46, 0.8); color: #fff;">
+                            <option value="">Trainer auswählen</option>
+                        </select>
+                    </div>
                     <div class="chat-box" id="chatMessages"></div>
                     <div class="section-divider"></div>
                     <form id="chatForm" class="form-grid">
@@ -554,11 +565,40 @@
             }
         }
 
+        let currentChatScope = 'team';
+        let currentTrainerId = null;
+        let trainerContacts = [];
+
+        async function loadTrainerContacts() {
+            try {
+                const response = await fetch('/api/messages/contacts');
+                const data = await response.json();
+                trainerContacts = data.contacts || [];
+                const select = document.getElementById('trainerSelect');
+                if (select) {
+                    select.innerHTML = '<option value="">Trainer auswählen</option>' + trainerContacts.map(c => {
+                        const name = `${c.vorname || ''} ${c.nachname || ''}`.trim() || c.email;
+                        return `<option value="${c.id}">${escapeHtml(name)} (${escapeHtml(c.role_name || 'Trainer')})</option>`;
+                    }).join('');
+                }
+            } catch (err) {
+                trainerContacts = [];
+            }
+        }
+
         async function loadMessages() {
             const container = document.getElementById('chatMessages');
             container.innerHTML = '';
             try {
-                const response = await fetch('/api/messages');
+                let url = '/api/messages?scope=team';
+                if (currentChatScope === 'trainer') {
+                    if (!currentTrainerId) {
+                        container.innerHTML = '<div class="empty-state">Bitte Trainer auswählen</div>';
+                        return;
+                    }
+                    url = `/api/messages?scope=direct&peer_id=${currentTrainerId}`;
+                }
+                const response = await fetch(url);
                 const data = await response.json();
                 const messages = data.messages || [];
                 if (messages.length === 0) {
@@ -613,6 +653,25 @@
             button.addEventListener('click', () => setActiveView(button.dataset.view));
         });
 
+        document.querySelectorAll('.chat-switch .btn').forEach(button => {
+            button.addEventListener('click', async () => {
+                document.querySelectorAll('.chat-switch .btn').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                currentChatScope = button.dataset.scope === 'trainer' ? 'trainer' : 'team';
+                document.getElementById('trainerSelectRow').style.display = currentChatScope === 'trainer' ? 'block' : 'none';
+                document.getElementById('chatInput').placeholder = currentChatScope === 'trainer' ? 'Nachricht an den Trainer' : 'Nachricht an das Team';
+                if (currentChatScope === 'trainer' && trainerContacts.length === 0) {
+                    await loadTrainerContacts();
+                }
+                await loadMessages();
+            });
+        });
+
+        document.getElementById('trainerSelect')?.addEventListener('change', async event => {
+            currentTrainerId = event.target.value ? parseInt(event.target.value, 10) : null;
+            await loadMessages();
+        });
+
         document.getElementById('toggleCalendar').addEventListener('click', () => {
             const panel = document.getElementById('calendarPanel');
             const isOpen = panel.classList.toggle('active');
@@ -660,10 +719,18 @@
             const content = document.getElementById('chatInput').value.trim();
             if (!content) return;
             try {
+                const payload = { content };
+                if (currentChatScope === 'trainer') {
+                    if (!currentTrainerId) {
+                        alert('Bitte Trainer auswählen');
+                        return;
+                    }
+                    payload.recipient_id = currentTrainerId;
+                }
                 const response = await fetch('/api/messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content })
+                    body: JSON.stringify(payload)
                 });
                 if (response.ok) {
                     document.getElementById('chatInput').value = '';

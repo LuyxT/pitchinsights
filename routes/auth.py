@@ -4708,7 +4708,7 @@ async def create_player_private_event(request: Request):
 # ============================================
 
 @router.get("/api/messages")
-async def get_messages(request: Request, limit: int = 50, before_id: int = None):
+async def get_messages(request: Request, limit: int = 50, before_id: int = None, scope: str = None, peer_id: int = None):
     """
     Team-Chat Nachrichten abrufen.
     PERFORMANCE: Cursor-basierte Pagination für große Chat-Historien.
@@ -4728,33 +4728,45 @@ async def get_messages(request: Request, limit: int = 50, before_id: int = None)
     # SECURITY: Limit begrenzen
     limit = min(max(1, limit), 100)
 
+    scope = (scope or "").lower()
+
     with get_db_connection() as db:
         cursor = db.cursor()
 
+        if scope == "team":
+            where_clause = "m.recipient_id IS NULL"
+            params = [db_user["team_id"]]
+        elif scope == "direct" and peer_id:
+            where_clause = "(m.sender_id = ? AND m.recipient_id = ?) OR (m.sender_id = ? AND m.recipient_id = ?)"
+            params = [db_user["team_id"], user["id"], peer_id, peer_id, user["id"]]
+        else:
+            where_clause = "(m.recipient_id IS NULL OR m.recipient_id = ? OR m.sender_id = ?)"
+            params = [db_user["team_id"], user["id"], user["id"]]
+
         if before_id:
             # PERFORMANCE: Cursor-Pagination (schneller als OFFSET)
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT m.id, m.content, m.created_at, m.sender_id,
                        u.vorname || ' ' || u.nachname as sender_name
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
                 WHERE m.team_id = ? AND m.deleted_at IS NULL
-                AND (m.recipient_id IS NULL OR m.recipient_id = ? OR m.sender_id = ?)
+                AND ({where_clause})
                 AND m.id < ?
                 ORDER BY m.created_at DESC
                 LIMIT ?
-            """, (db_user["team_id"], user["id"], user["id"], before_id, limit + 1))
+            """, (*params, before_id, limit + 1))
         else:
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT m.id, m.content, m.created_at, m.sender_id,
                        u.vorname || ' ' || u.nachname as sender_name
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
                 WHERE m.team_id = ? AND m.deleted_at IS NULL
-                AND (m.recipient_id IS NULL OR m.recipient_id = ? OR m.sender_id = ?)
+                AND ({where_clause})
                 ORDER BY m.created_at DESC
                 LIMIT ?
-            """, (db_user["team_id"], user["id"], user["id"], limit + 1))
+            """, (*params, limit + 1))
 
         rows = cursor.fetchall()
         has_more = len(rows) > limit
@@ -4787,6 +4799,20 @@ async def send_message(request: Request):
         return JSONResponse({"error": "Nachricht leer"}, status_code=400)
 
     recipient_id = data.get("recipient_id")  # None = Team-Chat
+
+    if recipient_id:
+        try:
+            recipient_id = int(recipient_id)
+        except (ValueError, TypeError):
+            return JSONResponse({"error": "Ungültiger Empfänger"}, status_code=400)
+
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT id FROM users WHERE id = ? AND team_id = ? AND is_active = 1
+            """, (recipient_id, db_user["team_id"]))
+            if not cursor.fetchone():
+                return JSONResponse({"error": "Empfänger nicht gefunden"}, status_code=404)
 
     with get_db_connection() as db:
         cursor = db.cursor()
@@ -4823,6 +4849,35 @@ async def get_unread_count(request: Request):
         row = cursor.fetchone()
 
     return JSONResponse({"count": row["count"] if row else 0})
+
+
+@router.get("/api/messages/contacts")
+async def get_message_contacts(request: Request):
+    """Kontaktliste für Messenger (Staff im Team)."""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"contacts": []}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"contacts": []})
+
+    staff_roles = list(STAFF_ROLE_NAMES)
+    placeholders = ",".join("?" * len(staff_roles))
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute(f"""
+            SELECT u.id, u.email, u.vorname, u.nachname, r.name as role_name
+            FROM users u
+            LEFT JOIN roles r ON u.role_id = r.id
+            WHERE u.team_id = ? AND u.is_active = 1
+              AND LOWER(COALESCE(r.name, u.rolle)) IN ({placeholders})
+            ORDER BY r.name, u.nachname
+        """, (db_user["team_id"], *staff_roles))
+        contacts = [dict(row) for row in cursor.fetchall()]
+
+    return JSONResponse({"contacts": contacts})
 
 
 # ============================================
