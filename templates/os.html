@@ -10648,24 +10648,40 @@
         let positionChart = null;
 
         // Lade Spieler von API oder localStorage
+        function getPositionCategory(positions) {
+            if (!positions || positions.length === 0) return 'mittelfeld';
+            if (positions.includes('TW')) return 'torwart';
+            if (positions.some(p => ['IV', 'LV', 'RV'].includes(p))) return 'abwehr';
+            if (positions.some(p => ['DM', 'ZM', 'LM', 'RM', 'OM'].includes(p))) return 'mittelfeld';
+            if (positions.some(p => ['LF', 'RF', 'ST'].includes(p))) return 'sturm';
+            return 'mittelfeld';
+        }
+
         async function initKaderData() {
             try {
                 const response = await fetch('/api/players');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.players && data.players.length > 0) {
-                        kaderPlayers = data.players.map(p => ({
-                            id: p.id,
-                            firstname: p.name.split(' ')[0] || p.name,
-                            lastname: p.name.split(' ').slice(1).join(' ') || '',
-                            position: p.position || 'mittelfeld',
-                            jersey: p.trikotnummer || 0,
-                            status: (p.status || 'Fit').toLowerCase(),
-                            email: p.email || '',
-                            phone: p.telefon || '',
-                            notes: p.notizen || '',
-                            user_id: p.user_id || null
-                        }));
+                        kaderPlayers = data.players.map(p => {
+                            const positions = p.position ? p.position.split(',').map(s => s.trim()).filter(Boolean) : [];
+                            return {
+                                id: p.id,
+                                firstname: p.name.split(' ')[0] || p.name,
+                                lastname: p.name.split(' ').slice(1).join(' ') || '',
+                                positions,
+                                position: p.position || '',
+                                position_category: getPositionCategory(positions),
+                                jersey: p.trikotnummer || 0,
+                                status: (p.status || 'Fit').toLowerCase(),
+                                email: p.email || '',
+                                phone: p.telefon || '',
+                                notes: p.notizen || '',
+                                user_id: p.user_id || null,
+                                height: p.groesse || null,
+                                weight: p.gewicht || null
+                            };
+                        });
                         return;
                     }
                 }
@@ -10834,10 +10850,10 @@
 
             // Position Counts
             const pos = {
-                torwart: filteredPlayers.filter(p => p.position === 'torwart').length,
-                abwehr: filteredPlayers.filter(p => p.position === 'abwehr').length,
-                mittelfeld: filteredPlayers.filter(p => p.position === 'mittelfeld').length,
-                sturm: filteredPlayers.filter(p => p.position === 'sturm').length
+                torwart: filteredPlayers.filter(p => p.position_category === 'torwart').length,
+                abwehr: filteredPlayers.filter(p => p.position_category === 'abwehr').length,
+                mittelfeld: filteredPlayers.filter(p => p.position_category === 'mittelfeld').length,
+                sturm: filteredPlayers.filter(p => p.position_category === 'sturm').length
             };
 
             // Update HTML
@@ -10975,7 +10991,7 @@
                     return `<div class="list-item" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <span>${p.firstname} ${p.lastname}</span>
-                            <span style="opacity: 0.7; margin-left: 10px;">#${p.jersey} - ${p.position}</span>
+                            <span style="opacity: 0.7; margin-left: 10px;">#${p.jersey} - ${p.position || '–'}</span>
                             <span style="opacity: 0.6; margin-left: 10px; font-size: 12px;">${p.status}</span>
                             ${p.team ? `<span style="margin-left: 10px; font-size: 11px; background: ${teamColor}; color: white; padding: 3px 8px; border-radius: 4px; font-weight: 500;">${p.team}</span>` : ''}
                         </div>
@@ -11032,10 +11048,7 @@
             }
 
             // Position-Kategorie für Charts bestimmen
-            let positionCategory = 'mittelfeld';
-            if (positions.includes('TW')) positionCategory = 'torwart';
-            else if (positions.some(p => ['IV', 'LV', 'RV'].includes(p))) positionCategory = 'abwehr';
-            else if (positions.some(p => ['ST', 'LF', 'RF'].includes(p))) positionCategory = 'sturm';
+            const positionCategory = getPositionCategory(positions);
 
             const newPlayer = {
                 id: Date.now(),
@@ -11043,24 +11056,27 @@
                 lastname,
                 jersey,
                 positions,
-                position: positionCategory,
+                position: positions.join(', '),
+                position_category: positionCategory,
                 status,
                 birthdate,
                 age,
                 country,
                 team,
-                height: height ? parseInt(height) : null,
-                weight: weight ? parseInt(weight) : null
+                height: height ? parseInt(height, 10) : null,
+                weight: weight ? parseInt(weight, 10) : null
             };
 
             // Speichere in API und localStorage
             try {
                 const apiPlayer = {
                     name: `${firstname} ${lastname}`.trim(),
-                    position: positionCategory,
+                    position: positions.join(', '),
                     trikotnummer: jersey,
                     status: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase(),
-                    notizen: `Team: ${team}`
+                    notizen: `Team: ${team}`,
+                    groesse: height ? parseInt(height, 10) : null,
+                    gewicht: weight ? parseInt(weight, 10) : null
                 };
                 const response = await fetch('/api/players', {
                     method: 'POST',
@@ -11222,16 +11238,7 @@
             }
 
             // Positions-Kategorie bestimmen
-            let positionCategory = 'feldspieler';
-            if (positions.includes('TW')) {
-                positionCategory = 'torwart';
-            } else if (positions.some(p => ['IV', 'LV', 'RV'].includes(p))) {
-                positionCategory = 'abwehr';
-            } else if (positions.some(p => ['DM', 'ZM', 'LM', 'RM', 'OM'].includes(p))) {
-                positionCategory = 'mittelfeld';
-            } else if (positions.some(p => ['LF', 'RF', 'ST'].includes(p))) {
-                positionCategory = 'sturm';
-            }
+            const positionCategory = getPositionCategory(positions);
 
             // An Server senden
             try {
@@ -11245,7 +11252,9 @@
                         position: positions.join(', '),
                         trikotnummer: jersey,
                         status: status,
-                        user_id: linkedUserId
+                        user_id: linkedUserId,
+                        groesse: height ? parseInt(height, 10) : null,
+                        gewicht: weight ? parseInt(weight, 10) : null
                     })
                 });
 
@@ -11273,7 +11282,8 @@
                     name: `${firstname} ${lastname}`,
                     jersey,
                     positions,
-                    position: positionCategory,
+                    position: positions.join(', '),
+                    position_category: positionCategory,
                     status,
                     birthdate,
                     age,
@@ -11286,7 +11296,6 @@
 
                 closeEditPlayerModal();
                 await initKaderData(); // Neu laden von Server
-                renderPlayerList();
                 renderCharts();
                 renderDashboardStats();
             } catch (e) {

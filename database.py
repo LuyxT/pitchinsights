@@ -361,6 +361,8 @@ def init_db():
                 telefon TEXT CHECK(length(telefon) <= 30),
                 geburtsdatum DATE,
                 notizen TEXT CHECK(length(notizen) <= 1000),
+                groesse INTEGER NULL,
+                gewicht INTEGER NULL,
                 
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -671,6 +673,8 @@ def _run_migrations(conn):
         ("users", "lizenzen", "TEXT DEFAULT ''"),  # z.B. A-Lizenz
         # Player-User Verknüpfung
         ("players", "user_id", "INTEGER NULL"),
+        ("players", "groesse", "INTEGER NULL"),
+        ("players", "gewicht", "INTEGER NULL"),
         # Audit Log Erweiterungen
         ("audit_log", "event_type", "TEXT DEFAULT ''"),
         ("audit_log", "severity", "TEXT DEFAULT 'INFO'"),

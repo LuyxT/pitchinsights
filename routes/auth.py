@@ -3638,7 +3638,7 @@ async def get_players(request: Request):
 
         if db_user.get("is_admin") or role_name in staff_roles:
             cursor.execute("""
-                SELECT id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen, user_id
+                SELECT id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen, user_id, groesse, gewicht
                 FROM players
                 WHERE team_id = ? AND deleted_at IS NULL
                 ORDER BY trikotnummer, name
@@ -3652,7 +3652,7 @@ async def get_players(request: Request):
         else:
             # Spieler/Eltern sehen nur sich selbst (verknüpft über user_id)
             cursor.execute("""
-                SELECT id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen, user_id
+                SELECT id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen, user_id, groesse, gewicht
                 FROM players
                 WHERE team_id = ? AND user_id = ? AND deleted_at IS NULL
             """, (db_user["team_id"], user["id"]))
@@ -3733,12 +3733,34 @@ async def create_player(request: Request):
     geburtsdatum = str(data.get("geburtsdatum", "")).strip()[:10] or None
     notizen = str(data.get("notizen", "")).strip()[:1000]
 
+    groesse = data.get("groesse")
+    if groesse is not None and groesse != "":
+        try:
+            groesse = int(groesse)
+            if groesse < 100 or groesse > 250:
+                groesse = None
+        except (ValueError, TypeError):
+            groesse = None
+    else:
+        groesse = None
+
+    gewicht = data.get("gewicht")
+    if gewicht is not None and gewicht != "":
+        try:
+            gewicht = int(gewicht)
+            if gewicht < 30 or gewicht > 200:
+                gewicht = None
+        except (ValueError, TypeError):
+            gewicht = None
+    else:
+        gewicht = None
+
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
-            INSERT INTO players (team_id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (db_user["team_id"], name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen))
+            INSERT INTO players (team_id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen, groesse, gewicht)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (db_user["team_id"], name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen, groesse, gewicht))
         db.commit()
         player_id = cursor.lastrowid
 
@@ -3816,6 +3838,24 @@ async def update_player(request: Request, player_id: int):
         if "notizen" in data:
             updates.append("notizen = ?")
             params.append(str(data["notizen"]).strip()[:1000])
+        if "groesse" in data:
+            try:
+                groesse = int(data["groesse"])
+                if groesse < 100 or groesse > 250:
+                    groesse = None
+            except (ValueError, TypeError):
+                groesse = None
+            updates.append("groesse = ?")
+            params.append(groesse)
+        if "gewicht" in data:
+            try:
+                gewicht = int(data["gewicht"])
+                if gewicht < 30 or gewicht > 200:
+                    gewicht = None
+            except (ValueError, TypeError):
+                gewicht = None
+            updates.append("gewicht = ?")
+            params.append(gewicht)
         if "user_id" in data:
             raw_user_id = data.get("user_id")
             if raw_user_id in (None, "", 0, "0"):
