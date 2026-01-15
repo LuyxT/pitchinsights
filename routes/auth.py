@@ -3360,7 +3360,9 @@ async def join_team(request: Request, token: str):
                         )
 
                 uses_key = "uses_count" if "uses_count" in invitation.keys() else "uses"
-                if invitation.get("max_uses") and invitation.get(uses_key, 0) >= invitation["max_uses"]:
+                max_uses = invitation["max_uses"] if "max_uses" in invitation.keys() else None
+                current_uses = invitation[uses_key] if uses_key in invitation.keys() else 0
+                if max_uses and current_uses >= max_uses:
                     return templates.TemplateResponse(
                         "join.html",
                         {"request": request, "error": "Einladungslimit erreicht", "token": token, "logged_in": False,
