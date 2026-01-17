@@ -225,18 +225,23 @@
         .chat-box {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-height: 45vh;
+            gap: 8px;
+            max-height: 52vh;
             overflow-y: auto;
-            padding-right: 4px;
+            padding: 6px 4px 6px 0;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.6));
+            border-radius: 14px;
         }
 
         .chat-message {
-            background: rgba(148, 163, 184, 0.1);
-            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 14px 14px 14px 4px;
             padding: 10px 12px;
             font-size: 13px;
             line-height: 1.4;
+            max-width: 78%;
+            align-self: flex-start;
+            border: 1px solid rgba(148, 163, 184, 0.12);
         }
 
         .chat-message .sender {
@@ -244,6 +249,86 @@
             color: var(--accent-soft);
             margin-bottom: 6px;
             font-weight: 600;
+        }
+
+        .chat-message.own {
+            background: rgba(34, 197, 94, 0.18);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            color: #dcfce7;
+            border-radius: 14px 14px 4px 14px;
+            align-self: flex-end;
+        }
+
+        .chat-message .time {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        .wa-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .wa-title {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .wa-title span {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .wa-tabs {
+            display: inline-flex;
+            gap: 6px;
+            padding: 4px;
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 999px;
+            border: 1px solid var(--border);
+        }
+
+        .wa-tabs .btn {
+            padding: 6px 12px;
+            font-size: 11px;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--text-dim);
+            border: none;
+        }
+
+        .wa-tabs .btn.active {
+            background: var(--accent);
+            color: #05210f;
+        }
+
+        .wa-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 6px 8px 6px 12px;
+        }
+
+        .wa-input input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .wa-input button {
+            border-radius: 999px;
+            padding: 8px 14px;
         }
 
         .bottom-nav {
@@ -366,11 +451,14 @@
 
             <section class="view" id="view-messenger">
                 <div class="card">
-                    <div class="card-header">
-                        <h2>Messenger</h2>
-                        <div class="chat-switch">
-                            <button class="btn btn-ghost active" data-scope="team" type="button">Teamchat</button>
-                            <button class="btn btn-ghost" data-scope="trainer" type="button">Trainerchat</button>
+                    <div class="wa-header">
+                        <div class="wa-title">
+                            <h2>Messenger</h2>
+                            <span id="chatSubtitle">Teamchat</span>
+                        </div>
+                        <div class="wa-tabs chat-switch">
+                            <button class="btn active" data-scope="team" type="button">Team</button>
+                            <button class="btn" data-scope="trainer" type="button">Trainer</button>
                         </div>
                     </div>
                     <div id="trainerSelectRow" style="display: none; margin-bottom: 12px;">
@@ -380,8 +468,8 @@
                     </div>
                     <div class="chat-box" id="chatMessages"></div>
                     <div class="section-divider"></div>
-                    <form id="chatForm" class="form-grid">
-                        <textarea id="chatInput" placeholder="Nachricht an das Team"></textarea>
+                    <form id="chatForm" class="wa-input">
+                        <input id="chatInput" type="text" placeholder="Nachricht schreiben">
                         <button class="btn btn-accent" type="submit">Senden</button>
                     </form>
                 </div>
@@ -428,6 +516,7 @@
     </div>
 
     <script>
+        const currentUserId = {{ user.get('id', 0) if user else 0 }};
         const viewMap = {
             calendar: document.getElementById('view-calendar'),
             messenger: document.getElementById('view-messenger'),
@@ -606,10 +695,15 @@
                     return;
                 }
                 container.innerHTML = messages.map(msg => {
+                    const isOwn = msg.sender_id === currentUserId;
+                    const sender = escapeHtml(msg.sender_name || 'Team');
+                    const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
+                    const senderLine = currentChatScope === 'team' && !isOwn ? `<div class="sender">${sender}</div>` : '';
                     return `
-                        <div class="chat-message">
-                            <div class="sender">${escapeHtml(msg.sender_name || 'Team')}</div>
+                        <div class="chat-message ${isOwn ? 'own' : ''}">
+                            ${senderLine}
                             <div>${escapeHtml(msg.content)}</div>
+                            <div class="time">${time}</div>
                         </div>
                     `;
                 }).join('');
@@ -658,6 +752,7 @@
                 document.querySelectorAll('.chat-switch .btn').forEach(b => b.classList.remove('active'));
                 button.classList.add('active');
                 currentChatScope = button.dataset.scope === 'trainer' ? 'trainer' : 'team';
+                document.getElementById('chatSubtitle').textContent = currentChatScope === 'trainer' ? 'Trainerchat' : 'Teamchat';
                 document.getElementById('trainerSelectRow').style.display = currentChatScope === 'trainer' ? 'block' : 'none';
                 document.getElementById('chatInput').placeholder = currentChatScope === 'trainer' ? 'Nachricht an den Trainer' : 'Nachricht an das Team';
                 if (currentChatScope === 'trainer' && trainerContacts.length === 0) {
