@@ -5001,7 +5001,10 @@ async def send_message(request: Request):
         with get_db_connection() as db:
             cursor = db.cursor()
             cursor.execute("""
-                SELECT id FROM users WHERE id = ? AND team_id = ? AND is_active = 1
+                SELECT u.id
+                FROM users u
+                JOIN team_members tm ON tm.user_id = u.id
+                WHERE u.id = ? AND tm.team_id = ? AND u.is_active = 1
             """, (recipient_id, db_user["team_id"]))
             if not cursor.fetchone():
                 return JSONResponse({"error": "Empfänger nicht gefunden"}, status_code=404)
