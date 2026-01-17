@@ -331,6 +331,95 @@
             padding: 8px 14px;
         }
 
+        .chat-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 14px;
+        }
+
+        .chat-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            cursor: pointer;
+            transition: background 0.2s ease, border 0.2s ease;
+        }
+
+        .chat-item.active {
+            background: rgba(34, 197, 94, 0.18);
+            border-color: rgba(34, 197, 94, 0.35);
+        }
+
+        .chat-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(148, 163, 184, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .chat-meta {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chat-title {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .chat-preview {
+            font-size: 12px;
+            color: var(--text-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-time {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .chat-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        @media (max-width: 520px) {
+            .chat-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -454,24 +543,25 @@
                     <div class="wa-header">
                         <div class="wa-title">
                             <h2>Messenger</h2>
-                            <span id="chatSubtitle">Teamchat</span>
-                        </div>
-                        <div class="wa-tabs chat-switch">
-                            <button class="btn active" data-scope="team" type="button">Team</button>
-                            <button class="btn" data-scope="trainer" type="button">Trainer</button>
+                            <span>Chats</span>
                         </div>
                     </div>
-                    <div id="trainerSelectRow" style="display: none; margin-bottom: 12px;">
-                        <select id="trainerSelect" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(44, 44, 46, 0.8); color: #fff;">
-                            <option value="">Trainer auswählen</option>
-                        </select>
+                    <div class="chat-layout">
+                        <div class="chat-list" id="chatList"></div>
+                        <div class="chat-panel">
+                            <div class="chat-header">
+                                <div class="wa-title">
+                                    <div class="app-title" id="chatTitle">Teamchat</div>
+                                    <span id="chatSubtitle">Alle Teammitglieder</span>
+                                </div>
+                            </div>
+                            <div class="chat-box" id="chatMessages"></div>
+                            <form id="chatForm" class="wa-input">
+                                <input id="chatInput" type="text" placeholder="Nachricht schreiben">
+                                <button class="btn btn-accent" type="submit">Senden</button>
+                            </form>
+                        </div>
                     </div>
-                    <div class="chat-box" id="chatMessages"></div>
-                    <div class="section-divider"></div>
-                    <form id="chatForm" class="wa-input">
-                        <input id="chatInput" type="text" placeholder="Nachricht schreiben">
-                        <button class="btn btn-accent" type="submit">Senden</button>
-                    </form>
                 </div>
             </section>
 
@@ -550,6 +640,7 @@
                 await loadCalendar();
             }
             if (viewName === 'messenger') {
+                await loadChatList();
                 await loadMessages();
             }
             if (viewName === 'profile') {
@@ -658,18 +749,74 @@
         let currentTrainerId = null;
         let trainerContacts = [];
 
+        async function loadChatList() {
+            const list = document.getElementById('chatList');
+            list.innerHTML = '';
+
+            if (trainerContacts.length === 0) {
+                await loadTrainerContacts();
+            }
+
+            const items = [{
+                id: 'team',
+                name: 'Teamchat',
+                subtitle: 'Alle Teammitglieder',
+                scope: 'team',
+                avatar: '👥'
+            }].concat(trainerContacts.map(contact => {
+                const name = `${contact.vorname || ''} ${contact.nachname || ''}`.trim() || contact.email;
+                return {
+                    id: contact.id,
+                    name,
+                    subtitle: contact.role_name || 'Trainer',
+                    scope: 'trainer',
+                    avatar: '⚽'
+                };
+            }));
+
+            const previews = await Promise.all(items.map(async item => {
+                if (item.scope === 'team') {
+                    const response = await fetch('/api/messages?scope=team&limit=1');
+                    const data = await response.json();
+                    const msg = (data.messages || [])[0];
+                    return {
+                        text: msg ? msg.content : 'Keine Nachrichten',
+                        time: msg?.created_at
+                    };
+                }
+                const response = await fetch(`/api/messages?scope=direct&peer_id=${item.id}&limit=1`);
+                const data = await response.json();
+                const msg = (data.messages || [])[0];
+                return {
+                    text: msg ? msg.content : 'Keine Nachrichten',
+                    time: msg?.created_at
+                };
+            }));
+
+            list.innerHTML = items.map((item, index) => {
+                const preview = previews[index];
+                const time = preview.time ? new Date(preview.time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
+                const isActive = currentChatScope === item.scope && (item.scope === 'team' || currentTrainerId === item.id);
+                return `
+                    <div class="chat-item ${isActive ? 'active' : ''}" data-scope="${item.scope}" data-id="${item.id}">
+                        <div class="chat-avatar">${item.avatar}</div>
+                        <div class="chat-meta">
+                            <div class="chat-title">
+                                <span>${escapeHtml(item.name)}</span>
+                                <span class="chat-time">${time}</span>
+                            </div>
+                            <div class="chat-preview">${escapeHtml(preview.text || '')}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         async function loadTrainerContacts() {
             try {
                 const response = await fetch('/api/messages/contacts');
                 const data = await response.json();
                 trainerContacts = data.contacts || [];
-                const select = document.getElementById('trainerSelect');
-                if (select) {
-                    select.innerHTML = '<option value="">Trainer auswählen</option>' + trainerContacts.map(c => {
-                        const name = `${c.vorname || ''} ${c.nachname || ''}`.trim() || c.email;
-                        return `<option value="${c.id}">${escapeHtml(name)} (${escapeHtml(c.role_name || 'Trainer')})</option>`;
-                    }).join('');
-                }
             } catch (err) {
                 trainerContacts = [];
             }
@@ -708,6 +855,7 @@
                     `;
                 }).join('');
                 container.scrollTop = container.scrollHeight;
+                await loadChatList();
             } catch (err) {
                 container.innerHTML = '<div class="empty-state">Messenger konnte nicht geladen werden</div>';
             }
@@ -747,23 +895,22 @@
             button.addEventListener('click', () => setActiveView(button.dataset.view));
         });
 
-        document.querySelectorAll('.chat-switch .btn').forEach(button => {
-            button.addEventListener('click', async () => {
-                document.querySelectorAll('.chat-switch .btn').forEach(b => b.classList.remove('active'));
-                button.classList.add('active');
-                currentChatScope = button.dataset.scope === 'trainer' ? 'trainer' : 'team';
-                document.getElementById('chatSubtitle').textContent = currentChatScope === 'trainer' ? 'Trainerchat' : 'Teamchat';
-                document.getElementById('trainerSelectRow').style.display = currentChatScope === 'trainer' ? 'block' : 'none';
-                document.getElementById('chatInput').placeholder = currentChatScope === 'trainer' ? 'Nachricht an den Trainer' : 'Nachricht an das Team';
-                if (currentChatScope === 'trainer' && trainerContacts.length === 0) {
-                    await loadTrainerContacts();
-                }
-                await loadMessages();
-            });
-        });
-
-        document.getElementById('trainerSelect')?.addEventListener('change', async event => {
-            currentTrainerId = event.target.value ? parseInt(event.target.value, 10) : null;
+        document.getElementById('chatList')?.addEventListener('click', async event => {
+            const item = event.target.closest('.chat-item');
+            if (!item) return;
+            const scope = item.dataset.scope;
+            const id = item.dataset.id;
+            currentChatScope = scope === 'trainer' ? 'trainer' : 'team';
+            currentTrainerId = scope === 'trainer' ? parseInt(id, 10) : null;
+            document.getElementById('chatTitle').textContent = scope === 'trainer'
+                ? item.querySelector('.chat-title span')?.textContent || 'Trainerchat'
+                : 'Teamchat';
+            document.getElementById('chatSubtitle').textContent = scope === 'trainer'
+                ? 'Direktnachricht'
+                : 'Alle Teammitglieder';
+            document.getElementById('chatInput').placeholder = scope === 'trainer'
+                ? 'Nachricht an den Trainer'
+                : 'Nachricht an das Team';
             await loadMessages();
         });
 
