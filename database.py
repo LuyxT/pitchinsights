@@ -288,6 +288,26 @@ def init_db():
             ON invitations(token) WHERE is_active = 1
         """)
 
+        # User Sessions (serverseitiger Team-Kontext)
+        # SECURITY: Session-Hash statt Token speichern
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS user_sessions (
+                session_hash TEXT PRIMARY KEY CHECK(length(session_hash) <= 128),
+                user_id INTEGER NOT NULL,
+                active_team_id INTEGER NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (active_team_id) REFERENCES teams(id) ON DELETE SET NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_user_sessions_user
+            ON user_sessions(user_id)
+        """)
+
         # Audit Log Tabelle (erweitert für Security Events)
         # SECURITY AUDIT: Alle sicherheitsrelevanten Aktionen
         cursor.execute("""
@@ -955,12 +975,6 @@ def create_team(verein: str, mannschaft: str, admin_user_id: int) -> int:
             VALUES (?, ?, ?)
         """, (team_id, admin_user_id, admin_role_id))
 
-        # User aktualisieren
-        cursor.execute("""
-            UPDATE users SET is_admin = 1, team_id = ?, role_id = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        """, (team_id, admin_role_id, admin_user_id))
-
         conn.commit()
 
         logger.info(
@@ -990,12 +1004,15 @@ def verify_user_is_team_admin(user_id: int, team_id: int) -> bool:
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT u.is_admin FROM users u
-            JOIN team_members tm ON u.id = tm.user_id
-            WHERE u.id = ? AND tm.team_id = ? AND u.is_active = 1
+            SELECT 1
+            FROM team_members tm
+            JOIN roles r ON tm.role_id = r.id
+            JOIN users u ON tm.user_id = u.id
+            WHERE tm.user_id = ? AND tm.team_id = ? AND u.is_active = 1
+              AND LOWER(r.name) = 'admin'
         """, (user_id, team_id))
         row = cursor.fetchone()
-        return bool(row and row["is_admin"])
+        return bool(row)
 
 
 # ============================================
@@ -1091,12 +1108,6 @@ def use_invitation(token: str, user_id: int) -> Dict[str, Any]:
             INSERT INTO team_members (team_id, user_id, role_id)
             VALUES (?, ?, ?)
         """, (invitation["team_id"], user_id, role_id))
-
-        # User aktualisieren
-        cursor.execute("""
-            UPDATE users SET team_id = ?, role_id = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        """, (invitation["team_id"], role_id, user_id))
 
         # Nutzung erhöhen
         cursor.execute("""

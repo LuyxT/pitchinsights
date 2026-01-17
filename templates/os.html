@@ -4263,7 +4263,7 @@
                                     style="padding: 10px 12px; background: var(--primary-green); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 18px;"
                                     title="Neue Gruppe">+</button>
                             </div>
-                            <div id="teamChatBtn" onclick="selectChat('team_chat', '👥 Team')"
+                            <div id="teamChatBtn" onclick="selectChat('team', '👥 Team')"
                                 style="padding: 12px; background: var(--primary-green); color: white; border-radius: 8px; cursor: pointer; font-weight: 600; text-align: center; margin-bottom: 8px;">
                                 👥 Team Chat</div>
                             <div style="font-size: 12px; font-weight: 600; opacity: 0.6; margin-top: 8px;">SPIELER
@@ -5428,6 +5428,21 @@
     </div>
     </div>
     <script>
+        const appStorage = (() => {
+            try {
+                window.localStorage.clear();
+                window.sessionStorage.clear();
+            } catch (e) {
+                // Ignore storage errors
+            }
+            const store = {};
+            return {
+                getItem: (key) => (Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null),
+                setItem: (key, value) => { store[key] = String(value); },
+                removeItem: (key) => { delete store[key]; },
+                clear: () => { Object.keys(store).forEach(k => delete store[k]); }
+            };
+        })();
         // ========================
         // EVENT DELEGATION FÜR DYNAMISCHE BUTTONS
         // ========================
@@ -5518,7 +5533,7 @@
         // Widget Counter für eindeutige IDs
         let widgetCounter = 0;
 
-        // Helper für benutzerspezifischen localStorage
+        // Helper für benutzerspezifischen appStorage
         function getUserStorageKey(key) {
             return `${key}_user_${currentUserId}`;
         }
@@ -5613,7 +5628,7 @@
         }
 
         function getAppConfig() {
-            const stored = localStorage.getItem('appConfig');
+            const stored = appStorage.getItem('appConfig');
             if (stored) {
                 try {
                     const config = JSON.parse(stored);
@@ -5627,7 +5642,7 @@
                     });
                     // Speichere aktualisierte Config
                     if (needsSave) {
-                        localStorage.setItem('appConfig', JSON.stringify(config));
+                        appStorage.setItem('appConfig', JSON.stringify(config));
                     }
                     return config;
                 } catch (e) {
@@ -5638,7 +5653,7 @@
         }
 
         function saveAppConfig(config) {
-            localStorage.setItem('appConfig', JSON.stringify(config));
+            appStorage.setItem('appConfig', JSON.stringify(config));
         }
 
         function toggleAppVisibility(appId, location) {
@@ -5704,7 +5719,7 @@
         }
 
         function getHomeAppPositions() {
-            const stored = localStorage.getItem('homeAppPositions');
+            const stored = appStorage.getItem('homeAppPositions');
             if (stored) {
                 try {
                     return JSON.parse(stored);
@@ -5716,7 +5731,7 @@
         }
 
         function saveHomeAppPositions(positions) {
-            localStorage.setItem('homeAppPositions', JSON.stringify(positions));
+            appStorage.setItem('homeAppPositions', JSON.stringify(positions));
         }
 
         function renderHomeGrid() {
@@ -5749,7 +5764,7 @@
                     tile.dataset.appId = app.id;
                     tile.draggable = true;
 
-                    // Position aus localStorage oder Standard-Grid
+                    // Position aus appStorage oder Standard-Grid
                     if (positions[app.id]) {
                         tile.style.left = positions[app.id].left;
                         tile.style.top = positions[app.id].top;
@@ -5806,7 +5821,7 @@
                 `;
             homeGrid.appendChild(addBtn);
 
-            // Restore saved widgets from localStorage
+            // Restore saved widgets from appStorage
             restoreSavedWidgets(homeGrid);
 
             // Setup Drag & Drop
@@ -5816,7 +5831,7 @@
         // Funktion zum Wiederherstellen gespeicherter Widgets
         function restoreSavedWidgets(grid) {
             console.log('restoreSavedWidgets() called');
-            const savedPositions = localStorage.getItem('appPositions');
+            const savedPositions = appStorage.getItem('appPositions');
             console.log('Saved positions:', savedPositions);
             if (!savedPositions) {
                 console.log('No saved positions found');
@@ -5867,7 +5882,7 @@
                                 ${restContent}
                             `;
 
-                        // Position aus localStorage
+                        // Position aus appStorage
                         widget.style.left = data.left || '0px';
                         widget.style.top = data.top || '0px';
 
@@ -6141,7 +6156,7 @@
 
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
-            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            appStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
             document.getElementById('darkModeToggle').checked = document.body.classList.contains('dark-mode');
             // Re-render Teams für Dark Mode Update
             if (typeof renderTeamsList === 'function') {
@@ -6242,7 +6257,7 @@
                     if (isAdmin) {
                         if (profilTypWaehler) profilTypWaehler.style.display = 'block';
                         // Gespeicherten Profil-Typ laden oder Standard: Trainer
-                        const savedProfilTyp = localStorage.getItem('profilTyp') || 'trainer';
+                        const savedProfilTyp = appStorage.getItem('profilTyp') || 'trainer';
                         setProfilTyp(savedProfilTyp, data);
                     }
                     // Spieler-spezifische Felder
@@ -6481,7 +6496,7 @@
             }
 
             // Typ speichern
-            localStorage.setItem('profilTyp', typ);
+            appStorage.setItem('profilTyp', typ);
             window.currentProfilTyp = typ;
         }
 
@@ -7082,8 +7097,7 @@
         function logout() {
             if (confirm('Möchtest du dich wirklich ausloggen?')) {
                 // SECURITY: Alle lokalen Daten löschen (kritisch für Datenschutz!)
-                localStorage.clear();
-                sessionStorage.clear();
+                appStorage.clear();
                 // Zur Logout-Endpoint weiterleiten (löscht auch Server-Session)
                 window.location.href = '/logout';
             }
@@ -7104,8 +7118,7 @@
         async function deleteAccount() {
             try {
                 // Alle lokalen Daten löschen
-                localStorage.clear();
-                sessionStorage.clear();
+                appStorage.clear();
 
                 // API Call zum Löschen des Accounts
                 const response = await fetch('/api/account/delete', {
@@ -7120,8 +7133,8 @@
             } catch (error) {
                 console.error('Fehler beim Löschen:', error);
                 // Trotzdem ausloggen
-                localStorage.clear();
-                sessionStorage.clear();
+                appStorage.clear();
+                appStorage.clear();
                 window.location.href = '/login';
             }
         }
@@ -8431,9 +8444,9 @@
         // Kalender Widget Daten
         function updateKalenderWidgets() {
             try {
-                // Events aus localStorage laden (wie die App)
+                // Events aus appStorage laden (wie die App)
                 const storageKey = getUserStorageKey('calendarEvents');
-                const allEvents = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                const allEvents = JSON.parse(appStorage.getItem(storageKey) || '[]');
 
                 // Nach Woche gruppieren
                 const today = new Date();
@@ -8499,9 +8512,9 @@
         // Messenger Widget Daten
         function updateMessengerWidgets() {
             try {
-                // Nachrichten aus localStorage laden (wie die App)
+                // Nachrichten aus appStorage laden (wie die App)
                 const storageKey = getUserStorageKey('messengerMessages');
-                const messages = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                const messages = JSON.parse(appStorage.getItem(storageKey) || '[]');
 
                 document.querySelectorAll('#widget-messenger-content').forEach(container => {
                     if (messages.length > 0) {
@@ -8528,9 +8541,9 @@
         // Mannschaftskasse Widget Daten
         function updateKasseWidgets() {
             try {
-                // Kasse aus localStorage laden (wie die App)
+                // Kasse aus appStorage laden (wie die App)
                 const storageKey = getUserStorageKey('kasseTransactions');
-                const transactions = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                const transactions = JSON.parse(appStorage.getItem(storageKey) || '[]');
 
                 let totalIncome = 0;
                 let totalExpense = 0;
@@ -8564,9 +8577,9 @@
                     const data = await response.json();
                     videos = data.videos || [];
                 } else {
-                    // Fallback auf localStorage
+                    // Fallback auf appStorage
                     const storageKey = getUserStorageKey('uploadedVideos');
-                    videos = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    videos = JSON.parse(appStorage.getItem(storageKey) || '[]');
                 }
 
                 // Upload Widget Content aktualisieren
@@ -8619,7 +8632,7 @@
                 };
             });
 
-            localStorage.setItem('appPositions', JSON.stringify(positions));
+            appStorage.setItem('appPositions', JSON.stringify(positions));
         }
 
         // ============================================
@@ -8672,7 +8685,7 @@
             const grid = document.getElementById('kalenderPreviewGrid');
             if (!grid) return;
 
-            // Versuche zuerst die API, dann localStorage
+            // Versuche zuerst die API, dann appStorage
             let weekEvents = {};
 
             try {
@@ -8682,12 +8695,12 @@
                     weekEvents = data.week || {};
                 }
             } catch (e) {
-                console.log('API nicht verfügbar, nutze localStorage');
+                console.log('API nicht verfügbar, nutze appStorage');
             }
 
-            // Fallback: localStorage Events (benutzerspezifisch)
+            // Fallback: appStorage Events (benutzerspezifisch)
             const storageKey = getUserStorageKey('calendarEvents');
-            const storedEvents = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const storedEvents = JSON.parse(appStorage.getItem(storageKey) || '[]');
             if (storedEvents.length > 0) {
                 // Berechne aktuelle Woche
                 const today = new Date();
@@ -8935,7 +8948,7 @@
             // Admin kann wählen, welches Profil er bearbeitet
             let effektiveRolle = rolleLower;
             if (isAdmin) {
-                const gewaehlterTyp = window.currentProfilTyp || localStorage.getItem('profilTyp') || 'trainer';
+                const gewaehlterTyp = window.currentProfilTyp || appStorage.getItem('profilTyp') || 'trainer';
                 effektiveRolle = gewaehlterTyp;
             }
 
@@ -9154,7 +9167,7 @@
             if (!grid) return;
 
             const storageKey = getUserStorageKey('calendarEvents');
-            const events = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const events = JSON.parse(appStorage.getItem(storageKey) || '[]');
             const today = new Date();
             const dayOfWeek = today.getDay(); // 0 = Sunday
             const monday = new Date(today);
@@ -9194,7 +9207,7 @@
             const container = document.getElementById('messengerPreview');
             if (!container) return;
 
-            const messages = JSON.parse(localStorage.getItem('messengerMessages') || '[]');
+            const messages = JSON.parse(appStorage.getItem('messengerMessages') || '[]');
             if (messages.length === 0) {
                 container.innerHTML = '<span class="dashboard-placeholder">Keine neuen Nachrichten</span>';
                 return;
@@ -9220,7 +9233,7 @@
             const container = document.getElementById('analysePreview');
             if (!container) return;
 
-            const analyses = JSON.parse(localStorage.getItem('analyses') || '[]');
+            const analyses = JSON.parse(appStorage.getItem('analyses') || '[]');
             if (analyses.length === 0) {
                 container.innerHTML = '<span class="dashboard-placeholder">Noch keine Analyse vorhanden</span>';
                 return;
@@ -9238,7 +9251,7 @@
             const container = document.getElementById('trainingPreview');
             if (!container) return;
 
-            const trainings = JSON.parse(localStorage.getItem('trainingSessions') || '[]');
+            const trainings = JSON.parse(appStorage.getItem('trainingSessions') || '[]');
             const now = new Date();
             const upcoming = trainings.filter(t => new Date(t.date) >= now).sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -9259,7 +9272,7 @@
             const container = document.getElementById('finanzenPreview');
             if (!container) return;
 
-            const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+            const transactions = JSON.parse(appStorage.getItem('transactions') || '[]');
             if (transactions.length === 0) {
                 container.innerHTML = '<span class="dashboard-placeholder">Keine Finanzdaten</span>';
                 return;
@@ -9406,7 +9419,7 @@
 
         function initializeKasse() {
             const storageKey = getUserStorageKey('kasseTransactions');
-            const stored = localStorage.getItem(storageKey);
+            const stored = appStorage.getItem(storageKey);
             if (stored) {
                 kasseTransactions = JSON.parse(stored);
             }
@@ -9415,7 +9428,7 @@
 
         function saveKasseToStorage() {
             const storageKey = getUserStorageKey('kasseTransactions');
-            localStorage.setItem(storageKey, JSON.stringify(kasseTransactions));
+            appStorage.setItem(storageKey, JSON.stringify(kasseTransactions));
         }
 
         function openKasseModal(type) {
@@ -9791,7 +9804,7 @@
             const fromApi = await refreshCalendarEvents();
             if (!fromApi) {
                 const storageKey = getUserStorageKey('calendarEvents');
-                const stored = localStorage.getItem(storageKey);
+                const stored = appStorage.getItem(storageKey);
                 if (stored) {
                     calendarEvents.length = 0;
                     calendarEvents.push(...JSON.parse(stored));
@@ -9804,7 +9817,7 @@
 
         function saveEventsToStorage() {
             const storageKey = getUserStorageKey('calendarEvents');
-            localStorage.setItem(storageKey, JSON.stringify(calendarEvents));
+            appStorage.setItem(storageKey, JSON.stringify(calendarEvents));
         }
 
         function deleteEvent(eventIndex) {
@@ -10582,7 +10595,7 @@
         }
 
         window.addEventListener('load', async function () {
-            const theme = localStorage.getItem('theme') || 'light';
+            const theme = appStorage.getItem('theme') || 'light';
             if (theme === 'dark') {
                 document.body.classList.add('dark-mode');
                 document.getElementById('darkModeToggle').checked = true;
@@ -10604,7 +10617,7 @@
             }, 100);
         });
 
-        // ONBOARDING CHECK - SECURITY: NICHT aus localStorage laden, IMMER vom Server!
+        // ONBOARDING CHECK - SECURITY: NICHT aus appStorage laden, IMMER vom Server!
         let registeredClub = null;
         let registeredUser = null;
 
@@ -10614,20 +10627,24 @@
                 const response = await fetch('/api/profile');
                 if (response.status === 401) {
                     // Nicht eingeloggt - zur Login-Seite
-                    localStorage.clear();
-                    sessionStorage.clear();
+                    appStorage.clear();
+                    appStorage.clear();
                     window.location.href = '/login';
                     return;
                 }
                 const data = await response.json();
                 if (!data.error) {
-                    registeredClub = data.teamname ? { name: data.teamname, id: 1 } : null;
                     registeredUser = data.vorname || data.email;
-
-                    // Update sidebar logo
-                    const logo = document.querySelector('.logo');
-                    if (logo && registeredClub?.name) {
-                        logo.innerHTML = `⚽ ${escapeHtml(registeredClub.name)}`;
+                }
+                const teamResponse = await fetch('/api/team/info');
+                if (teamResponse.ok) {
+                    const teamInfo = await teamResponse.json();
+                    if (teamInfo.has_team) {
+                        registeredClub = { name: teamInfo.verein || teamInfo.team_name || '', id: teamInfo.team_id };
+                        const logo = document.querySelector('.logo');
+                        if (logo && registeredClub?.name) {
+                            logo.innerHTML = `⚽ ${escapeHtml(registeredClub.name)}`;
+                        }
                     }
                 }
             } catch (e) {
@@ -10772,10 +10789,10 @@
         // Beim Laden prüfen
         document.addEventListener('DOMContentLoaded', function () {
             // Einmalig: Alte appConfig ohne 'kasse' zurücksetzen
-            const configCheck = localStorage.getItem('appConfig');
+            const configCheck = appStorage.getItem('appConfig');
             if (configCheck && !configCheck.includes('"kasse"')) {
                 console.log('Resetting appConfig to include new apps');
-                localStorage.removeItem('appConfig');
+                appStorage.removeItem('appConfig');
             }
 
             checkTeamStatus(); // Team-Status prüfen
@@ -10795,12 +10812,12 @@
 
         let kaderPlayers = [];
         let teamMembersCache = [];
-        let kaderTeams = JSON.parse(localStorage.getItem('kaderTeams') || '[]');
+        let kaderTeams = JSON.parse(appStorage.getItem('kaderTeams') || '[]');
         let selectedTeamFilter = 'all';
         let statusChart = null;
         let positionChart = null;
 
-        // Lade Spieler von API oder localStorage
+        // Lade Spieler von API oder appStorage
         function getPositionCategory(positions) {
             if (!positions || positions.length === 0) return 'mittelfeld';
             if (positions.includes('TW')) return 'torwart';
@@ -10843,11 +10860,11 @@
                 kaderPlayers = [];
                 return;
             } catch (e) {
-                console.log('API nicht verfügbar, nutze localStorage');
+                console.log('API nicht verfügbar, nutze appStorage');
             }
 
-            // Fallback: localStorage
-            kaderPlayers = JSON.parse(localStorage.getItem('kaderPlayers') || '[]');
+            // Fallback: appStorage
+            kaderPlayers = JSON.parse(appStorage.getItem('kaderPlayers') || '[]');
         }
 
         // Initialisierung beim Laden
@@ -10900,7 +10917,7 @@
                         id: userTeamInfo.team_id || 'team',
                         name: teamDisplayName
                     }];
-                    localStorage.setItem('kaderTeams', JSON.stringify(kaderTeams));
+                    appStorage.setItem('kaderTeams', JSON.stringify(kaderTeams));
                 }
 
                 const teamOption = document.createElement('option');
@@ -11221,7 +11238,7 @@
                 weight: weight ? parseInt(weight, 10) : null
             };
 
-            // Speichere in API und localStorage
+            // Speichere in API und appStorage
             try {
                 const apiPlayer = {
                     name: `${firstname} ${lastname}`.trim(),
@@ -11246,7 +11263,7 @@
             }
 
             kaderPlayers.push(newPlayer);
-            localStorage.setItem('kaderPlayers', JSON.stringify(kaderPlayers));
+            appStorage.setItem('kaderPlayers', JSON.stringify(kaderPlayers));
 
             // Clear form
             document.getElementById('playerFirstname').value = '';
@@ -11493,7 +11510,7 @@
             };
 
             kaderTeams.push(newTeam);
-            localStorage.setItem('kaderTeams', JSON.stringify(kaderTeams));
+            appStorage.setItem('kaderTeams', JSON.stringify(kaderTeams));
             closeAddTeamModal();
             renderTeamsList();
             populateKaderTeamSelect();
@@ -11513,7 +11530,7 @@
 
             if (confirm(`Mannschaft "${team.name}" wirklich löschen?`)) {
                 kaderTeams = kaderTeams.filter(t => t.id !== id);
-                localStorage.setItem('kaderTeams', JSON.stringify(kaderTeams));
+                appStorage.setItem('kaderTeams', JSON.stringify(kaderTeams));
                 renderTeamsList();
                 populateKaderTeamSelect();
             }
@@ -11564,7 +11581,7 @@
         function deletePlayer(id) {
             if (confirm('Spieler wirklich löschen?')) {
                 kaderPlayers = kaderPlayers.filter(p => p.id !== id);
-                localStorage.setItem('kaderPlayers', JSON.stringify(kaderPlayers));
+                appStorage.setItem('kaderPlayers', JSON.stringify(kaderPlayers));
                 renderCharts();
                 renderDashboardStats();
             }
@@ -11752,17 +11769,17 @@
             const groupId = Date.now().toString();
             const members = Array.from(checkboxes).map(cb => cb.value);
 
-            let groups = JSON.parse(localStorage.getItem('messengerGroups') || '[]');
+            let groups = JSON.parse(appStorage.getItem('messengerGroups') || '[]');
             groups.push({ id: groupId, name, members });
-            localStorage.setItem('messengerGroups', JSON.stringify(groups));
-            localStorage.setItem(`group_${groupId}`, JSON.stringify({ messages: [] }));
+            appStorage.setItem('messengerGroups', JSON.stringify(groups));
+            appStorage.setItem(`group_${groupId}`, JSON.stringify({ messages: [] }));
 
             closeCreateGroupModal();
             loadMessengerData();
         }
 
         window.addEventListener('load', async function () {
-            const theme = localStorage.getItem('theme') || 'light';
+            const theme = appStorage.getItem('theme') || 'light';
             if (theme === 'dark') {
                 document.body.classList.add('dark-mode');
                 document.getElementById('darkModeToggle').checked = true;
@@ -11856,7 +11873,7 @@
 
         function loadTaktikKaderData() {
             try {
-                const kader = JSON.parse(localStorage.getItem('kaderPlayers') || '[]');
+                const kader = JSON.parse(appStorage.getItem('kaderPlayers') || '[]');
                 taktikState.kaderData = kader.slice(0, 11);
             } catch (e) {
                 taktikState.kaderData = [];

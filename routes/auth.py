@@ -9,6 +9,7 @@ import logging
 import uuid
 import shutil
 import secrets
+import hashlib
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 
@@ -82,6 +83,10 @@ def get_user_role_name(db_user: Dict[str, Any]) -> str:
     SECURITY: Rollenermittlung serverseitig.
     """
     role_name = ""
+    if db_user.get("role_name"):
+        return str(db_user.get("role_name", "")).lower()
+    if db_user.get("team_id") is None:
+        return ""
     role_id = db_user.get("role_id")
     if role_id:
         with get_db_connection() as db:
@@ -102,6 +107,39 @@ def is_staff_user(db_user: Dict[str, Any]) -> bool:
     if db_user.get("is_admin"):
         return True
     return get_user_role_name(db_user) in STAFF_ROLE_NAMES
+
+
+def get_user_memberships(user_id: int) -> list:
+    team_id = None
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT tm.team_id, tm.role_id, tm.joined_at,
+                   t.name as team_name, t.verein, t.mannschaft,
+                   r.name as role_name
+            FROM team_members tm
+            JOIN teams t ON tm.team_id = t.id
+            JOIN roles r ON tm.role_id = r.id
+            WHERE tm.user_id = ? AND t.deleted_at IS NULL
+            ORDER BY tm.joined_at ASC
+        """, (user_id,))
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def user_has_role_in_any_team(user_id: int, role_name: str) -> bool:
+    role_name = role_name.lower().strip()
+    if not role_name:
+        return False
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT 1
+            FROM team_members tm
+            JOIN roles r ON tm.role_id = r.id
+            WHERE tm.user_id = ? AND LOWER(r.name) = ?
+            LIMIT 1
+        """, (user_id, role_name))
+        return cursor.fetchone() is not None
 
 
 def create_email_verification(user_id: int, email: str, request: Request) -> bool:
@@ -174,7 +212,8 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
 
         logging.info(
             f"[AUTH] Authentication successful for user_id={data.get('id')}")
-        return {"email": data["email"], "id": data["id"], "active_team_id": data.get("team_id")}
+        session_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        return {"email": data["email"], "id": data["id"], "session_hash": session_hash}
 
     except SignatureExpired:
         logger.info("Session token expired")
@@ -194,15 +233,121 @@ def create_session_token(user: Dict[str, Any], request: Request) -> str:
     """
     client_ip = get_client_ip(request)
 
-    team_id = user.get("team_id") if user.get("team_id") is not None else user.get("active_team_id")
     return serializer.dumps({
         "email": user["email"],
         "id": user["id"],
-        "team_id": team_id,
         "ip_hash": get_ip_hash(client_ip) if SecurityConfig.SESSION_BIND_IP else None,
         "fp": get_request_fingerprint(request),
         "iat": datetime.utcnow().isoformat()  # Issued At
     })
+
+
+def _ensure_session_record(session_hash: str, user_id: int) -> None:
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO user_sessions (session_hash, user_id)
+            VALUES (?, ?)
+            ON CONFLICT(session_hash) DO UPDATE SET
+                user_id = excluded.user_id,
+                updated_at = CURRENT_TIMESTAMP
+        """, (session_hash, user_id))
+        db.commit()
+
+
+def _get_active_team_for_session(session_hash: str, user_id: int) -> Optional[int]:
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT active_team_id FROM user_sessions
+            WHERE session_hash = ? AND user_id = ?
+        """, (session_hash, user_id))
+        row = cursor.fetchone()
+    return row["active_team_id"] if row else None
+
+
+def _set_active_team_for_session(session_hash: str, user_id: int, team_id: int) -> None:
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            UPDATE user_sessions
+            SET active_team_id = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE session_hash = ? AND user_id = ?
+        """, (team_id, session_hash, user_id))
+        if cursor.rowcount == 0:
+            cursor.execute("""
+                INSERT INTO user_sessions (session_hash, user_id, active_team_id)
+                VALUES (?, ?, ?)
+            """, (session_hash, user_id, team_id))
+        db.commit()
+
+
+def _clear_session_record(session_hash: str, user_id: int) -> None:
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            DELETE FROM user_sessions WHERE session_hash = ? AND user_id = ?
+        """, (session_hash, user_id))
+        db.commit()
+
+
+def apply_active_membership(request: Request, db_user: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not db_user:
+        return None
+
+    user = get_current_user(request)
+    session_hash = user.get("session_hash") if user else None
+    if not session_hash:
+        db_user["team_id"] = None
+        db_user["role_id"] = None
+        db_user["role_name"] = ""
+        db_user["is_admin"] = False
+        return db_user
+
+    _ensure_session_record(session_hash, db_user["id"])
+
+    active_team_id = _get_active_team_for_session(session_hash, db_user["id"])
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        if active_team_id:
+            cursor.execute("""
+                SELECT tm.team_id, tm.role_id, r.name as role_name
+                FROM team_members tm
+                JOIN roles r ON tm.role_id = r.id
+                WHERE tm.user_id = ? AND tm.team_id = ?
+            """, (db_user["id"], active_team_id))
+            membership = cursor.fetchone()
+            if membership:
+                db_user["team_id"] = membership["team_id"]
+                db_user["role_id"] = membership["role_id"]
+                db_user["role_name"] = membership["role_name"]
+                db_user["is_admin"] = membership["role_name"].lower() == "admin"
+                return db_user
+
+        cursor.execute("""
+            SELECT tm.team_id, tm.role_id, r.name as role_name
+            FROM team_members tm
+            JOIN roles r ON tm.role_id = r.id
+            WHERE tm.user_id = ?
+            ORDER BY tm.joined_at ASC
+        """, (db_user["id"],))
+        memberships = cursor.fetchall()
+
+    if len(memberships) == 1:
+        membership = memberships[0]
+        _set_active_team_for_session(session_hash, db_user["id"], membership["team_id"])
+        db_user["team_id"] = membership["team_id"]
+        db_user["role_id"] = membership["role_id"]
+        db_user["role_name"] = membership["role_name"]
+        db_user["is_admin"] = membership["role_name"].lower() == "admin"
+        return db_user
+
+    db_user["team_id"] = None
+    db_user["role_id"] = None
+    db_user["role_name"] = ""
+    db_user["is_admin"] = False
+    return db_user
 
 
 def set_session_cookie(response, token: str) -> None:
@@ -237,20 +382,9 @@ def get_active_team_id(request: Request, db_user: Dict[str, Any]) -> Optional[in
     Ermittelt aktives Team aus Session (falls Mitglied), sonst Standard-Team.
     SECURITY: Team-Zugehörigkeit serverseitig prüfen.
     """
-    session_team_id = None
-    user = get_current_user(request)
-    if user:
-        session_team_id = user.get("active_team_id")
-
-    if session_team_id:
-        with get_db_connection() as db:
-            cursor = db.cursor()
-            cursor.execute("""
-                SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?
-            """, (session_team_id, db_user["id"]))
-            if cursor.fetchone():
-                return session_team_id
-
+    db_user = apply_active_membership(request, db_user)
+    if not db_user:
+        return None
     return db_user.get("team_id")
 
 
@@ -789,8 +923,7 @@ async def login(
 
     # Optional: Spieler-Login erzwingen
     if mode == "player":
-        role_name = get_user_role_name(user)
-        if role_name != "spieler" and not user.get("is_admin"):
+        if not user_has_role_in_any_team(user["id"], "spieler"):
             new_csrf = generate_csrf_token("login_form")
             return templates.TemplateResponse(
                 "login.html",
@@ -800,6 +933,8 @@ async def login(
 
     # SECURITY: Session im SecureSessionManager registrieren
     token = create_session_token(user, request)
+    session_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    _ensure_session_record(session_hash, user["id"])
     secure_session_manager.register_session(
         token, user["id"], client_ip, user_agent)
 
@@ -1042,10 +1177,15 @@ async def register(
             player_role = cursor.fetchone()
             role_id = player_role["id"] if player_role else invitation_data["role_id"]
             cursor.execute("""
-                INSERT INTO users (email, password_hash, team_id, role_id, onboarding_complete, is_active, payment_status)
-                VALUES (?, ?, ?, ?, 1, 0, 'paid')
-            """, (email, password_hash, invitation_data["team_id"], role_id))
+                INSERT INTO users (email, password_hash, onboarding_complete, is_active, payment_status)
+                VALUES (?, ?, 1, 0, 'paid')
+            """, (email, password_hash))
             user_id = cursor.lastrowid
+
+            cursor.execute("""
+                INSERT INTO team_members (team_id, user_id, role_id)
+                VALUES (?, ?, ?)
+            """, (invitation_data["team_id"], user_id, role_id))
 
             # Einladung als benutzt markieren
             cursor.execute("""
@@ -1117,6 +1257,11 @@ async def logout(request: Request):
     user = get_current_user(request)
     if user:
         log_audit_event(user["id"], "LOGOUT", "user", user["id"])
+        if user.get("session_hash"):
+            _clear_session_record(user["session_hash"], user["id"])
+        token = request.cookies.get("session")
+        if token:
+            secure_session_manager.invalidate_session(token)
 
     response = RedirectResponse(url="/login", status_code=303)
     response.delete_cookie("session", path="/")
@@ -1149,6 +1294,7 @@ async def get_pending_users(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("is_admin"):
         return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
@@ -1385,6 +1531,7 @@ async def change_password(request: Request):
 
     # Aktuelles Passwort prüfen
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user:
         return JSONResponse({"error": "User nicht gefunden"}, status_code=404)
 
@@ -1431,12 +1578,18 @@ async def dashboard(request: Request):
 
     # Payment-Status prüfen
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user:
         return RedirectResponse(url="/login", status_code=303)
 
     # Onboarding-Status prüfen
     if not db_user.get("onboarding_complete"):
         return RedirectResponse(url="/onboarding", status_code=303)
+
+    if not db_user.get("team_id"):
+        memberships = get_user_memberships(user["id"])
+        if len(memberships) > 1:
+            return RedirectResponse(url="/select-team", status_code=303)
 
     role_name = get_user_role_name(db_user)
     if role_name == "spieler" and not db_user.get("is_admin"):
@@ -1463,6 +1616,25 @@ async def results(request: Request):
     )
 
 
+@router.get("/select-team", response_class=HTMLResponse)
+async def select_team(request: Request):
+    """Team-Auswahl für mehrere Mitgliedschaften."""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+
+    memberships = get_user_memberships(user["id"])
+    if len(memberships) == 1:
+        _ensure_session_record(user["session_hash"], user["id"])
+        _set_active_team_for_session(user["session_hash"], user["id"], memberships[0]["team_id"])
+        return RedirectResponse(url="/dashboard", status_code=303)
+
+    return templates.TemplateResponse(
+        "team_select.html",
+        {"request": request, "memberships": memberships}
+    )
+
+
 @router.get("/onboarding", response_class=HTMLResponse)
 async def onboarding_page(request: Request):
     """Onboarding-Seite."""
@@ -1472,6 +1644,7 @@ async def onboarding_page(request: Request):
 
     # Bereits abgeschlossen?
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if db_user and db_user.get("onboarding_complete"):
         return RedirectResponse(url="/dashboard", status_code=303)
 
@@ -1513,14 +1686,12 @@ async def complete_onboarding(request: Request):
     with get_db_connection() as db:
         cursor = db.cursor()
 
-        # Prüfen ob User bereits Team hat
-        cursor.execute(
-            "SELECT team_id FROM users WHERE id = ?",
-            (user["id"],)
-        )
-        user_data = cursor.fetchone()
+        cursor.execute("""
+            SELECT 1 FROM team_members WHERE user_id = ? LIMIT 1
+        """, (user["id"],))
+        has_membership = cursor.fetchone() is not None
 
-        if not user_data or not user_data["team_id"]:
+        if not has_membership:
             # Verein/Mannschaft doppelt? -> neue Mannschaft erzwingen
             cursor.execute("""
                 SELECT 1 FROM teams
@@ -1548,6 +1719,9 @@ async def complete_onboarding(request: Request):
         db.commit()
 
     log_audit_event(user["id"], "ONBOARDING_COMPLETE", "user", user["id"])
+    if team_id and user.get("session_hash"):
+        _ensure_session_record(user["session_hash"], user["id"])
+        _set_active_team_for_session(user["session_hash"], user["id"], team_id)
     return {"success": True}
 
 
@@ -1562,26 +1736,12 @@ async def get_profile(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user:
         return JSONResponse({"error": "Benutzer nicht gefunden"}, status_code=404)
 
-    # Rolle aus roles Tabelle holen (via role_id) - das ist die echte Rolle
-    rolle = ""
-    role_id = db_user.get("role_id")
-    if role_id:
-        with get_db_connection() as db:
-            cursor = db.cursor()
-            cursor.execute("SELECT name FROM roles WHERE id = ?", (role_id,))
-            role_row = cursor.fetchone()
-            if role_row:
-                rolle = role_row["name"].lower()
-
-    # Fallback auf users.rolle wenn keine role_id
-    if not rolle:
-        rolle = db_user.get("rolle", "").lower()
-
-    # Admin bekommt BEIDE Profile, damit er wählen kann
-    is_admin = rolle == "admin" or db_user.get("is_admin")
+    rolle = get_user_role_name(db_user)
+    is_admin = rolle == "admin"
     is_trainer = rolle in ["trainer", "co-trainer"] or is_admin
     is_spieler = rolle == "spieler" or is_admin
 
@@ -1594,7 +1754,7 @@ async def get_profile(request: Request):
         "verein": db_user.get("verein", ""),
         "werdegang": db_user.get("werdegang", ""),
         "teamname": db_user.get("teamname", ""),
-        "rolle": rolle.capitalize() if rolle else "",  # Rolle aus roles Tabelle
+        "rolle": rolle.capitalize() if rolle else "",
         "mannschaft": db_user.get("mannschaft", ""),
         "telefon": db_user.get("telefon", ""),
     }
@@ -1647,6 +1807,7 @@ async def update_profile(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user:
         return JSONResponse({"error": "Benutzer nicht gefunden"}, status_code=404)
 
@@ -1655,24 +1816,11 @@ async def update_profile(request: Request):
     except Exception:
         return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
 
-    # Rolle aus roles Tabelle holen (via role_id) - das ist die echte Rolle
-    rolle = ""
-    role_id = db_user.get("role_id")
-    if role_id:
-        with get_db_connection() as db:
-            cursor = db.cursor()
-            cursor.execute("SELECT name FROM roles WHERE id = ?", (role_id,))
-            role_row = cursor.fetchone()
-            if role_row:
-                rolle = role_row["name"].lower()
-
-    # Fallback auf users.rolle wenn keine role_id
-    if not rolle:
-        rolle = db_user.get("rolle", "").lower()
+    rolle = get_user_role_name(db_user)
 
     # Admin kann wählen welches Profil (Trainer oder Spieler)
     # Erkennung: Anhand der gesendeten Felder
-    is_admin = rolle == "admin" or db_user.get("is_admin")
+    is_admin = rolle == "admin"
 
     # Prüfen welcher Profiltyp vom Frontend gewählt wurde
     has_spieler_fields = any(k in data for k in [
@@ -1823,6 +1971,7 @@ async def get_profile_kader(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return {"player": None}
 
@@ -1858,6 +2007,11 @@ async def delete_account(request: Request):
 
     if success:
         logger.info(f"Account deleted: user_id={user['id']}")
+        if user.get("session_hash"):
+            _clear_session_record(user["session_hash"], user["id"])
+        token = request.cookies.get("session")
+        if token:
+            secure_session_manager.invalidate_session(token)
         response = JSONResponse({"success": True})
         response.delete_cookie("session", path="/")
         return response
@@ -1879,39 +2033,44 @@ async def get_team_info(request: Request):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert", "has_team": False}, status_code=401)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user:
+        return {"has_team": False}
+
+    if not db_user.get("team_id") or not db_user.get("role_id"):
+        memberships = get_user_memberships(user["id"])
+        return {"has_team": False, "membership_count": len(memberships)}
+
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
-            SELECT u.*, r.name as role_name, t.name as team_name, t.verein, t.mannschaft, t.admin_user_id
-            FROM users u
-            LEFT JOIN roles r ON u.role_id = r.id
-            LEFT JOIN teams t ON u.team_id = t.id
-            WHERE u.id = ? AND u.is_active = 1
-        """, (user["id"],))
-        user_data = cursor.fetchone()
+            SELECT t.id, t.name as team_name, t.verein, t.mannschaft, t.admin_user_id
+            FROM teams t
+            WHERE t.id = ? AND t.deleted_at IS NULL
+        """, (db_user["team_id"],))
+        team_row = cursor.fetchone()
 
-        if not user_data or not user_data["team_id"]:
-            return {"has_team": False, "is_admin": True}
+        if not team_row:
+            return {"has_team": False}
 
-        # Berechtigungen laden
         cursor.execute("""
             SELECT app_id, can_view, can_edit FROM permissions WHERE role_id = ?
-        """, (user_data["role_id"],))
+        """, (db_user["role_id"],))
         permissions = cursor.fetchall()
 
     return {
         "has_team": True,
-        "is_admin": bool(user_data["is_admin"]),
-        "is_primary_admin": bool(user_data["admin_user_id"] == user["id"]),
-        "team_id": user_data["team_id"],
-        "team_name": user_data["team_name"],
-        "verein": user_data["verein"],
-        "mannschaft": user_data["mannschaft"],
-        "role_id": user_data["role_id"],
-        "role_name": user_data["role_name"],
+        "is_admin": bool(db_user.get("is_admin")),
+        "is_primary_admin": bool(team_row["admin_user_id"] == user["id"]),
+        "team_id": team_row["id"],
+        "team_name": team_row["team_name"],
+        "verein": team_row["verein"],
+        "mannschaft": team_row["mannschaft"],
+        "role_id": db_user["role_id"],
+        "role_name": db_user.get("role_name") or get_user_role_name(db_user),
         "permissions": {
-            p["app_id"]: {"view": bool(
-                p["can_view"]), "edit": bool(p["can_edit"])}
+            p["app_id"]: {"view": bool(p["can_view"]), "edit": bool(p["can_edit"])}
             for p in permissions
         }
     }
@@ -1927,18 +2086,63 @@ async def list_teams(request: Request):
     if not user:
         return JSONResponse({"teams": []}, status_code=401)
 
-    with get_db_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT t.id, t.name, t.verein, t.mannschaft, t.admin_user_id
-            FROM team_members tm
-            JOIN teams t ON tm.team_id = t.id
-            WHERE tm.user_id = ? AND t.deleted_at IS NULL
-            ORDER BY t.created_at ASC
-        """, (user["id"],))
-        teams = [dict(row) for row in cursor.fetchall()]
-
+    memberships = get_user_memberships(user["id"])
+    teams = [{
+        "id": m["team_id"],
+        "name": m["team_name"],
+        "verein": m["verein"],
+        "mannschaft": m["mannschaft"],
+        "role_name": m["role_name"],
+        "role_id": m["role_id"]
+    } for m in memberships]
     return {"teams": teams}
+
+
+@router.get("/api/memberships")
+async def list_memberships(request: Request):
+    """
+    Liste aller Team-Mitgliedschaften inkl. Rolle.
+    SECURITY: Nur eigene Mitgliedschaften.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"memberships": [], "active_team_id": None}, status_code=401)
+
+    memberships = get_user_memberships(user["id"])
+    active_team_id = _get_active_team_for_session(user.get("session_hash"), user["id"]) if user.get("session_hash") else None
+    return {"memberships": memberships, "active_team_id": active_team_id}
+
+
+@router.post("/api/memberships/active")
+async def set_active_membership(request: Request):
+    """
+    Aktive Mitgliedschaft setzen.
+    SECURITY: Nur eigene Teams, Session-Context.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
+
+    team_id = data.get("team_id")
+    if not team_id:
+        return JSONResponse({"error": "Team erforderlich"}, status_code=400)
+    try:
+        team_id = int(team_id)
+    except (TypeError, ValueError):
+        return JSONResponse({"error": "Ungültiges Team"}, status_code=400)
+
+    memberships = get_user_memberships(user["id"])
+    if not any(m["team_id"] == team_id for m in memberships):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+    _ensure_session_record(user["session_hash"], user["id"])
+    _set_active_team_for_session(user["session_hash"], user["id"], team_id)
+    return JSONResponse({"success": True, "team_id": team_id})
 
 
 @router.post("/api/teams/switch")
@@ -1959,27 +2163,18 @@ async def switch_team(request: Request):
     team_id = data.get("team_id")
     if not team_id:
         return JSONResponse({"error": "Team erforderlich"}, status_code=400)
+    try:
+        team_id = int(team_id)
+    except (TypeError, ValueError):
+        return JSONResponse({"error": "Ungültiges Team"}, status_code=400)
 
-    with get_db_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT role_id FROM team_members WHERE team_id = ? AND user_id = ?
-        """, (team_id, user["id"]))
-        role_row = cursor.fetchone()
-        if not role_row:
-            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+    memberships = get_user_memberships(user["id"])
+    if not any(m["team_id"] == team_id for m in memberships):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
-        cursor.execute("""
-            UPDATE users SET team_id = ?, role_id = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        """, (team_id, role_row["role_id"], user["id"]))
-        db.commit()
-
-    token = create_session_token(
-        {"email": user["email"], "id": user["id"], "team_id": team_id}, request)
-    response = JSONResponse({"success": True, "team_id": team_id})
-    set_session_cookie(response, token)
-    return response
+    _ensure_session_record(user["session_hash"], user["id"])
+    _set_active_team_for_session(user["session_hash"], user["id"], team_id)
+    return JSONResponse({"success": True, "team_id": team_id})
 
 
 @router.post("/api/team/create")
@@ -1992,9 +2187,8 @@ async def create_team_api(request: Request):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
-    # SECURITY: Prüfe ob User bereits ein Team hat (Limit: 1 Team)
-    db_user = get_user_by_id(user["id"])
-    if db_user and db_user.get("team_id"):
+    memberships = get_user_memberships(user["id"])
+    if memberships:
         return JSONResponse({"error": "Du hast bereits ein Team. Pro Account ist nur ein Team erlaubt."}, status_code=400)
 
     try:
@@ -2025,6 +2219,10 @@ async def create_team_api(request: Request):
     team_id = create_team(verein, mannschaft, user["id"])
     log_audit_event(user["id"], "TEAM_CREATED", "team", team_id)
 
+    if user.get("session_hash"):
+        _ensure_session_record(user["session_hash"], user["id"])
+        _set_active_team_for_session(user["session_hash"], user["id"], team_id)
+
     return {"success": True, "team_id": team_id}
 
 
@@ -2039,6 +2237,7 @@ async def create_additional_team(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -2080,11 +2279,10 @@ async def create_additional_team(request: Request):
     team_id = create_team(verein, mannschaft, user["id"])
     log_audit_event(user["id"], "TEAM_CREATED_ADDITIONAL", "team", team_id)
 
-    token = create_session_token(
-        {"email": user["email"], "id": user["id"], "team_id": team_id}, request)
-    response = JSONResponse({"success": True, "team_id": team_id})
-    set_session_cookie(response, token)
-    return response
+    if user.get("session_hash"):
+        _ensure_session_record(user["session_hash"], user["id"])
+        _set_active_team_for_session(user["session_hash"], user["id"], team_id)
+    return JSONResponse({"success": True, "team_id": team_id})
 
 
 @router.get("/api/team/status")
@@ -2097,10 +2295,12 @@ async def get_team_status(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
-    has_team = db_user and db_user.get("team_id") is not None
+    db_user = apply_active_membership(request, db_user)
+    memberships = get_user_memberships(user["id"])
+    has_team = len(memberships) > 0
 
     team_info = None
-    if has_team:
+    if db_user and db_user.get("team_id"):
         with get_db_connection() as db:
             cursor = db.cursor()
             cursor.execute("""
@@ -2116,7 +2316,7 @@ async def get_team_status(request: Request):
                     "mannschaft": team["mannschaft"]
                 }
 
-    return {"has_team": has_team, "team": team_info}
+    return {"has_team": has_team, "team": team_info, "membership_count": len(memberships)}
 
 
 @router.get("/api/team/members")
@@ -2129,28 +2329,21 @@ async def get_team_members(request: Request):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return {"error": "Kein Team gefunden", "members": []}
+
     with get_db_connection() as db:
         cursor = db.cursor()
-
-        # Eigenes Team ermitteln
-        cursor.execute(
-            "SELECT team_id FROM users WHERE id = ? AND is_active = 1",
-            (user["id"],)
-        )
-        user_data = cursor.fetchone()
-
-        if not user_data or not user_data["team_id"]:
-            return {"error": "Kein Team gefunden", "members": []}
-
-        # SECURITY: Nur Members des eigenen Teams
         cursor.execute("""
-            SELECT u.id, u.email, u.vorname, u.nachname, u.is_admin, r.name as role_name, r.id as role_id, tm.joined_at
+            SELECT u.id, u.email, u.vorname, u.nachname, r.name as role_name, r.id as role_id, tm.joined_at
             FROM team_members tm
             JOIN users u ON tm.user_id = u.id
             JOIN roles r ON tm.role_id = r.id
             WHERE tm.team_id = ? AND u.is_active = 1
             ORDER BY r.id, u.nachname
-        """, (user_data["team_id"],))
+        """, (db_user["team_id"],))
         members = cursor.fetchall()
 
     return {
@@ -2163,7 +2356,7 @@ async def get_team_members(request: Request):
                 "role_name": m["role_name"],
                 "role_id": m["role_id"],
                 "joined_at": m["joined_at"],
-                "is_admin": bool(m["is_admin"])
+                "is_admin": (m["role_name"] or "").lower() == "admin"
             }
             for m in members
         ]
@@ -2181,19 +2374,15 @@ async def get_team_roles(request: Request):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return {"error": "Kein Team gefunden", "roles": []}
+
+    team_id = db_user["team_id"]
+
     with get_db_connection() as db:
         cursor = db.cursor()
-
-        cursor.execute(
-            "SELECT team_id FROM users WHERE id = ? AND is_active = 1",
-            (user["id"],)
-        )
-        user_data = cursor.fetchone()
-
-        if not user_data or not user_data["team_id"]:
-            return {"error": "Kein Team gefunden", "roles": []}
-
-        team_id = user_data["team_id"]
 
         # PERFORMANCE: Single Query für Rollen mit Member-Count
         cursor.execute("""
@@ -2253,18 +2442,17 @@ async def create_role(request: Request):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team gefunden"}, status_code=400)
+
+    # SECURITY: Nur Admins dürfen Rollen erstellen
+    if not db_user.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
     with get_db_connection() as db:
         cursor = db.cursor()
-
-        cursor.execute(
-            "SELECT team_id, is_admin FROM users WHERE id = ? AND is_active = 1",
-            (user["id"],)
-        )
-        user_data = cursor.fetchone()
-
-        # SECURITY: Nur Admins dürfen Rollen erstellen
-        if not user_data or not user_data["is_admin"]:
-            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
         try:
             data = await request.json()
@@ -2281,7 +2469,7 @@ async def create_role(request: Request):
         cursor.execute("""
             INSERT INTO roles (team_id, name, description, is_deletable)
             VALUES (?, ?, ?, 1)
-        """, (user_data["team_id"], name, description))
+        """, (db_user["team_id"], name, description))
         role_id = cursor.lastrowid
 
         # Berechtigungen setzen
@@ -2322,22 +2510,20 @@ async def update_role_permissions(request: Request, role_id: int):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team gefunden"}, status_code=400)
+
+    if not db_user.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
     with get_db_connection() as db:
         cursor = db.cursor()
 
         cursor.execute(
-            "SELECT team_id, is_admin FROM users WHERE id = ? AND is_active = 1",
-            (user["id"],)
-        )
-        user_data = cursor.fetchone()
-
-        if not user_data or not user_data["is_admin"]:
-            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
-
-        # SECURITY: Prüfen ob Rolle zum eigenen Team gehört (IDOR Prevention)
-        cursor.execute(
             "SELECT id FROM roles WHERE id = ? AND team_id = ?",
-            (role_id, user_data["team_id"])
+            (role_id, db_user["team_id"])
         )
         if not cursor.fetchone():
             return JSONResponse({"error": "Rolle nicht gefunden"}, status_code=404)
@@ -2395,22 +2581,20 @@ async def delete_role(request: Request, role_id: int):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team gefunden"}, status_code=400)
+
+    if not db_user.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
     with get_db_connection() as db:
         cursor = db.cursor()
 
         cursor.execute(
-            "SELECT team_id, is_admin FROM users WHERE id = ? AND is_active = 1",
-            (user["id"],)
-        )
-        user_data = cursor.fetchone()
-
-        if not user_data or not user_data["is_admin"]:
-            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
-
-        # SECURITY: IDOR Prevention + is_deletable Check
-        cursor.execute(
             "SELECT id, is_deletable FROM roles WHERE id = ? AND team_id = ?",
-            (role_id, user_data["team_id"])
+            (role_id, db_user["team_id"])
         )
         role = cursor.fetchone()
 
@@ -2438,23 +2622,21 @@ async def update_member_role(request: Request, member_id: int):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team gefunden"}, status_code=400)
+
+    if not db_user.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
     with get_db_connection() as db:
         cursor = db.cursor()
 
-        cursor.execute(
-            "SELECT team_id, is_admin FROM users WHERE id = ? AND is_active = 1",
-            (user["id"],)
-        )
-        user_data = cursor.fetchone()
-
-        if not user_data or not user_data["is_admin"]:
-            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
-
-        # SECURITY: Prüfen ob Member im eigenen Team
         cursor.execute("""
             SELECT tm.id FROM team_members tm
             WHERE tm.user_id = ? AND tm.team_id = ?
-        """, (member_id, user_data["team_id"]))
+        """, (member_id, db_user["team_id"]))
 
         if not cursor.fetchone():
             return JSONResponse({"error": "Mitglied nicht gefunden"}, status_code=404)
@@ -2471,18 +2653,14 @@ async def update_member_role(request: Request, member_id: int):
         # SECURITY: Prüfen ob Rolle zum Team gehört
         cursor.execute(
             "SELECT id FROM roles WHERE id = ? AND team_id = ?",
-            (new_role_id, user_data["team_id"])
+            (new_role_id, db_user["team_id"])
         )
         if not cursor.fetchone():
             return JSONResponse({"error": "Ungültige Rolle"}, status_code=400)
 
         cursor.execute(
             "UPDATE team_members SET role_id = ? WHERE user_id = ? AND team_id = ?",
-            (new_role_id, member_id, user_data["team_id"])
-        )
-        cursor.execute(
-            "UPDATE users SET role_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-            (new_role_id, member_id)
+            (new_role_id, member_id, db_user["team_id"])
         )
         db.commit()
 
@@ -2504,43 +2682,37 @@ async def remove_member(request: Request, member_id: int):
     if member_id == user["id"]:
         return JSONResponse({"error": "Sie können sich nicht selbst entfernen"}, status_code=400)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
+    staff_roles = ["Admin", "Trainer", "Co-Trainer", "Torwarttrainer",
+                   "Betreuer", "Physio", "Jugendleiter", "Vorstand"]
+    role_name = (db_user.get("role_name") or get_user_role_name(db_user)).strip()
+    is_admin = bool(db_user.get("is_admin")) or role_name == "Admin"
+
     with get_db_connection() as db:
         cursor = db.cursor()
-
-        cursor.execute("""
-            SELECT u.team_id, u.is_admin, r.name as role_name
-            FROM users u
-            LEFT JOIN roles r ON u.role_id = r.id
-            WHERE u.id = ? AND u.is_active = 1
-        """, (user["id"],))
-        user_data = cursor.fetchone()
-
-        if not user_data:
-            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
-
-        staff_roles = ["Admin", "Trainer", "Co-Trainer", "Torwarttrainer",
-                       "Betreuer", "Physio", "Jugendleiter", "Vorstand"]
-        role_name = (user_data["role_name"] or "").strip()
-        is_admin = bool(user_data["is_admin"]) or role_name == "Admin"
 
         if not is_admin and role_name not in staff_roles:
             return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
         # SECURITY: IDOR Prevention
         cursor.execute("""
-            SELECT tm.id, u.is_admin, r.name as role_name
+            SELECT tm.id, r.name as role_name
             FROM team_members tm
             JOIN users u ON tm.user_id = u.id
             LEFT JOIN roles r ON tm.role_id = r.id
             WHERE tm.user_id = ? AND tm.team_id = ?
-        """, (member_id, user_data["team_id"]))
+        """, (member_id, db_user["team_id"]))
 
         target = cursor.fetchone()
         if not target:
             return JSONResponse({"error": "Mitglied nicht gefunden"}, status_code=404)
 
         target_role = (target["role_name"] or "").strip()
-        target_is_admin = bool(target["is_admin"]) or target_role == "Admin"
+        target_is_admin = target_role == "Admin"
 
         if not is_admin:
             if target_is_admin or target_role in staff_roles:
@@ -2550,17 +2722,13 @@ async def remove_member(request: Request, member_id: int):
 
         cursor.execute(
             "DELETE FROM team_members WHERE user_id = ? AND team_id = ?",
-            (member_id, user_data["team_id"])
-        )
-        cursor.execute(
-            "UPDATE users SET team_id = NULL, role_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-            (member_id,)
+            (member_id, db_user["team_id"])
         )
         cursor.execute("""
             UPDATE players
             SET user_id = NULL, updated_at = CURRENT_TIMESTAMP
             WHERE user_id = ? AND team_id = ? AND deleted_at IS NULL
-        """, (member_id, user_data["team_id"]))
+        """, (member_id, db_user["team_id"]))
         db.commit()
 
     log_audit_event(user["id"], "MEMBER_REMOVED", "user", member_id)
@@ -2581,18 +2749,16 @@ async def get_invitations(request: Request):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert", "invitations": []}, status_code=401)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team gefunden", "invitations": []}, status_code=400)
+
+    if not db_user.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung", "invitations": []}, status_code=403)
+
     with get_db_connection() as db:
         cursor = db.cursor()
-
-        cursor.execute(
-            "SELECT team_id, is_admin FROM users WHERE id = ? AND is_active = 1",
-            (user["id"],)
-        )
-        user_data = cursor.fetchone()
-
-        if not user_data or not user_data["is_admin"]:
-            return JSONResponse({"error": "Keine Berechtigung", "invitations": []}, status_code=403)
-
         cursor.execute("""
             SELECT i.*, r.name as role_name, u.email as created_by_email
             FROM invitations i
@@ -2600,7 +2766,7 @@ async def get_invitations(request: Request):
             JOIN users u ON i.created_by = u.id
             WHERE i.team_id = ? AND i.is_active = 1
             ORDER BY i.created_at DESC
-        """, (user_data["team_id"],))
+        """, (db_user["team_id"],))
         invitations = cursor.fetchall()
 
     return {
@@ -2653,6 +2819,7 @@ async def upload_video(
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team gefunden"}, status_code=400)
 
@@ -2723,6 +2890,7 @@ async def get_videos(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return {"videos": []}
 
@@ -2773,6 +2941,7 @@ async def stream_video(request: Request, video_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
     if not is_staff_user(db_user):
@@ -2854,6 +3023,7 @@ async def delete_video(request: Request, video_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -2891,6 +3061,7 @@ async def create_clip(request: Request, video_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -2943,6 +3114,7 @@ async def get_clips(request: Request, video_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return {"clips": []}
 
@@ -2989,6 +3161,7 @@ async def create_marker(request: Request, video_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -3036,6 +3209,7 @@ async def get_markers(request: Request, video_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return {"markers": []}
 
@@ -3077,6 +3251,7 @@ async def delete_marker(request: Request, marker_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -3102,6 +3277,7 @@ async def delete_clip(request: Request, clip_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -3127,6 +3303,7 @@ async def share_clip(request: Request, clip_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -3250,18 +3427,16 @@ async def create_invitation_api(request: Request):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team gefunden"}, status_code=400)
+
+    if not db_user.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
     with get_db_connection() as db:
         cursor = db.cursor()
-
-        cursor.execute(
-            "SELECT team_id, is_admin FROM users WHERE id = ? AND is_active = 1",
-            (user["id"],)
-        )
-        user_data = cursor.fetchone()
-
-        if not user_data or not user_data["is_admin"]:
-            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
-
         try:
             data = await request.json()
         except Exception:
@@ -3278,14 +3453,14 @@ async def create_invitation_api(request: Request):
         # Rolle prüfen
         cursor.execute(
             "SELECT id FROM roles WHERE id = ? AND team_id = ?",
-            (role_id, user_data["team_id"])
+            (role_id, db_user["team_id"])
         )
         if not cursor.fetchone():
             return JSONResponse({"error": "Ungültige Rolle"}, status_code=400)
 
     try:
         token = create_invitation(
-            user_data["team_id"], role_id, user["id"], max_uses, days_valid)
+            db_user["team_id"], role_id, user["id"], max_uses, days_valid)
     except (PermissionError, ValueError) as e:
         return JSONResponse({"error": str(e)}, status_code=400)
 
@@ -3302,22 +3477,19 @@ async def delete_invitation(request: Request, invitation_id: int):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team gefunden"}, status_code=400)
+
+    if not db_user.get("is_admin"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
+
     with get_db_connection() as db:
         cursor = db.cursor()
-
-        cursor.execute(
-            "SELECT team_id, is_admin FROM users WHERE id = ? AND is_active = 1",
-            (user["id"],)
-        )
-        user_data = cursor.fetchone()
-
-        if not user_data or not user_data["is_admin"]:
-            return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
-
-        # SECURITY: IDOR Prevention
         cursor.execute(
             "UPDATE invitations SET is_active = 0 WHERE id = ? AND team_id = ?",
-            (invitation_id, user_data["team_id"])
+            (invitation_id, db_user["team_id"])
         )
         db.commit()
 
@@ -3638,9 +3810,9 @@ async def join_team(request: Request, token: str):
                 ).decode('utf-8')
 
                 cursor.execute("""
-                    INSERT INTO users (email, password_hash, team_id, role_id, onboarding_complete, is_active, payment_status, vorname, nachname, position, telefon, geburtsdatum)
-                    VALUES (?, ?, ?, ?, 1, 0, 'paid', ?, ?, ?, ?, ?)
-                """, (email, password_hash, invitation["team_id"], role_id, vorname, nachname,
+                    INSERT INTO users (email, password_hash, onboarding_complete, is_active, payment_status, vorname, nachname, position, telefon, geburtsdatum)
+                    VALUES (?, ?, 1, 0, 'paid', ?, ?, ?, ?, ?)
+                """, (email, password_hash, vorname, nachname,
                       player_row["position"] or "", player_row["telefon"] or "", player_row["geburtsdatum"]))
                 user_id = cursor.lastrowid
 
@@ -3724,6 +3896,7 @@ async def get_players(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"players": []})
 
@@ -3797,6 +3970,7 @@ async def create_player(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team zugeordnet"}, status_code=400)
 
@@ -3898,6 +4072,7 @@ async def update_player(request: Request, player_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -3990,8 +4165,9 @@ async def update_player(request: Request, player_id: int):
                 cursor.execute("""
                     SELECT u.id, u.email, r.name as role_name
                     FROM users u
-                    LEFT JOIN roles r ON u.role_id = r.id
-                    WHERE u.id = ? AND u.team_id = ? AND u.is_active = 1
+                    JOIN team_members tm ON tm.user_id = u.id
+                    JOIN roles r ON tm.role_id = r.id
+                    WHERE u.id = ? AND tm.team_id = ? AND u.is_active = 1
                 """, (link_user_id, db_user["team_id"]))
                 user_row = cursor.fetchone()
                 if not user_row:
@@ -4083,6 +4259,7 @@ async def delete_player(request: Request, player_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -4120,6 +4297,7 @@ async def cleanup_dummy_players(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -4156,6 +4334,7 @@ async def get_player_stats(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"fit": 0, "training": 0, "reha": 0, "ausfall": 0, "total": 0})
 
@@ -4194,6 +4373,7 @@ async def get_events(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"events": []})
 
@@ -4245,6 +4425,7 @@ async def create_event(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
     if not is_staff_user(db_user):
@@ -4297,10 +4478,11 @@ async def create_event(request: Request):
             cursor.execute(f"""
                 SELECT u.id
                 FROM users u
-                LEFT JOIN roles r ON u.role_id = r.id
-                WHERE u.team_id = ? AND u.is_active = 1
+                JOIN team_members tm ON tm.user_id = u.id
+                JOIN roles r ON tm.role_id = r.id
+                WHERE tm.team_id = ? AND u.is_active = 1
                   AND u.id IN ({placeholders})
-                  AND LOWER(COALESCE(r.name, u.rolle)) = 'spieler'
+                  AND LOWER(r.name) = 'spieler'
             """, (db_user["team_id"], *roster_user_ids))
             allowed_ids = {row["id"] for row in cursor.fetchall()}
         roster_user_ids = [uid for uid in roster_user_ids if uid in allowed_ids]
@@ -4369,6 +4551,7 @@ async def delete_event(request: Request, event_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
     if not is_staff_user(db_user):
@@ -4393,6 +4576,7 @@ async def update_event(request: Request, event_id: int):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
     if not is_staff_user(db_user):
@@ -4438,10 +4622,11 @@ async def update_event(request: Request, event_id: int):
             cursor.execute(f"""
                 SELECT u.id
                 FROM users u
-                LEFT JOIN roles r ON u.role_id = r.id
-                WHERE u.team_id = ? AND u.is_active = 1
+                JOIN team_members tm ON tm.user_id = u.id
+                JOIN roles r ON tm.role_id = r.id
+                WHERE tm.team_id = ? AND u.is_active = 1
                   AND u.id IN ({placeholders})
-                  AND LOWER(COALESCE(r.name, u.rolle)) = 'spieler'
+                  AND LOWER(r.name) = 'spieler'
             """, (db_user["team_id"], *roster_user_ids))
             allowed_ids = {row["id"] for row in cursor.fetchall()}
         roster_user_ids = [uid for uid in roster_user_ids if uid in allowed_ids]
@@ -4485,6 +4670,7 @@ async def get_week_events(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"events": [], "week": {}})
 
@@ -4528,6 +4714,7 @@ async def get_player_next_events(request: Request):
         return JSONResponse({"events": []}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"events": []})
 
@@ -4565,6 +4752,7 @@ async def set_player_rsvp(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -4624,6 +4812,7 @@ async def get_player_calendar(request: Request):
         return JSONResponse({"events": []}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"events": []})
 
@@ -4661,6 +4850,7 @@ async def create_player_private_event(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -4722,6 +4912,7 @@ async def get_messages(request: Request, limit: int = 50, before_id: int = None,
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"messages": [], "has_more": False})
 
@@ -4786,6 +4977,7 @@ async def send_message(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -4834,6 +5026,7 @@ async def get_unread_count(request: Request):
         return JSONResponse({"count": 0})
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"count": 0})
 
@@ -4859,6 +5052,7 @@ async def get_message_contacts(request: Request):
         return JSONResponse({"contacts": []}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"contacts": []})
 
@@ -4870,9 +5064,10 @@ async def get_message_contacts(request: Request):
         cursor.execute(f"""
             SELECT u.id, u.email, u.vorname, u.nachname, r.name as role_name
             FROM users u
-            LEFT JOIN roles r ON u.role_id = r.id
-            WHERE u.team_id = ? AND u.is_active = 1
-              AND LOWER(COALESCE(r.name, u.rolle)) IN ({placeholders})
+            JOIN team_members tm ON tm.user_id = u.id
+            JOIN roles r ON tm.role_id = r.id
+            WHERE tm.team_id = ? AND u.is_active = 1
+              AND LOWER(r.name) IN ({placeholders})
             ORDER BY r.name, u.nachname
         """, (db_user["team_id"], *staff_roles))
         contacts = [dict(row) for row in cursor.fetchall()]
@@ -4892,6 +5087,7 @@ async def get_kasse(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return {"saldo": 0, "transactions": []}
 
@@ -4929,6 +5125,7 @@ async def add_kasse_transaction(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team zugeordnet"}, status_code=400)
 
@@ -4970,6 +5167,7 @@ async def get_formations(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"formations": []})
 
@@ -4994,6 +5192,7 @@ async def save_formation(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
@@ -5126,6 +5325,8 @@ async def verify_2fa(
 
     # Session erstellen
     token = create_session_token(user, request)
+    session_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    _ensure_session_record(session_hash, user_id)
     secure_session_manager.register_session(
         token, user_id, client_ip, user_agent)
 
@@ -5145,6 +5346,7 @@ async def setup_2fa_page(request: Request):
         return RedirectResponse(url="/auth/login", status_code=303)
 
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user:
         return RedirectResponse(url="/auth/login", status_code=303)
 
@@ -5264,6 +5466,7 @@ async def disable_2fa_route(
 
     # Passwort verifizieren
     db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
     if not db_user:
         return JSONResponse({"error": "User nicht gefunden"}, status_code=400)
 
