@@ -298,6 +298,14 @@ def apply_active_membership(request: Request, db_user: Optional[Dict[str, Any]])
     user = get_current_user(request)
     session_hash = user.get("session_hash") if user else None
     if not session_hash:
+        memberships = get_user_memberships(db_user["id"])
+        if len(memberships) == 1:
+            membership = memberships[0]
+            db_user["team_id"] = membership["team_id"]
+            db_user["role_id"] = membership["role_id"]
+            db_user["role_name"] = membership["role_name"]
+            db_user["is_admin"] = membership["role_name"].lower() == "admin"
+            return db_user
         db_user["team_id"] = None
         db_user["role_id"] = None
         db_user["role_name"] = ""
