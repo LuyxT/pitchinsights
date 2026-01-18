@@ -4474,14 +4474,16 @@ async def get_events(request: Request):
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
-            SELECT id, title, description, event_type, event_date, start_time, end_time, location, visibility,
-                   (SELECT COUNT(*) FROM event_rsvps WHERE event_id = calendar_events.id AND status = 'yes') as rsvp_yes,
-                   (SELECT COUNT(*) FROM event_rsvps WHERE event_id = calendar_events.id AND status = 'no') as rsvp_no,
-                   (SELECT COUNT(*) FROM event_rsvps WHERE event_id = calendar_events.id AND status = 'maybe') as rsvp_maybe,
-                   (SELECT status FROM event_rsvps WHERE event_id = calendar_events.id AND user_id = ?) as my_rsvp
-            FROM calendar_events
-            WHERE team_id = ? AND deleted_at IS NULL
-            ORDER BY event_date, start_time
+            SELECT e.id, e.title, e.description, e.event_type, e.event_date, e.start_time, e.end_time, e.location, e.visibility,
+                   SUM(CASE WHEN r.status = 'yes' THEN 1 ELSE 0 END) as rsvp_yes,
+                   SUM(CASE WHEN r.status = 'no' THEN 1 ELSE 0 END) as rsvp_no,
+                   SUM(CASE WHEN r.status = 'maybe' THEN 1 ELSE 0 END) as rsvp_maybe,
+                   MAX(CASE WHEN r.user_id = ? THEN r.status ELSE NULL END) as my_rsvp
+            FROM calendar_events e
+            LEFT JOIN event_rsvps r ON r.event_id = e.id
+            WHERE e.team_id = ? AND e.deleted_at IS NULL
+            GROUP BY e.id
+            ORDER BY e.event_date, e.start_time
         """, (user["id"], db_user["team_id"]))
         events = [dict(row) for row in cursor.fetchall()]
 

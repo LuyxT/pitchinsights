@@ -538,6 +538,14 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_messages_team 
             ON messages(team_id, created_at) WHERE deleted_at IS NULL
         """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_messages_team_recipient_read
+            ON messages(team_id, recipient_id, is_read, created_at) WHERE deleted_at IS NULL
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_messages_team_sender_recipient
+            ON messages(team_id, sender_id, recipient_id, created_at) WHERE deleted_at IS NULL
+        """)
 
         # Taktik-Formationen Tabelle
         cursor.execute("""
@@ -752,6 +760,8 @@ def _run_migrations(conn):
     index_migrations = [
         "CREATE INDEX IF NOT EXISTS idx_audit_log_event_type ON audit_log(event_type, created_at)",
         "CREATE INDEX IF NOT EXISTS idx_audit_log_severity ON audit_log(severity, created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_messages_team_recipient_read ON messages(team_id, recipient_id, is_read, created_at) WHERE deleted_at IS NULL",
+        "CREATE INDEX IF NOT EXISTS idx_messages_team_sender_recipient ON messages(team_id, sender_id, recipient_id, created_at) WHERE deleted_at IS NULL",
     ]
 
     for index_sql in index_migrations:
