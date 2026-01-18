@@ -7839,11 +7839,14 @@
 
             // Team-Mitglieder laden
             try {
-                const response = await fetch('/api/team', {
+                const response = await fetch('/api/team/members', {
                     credentials: 'include'
                 });
                 if (!response.ok) throw new Error('Fehler');
-                const players = await response.json();
+                const data = await response.json();
+                const players = (data.members || []).filter(member => {
+                    return (member.role_name || '').toLowerCase() === 'spieler';
+                });
 
                 const container = document.getElementById('sharePlayersList');
                 container.innerHTML = players.map(player => `
@@ -7854,7 +7857,7 @@
                             </div>
                             <div>
                                 <div style="font-weight: 500; color: white;">${escapeHtml(player.vorname)} ${escapeHtml(player.nachname)}</div>
-                                <div style="font-size: 12px; opacity: 0.6; color: white;">${escapeHtml(player.position || 'Spieler')}</div>
+                                <div style="font-size: 12px; opacity: 0.6; color: white;">${escapeHtml(player.role_name || 'Spieler')}</div>
                             </div>
                         </label>
                     `).join('');
@@ -7885,17 +7888,16 @@
             const message = document.getElementById('shareMessage').value;
 
             try {
-                for (const playerId of selectedPlayersForShare) {
-                    await fetch(`/api/clips/${currentClipToShare}/share`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            recipient_id: playerId,
-                            message: message
-                        })
-                    });
-                }
+                const response = await fetch(`/api/clips/${currentClipToShare}/share`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        recipient_ids: selectedPlayersForShare,
+                        message: message
+                    })
+                });
+                if (!response.ok) throw new Error('Fehler');
 
                 showToast(`Clip an ${selectedPlayersForShare.length} Spieler gesendet!`, 'success');
                 closeShareModal();

@@ -3403,6 +3403,8 @@ async def share_clip(request: Request, clip_id: int):
     try:
         data = await request.json()
         recipient_ids = data.get("recipient_ids", [])
+        if not recipient_ids and data.get("recipient_id") is not None:
+            recipient_ids = [data.get("recipient_id")]
         message = data.get("message", "").strip()[:500]
 
         if not recipient_ids or not isinstance(recipient_ids, list):
