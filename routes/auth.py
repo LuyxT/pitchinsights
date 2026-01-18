@@ -2812,6 +2812,14 @@ async def get_invitations(request: Request):
 
 # Erlaubte Video-Formate und Max-Größe
 ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.webm', '.mkv'}
+ALLOWED_VIDEO_MIME_TYPES = {
+    "video/mp4",
+    "video/quicktime",
+    "video/x-msvideo",
+    "video/webm",
+    "video/x-matroska",
+    "application/octet-stream",
+}
 MAX_VIDEO_SIZE = 500 * 1024 * 1024  # 500 MB
 TEAM_VIDEO_QUOTA = 5 * 1024 * 1024 * 1024  # 5 GB pro Mannschaft
 
@@ -2847,11 +2855,24 @@ async def upload_video(
     if role_name not in ("admin", "trainer", "co-trainer"):
         return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
+    # SECURITY: Content-Length prüfen (wenn vorhanden)
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > MAX_VIDEO_SIZE + (5 * 1024 * 1024):
+                return JSONResponse({"error": "Video zu groß (max. 500 MB)"}, status_code=400)
+        except ValueError:
+            return JSONResponse({"error": "Ungültige Upload-Größe"}, status_code=400)
+
     # SECURITY: Dateiendung prüfen
     filename = file.filename or "video"
     ext = os.path.splitext(filename)[1].lower()
     if ext not in ALLOWED_VIDEO_EXTENSIONS:
         return JSONResponse({"error": f"Ungültiges Format. Erlaubt: {', '.join(ALLOWED_VIDEO_EXTENSIONS)}"}, status_code=400)
+
+    # SECURITY: MIME-Type prüfen (best effort)
+    if file.content_type and file.content_type.lower() not in ALLOWED_VIDEO_MIME_TYPES:
+        return JSONResponse({"error": "Ungültiger Dateityp"}, status_code=400)
 
     # SECURITY: Dateigröße prüfen
     file.file.seek(0, 2)
@@ -2952,16 +2973,9 @@ async def stream_video(request: Request, video_id: int):
     Video streamen mit Range-Request-Unterstützung.
     SECURITY: Nur eigenes Team, IDOR Prevention.
     """
-    # Debug: Log session info
-    session_cookie = request.cookies.get("session")
-    logging.info(
-        f"[VIDEO STREAM] video_id={video_id}, session_cookie_present={bool(session_cookie)}")
-
     user = get_current_user(request)
-    logging.info(f"[VIDEO STREAM] user={user}")
 
     if not user:
-        logging.warning(f"[VIDEO STREAM] 401 - No user from session")
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     db_user = get_user_by_id(user["id"])
@@ -2982,21 +2996,41 @@ async def stream_video(request: Request, video_id: int):
     if not video:
         return JSONResponse({"error": "Video nicht gefunden"}, status_code=404)
 
-    file_path = os.path.join(get_video_upload_dir(), str(
-        db_user["team_id"]), video["filename"])
+    team_dir = os.path.join(get_video_upload_dir(), str(db_user["team_id"]))
+    file_path = os.path.join(team_dir, video["filename"])
+    normalized_path = os.path.abspath(file_path)
+    if not normalized_path.startswith(os.path.abspath(team_dir) + os.sep):
+        return JSONResponse({"error": "Datei nicht gefunden"}, status_code=404)
     if not os.path.exists(file_path):
         return JSONResponse({"error": "Datei nicht gefunden"}, status_code=404)
 
     file_size = os.path.getsize(file_path)
+    ext = os.path.splitext(video["filename"])[1].lower()
+    media_type = {
+        ".mp4": "video/mp4",
+        ".mov": "video/quicktime",
+        ".avi": "video/x-msvideo",
+        ".webm": "video/webm",
+        ".mkv": "video/x-matroska",
+    }.get(ext, "application/octet-stream")
 
     # Check for Range header (for video seeking)
     range_header = request.headers.get("range")
 
     if range_header:
         # Parse range header: "bytes=0-1000" or "bytes=0-"
-        range_match = range_header.replace("bytes=", "").split("-")
-        start = int(range_match[0]) if range_match[0] else 0
-        end = int(range_match[1]) if range_match[1] else file_size - 1
+        range_value = range_header.replace("bytes=", "").strip()
+        if "-" not in range_value:
+            return JSONResponse({"error": "Ungültiger Range"}, status_code=416)
+        range_match = range_value.split("-", 1)
+        try:
+            start = int(range_match[0]) if range_match[0] else 0
+            end = int(range_match[1]) if range_match[1] else file_size - 1
+        except ValueError:
+            return JSONResponse({"error": "Ungültiger Range"}, status_code=416)
+
+        if start < 0 or end < start or start >= file_size:
+            return JSONResponse({"error": "Range nicht verfügbar"}, status_code=416)
 
         # Clamp end to file size
         end = min(end, file_size - 1)
@@ -3018,20 +3052,20 @@ async def stream_video(request: Request, video_id: int):
             "Content-Range": f"bytes {start}-{end}/{file_size}",
             "Accept-Ranges": "bytes",
             "Content-Length": str(chunk_size),
-            "Content-Type": "video/mp4",
+            "Content-Type": media_type,
         }
 
         return StreamingResponse(
             iterfile(),
             status_code=206,
             headers=headers,
-            media_type="video/mp4"
+            media_type=media_type
         )
     else:
         # No range header - return full file with Accept-Ranges header
         return FileResponse(
             file_path,
-            media_type="video/mp4",
+            media_type=media_type,
             headers={"Accept-Ranges": "bytes"}
         )
 
