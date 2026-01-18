@@ -761,6 +761,7 @@
         let currentTrainerId = null;
         let trainerContacts = [];
         let isChatOpen = false;
+        let sharedClips = [];
 
         async function loadChatList() {
             const list = document.getElementById('chatList');
@@ -870,11 +871,20 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 const messages = data.messages || [];
+                if (currentChatScope === 'trainer') {
+                    await loadSharedClips();
+                } else {
+                    sharedClips = [];
+                }
                 if (messages.length === 0) {
-                    container.innerHTML = '<div class="empty-state">Keine Nachrichten</div>';
+                    container.innerHTML = renderSharedClips();
+                    if (!sharedClips.length) {
+                        container.innerHTML = '<div class="empty-state">Keine Nachrichten</div>';
+                    }
                     return;
                 }
-                container.innerHTML = messages.map(msg => {
+                const sharedHtml = renderSharedClips();
+                const messagesHtml = messages.map(msg => {
                     const isOwn = msg.sender_id === currentUserId;
                     const sender = escapeHtml(msg.sender_name || 'Team');
                     const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -887,11 +897,41 @@
                         </div>
                     `;
                 }).join('');
+                container.innerHTML = sharedHtml + messagesHtml;
                 container.scrollTop = container.scrollHeight;
                 await loadChatList();
             } catch (err) {
                 container.innerHTML = '<div class="empty-state">Messenger konnte nicht geladen werden</div>';
             }
+        }
+
+        async function loadSharedClips() {
+            try {
+                const response = await fetch('/api/shared-clips');
+                const data = await response.json();
+                sharedClips = data.shared_clips || [];
+            } catch (err) {
+                sharedClips = [];
+            }
+        }
+
+        function renderSharedClips() {
+            if (!sharedClips.length) {
+                return '';
+            }
+            return `
+                <div class="chat-message">
+                    <div class="sender">Trainer Clips</div>
+                    ${sharedClips.map(clip => `
+                        <div style="margin: 8px 0; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.06);">
+                            <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(clip.video?.title || 'Video')}</div>
+                            <div style="font-size: 12px; opacity: 0.7; margin-bottom: 6px;">${escapeHtml(clip.clip?.title || 'Clip')}</div>
+                            ${clip.message ? `<div style="font-size: 12px; opacity: 0.8; margin-bottom: 6px;">${escapeHtml(clip.message)}</div>` : ''}
+                            <div style="font-size: 11px; opacity: 0.6;">${new Date(clip.shared_at).toLocaleDateString('de-DE')}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
 
         async function loadProfile() {
