@@ -210,9 +210,20 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
                 f"[AUTH] User not found or inactive: id={data.get('id')}")
             return None
 
+        # SECURITY: Session muss serverseitig aktiv sein
+        session_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        with get_db_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("""
+                SELECT 1 FROM user_sessions
+                WHERE session_hash = ? AND user_id = ?
+            """, (session_hash, user["id"]))
+            if not cursor.fetchone():
+                logger.warning(f"[AUTH] Session not active for user_id={user['id']}")
+                return None
+
         logging.info(
             f"[AUTH] Authentication successful for user_id={data.get('id')}")
-        session_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
         return {"email": data["email"], "id": data["id"], "session_hash": session_hash}
 
     except SignatureExpired:
@@ -2830,6 +2841,11 @@ async def upload_video(
     db_user = apply_active_membership(request, db_user)
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team gefunden"}, status_code=400)
+
+    # SECURITY: Nur Admin/Trainer dürfen Videos hochladen
+    role_name = get_user_role_name(db_user)
+    if role_name not in ("admin", "trainer", "co-trainer"):
+        return JSONResponse({"error": "Keine Berechtigung"}, status_code=403)
 
     # SECURITY: Dateiendung prüfen
     filename = file.filename or "video"
