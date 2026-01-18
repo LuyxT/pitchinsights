@@ -210,6 +210,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+@app.middleware("http")
+async def healthcheck_bypass(request: Request, call_next):
+    if request.url.path in ["/health", "/_health"]:
+        return JSONResponse({"status": "healthy"})
+    return await call_next(request)
+
 
 # ============================================
 # Security Middleware
