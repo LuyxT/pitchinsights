@@ -7,16 +7,16 @@
     <title>PitchInsights Spieler</title>
     <style>
         :root {
-            --bg: #0f172a;
-            --bg-soft: #16233f;
-            --accent: #22c55e;
-            --accent-soft: #86efac;
-            --text: #f8fafc;
-            --text-dim: #cbd5f5;
-            --card: rgba(15, 23, 42, 0.88);
-            --border: rgba(148, 163, 184, 0.2);
+            --primary-green: #10b981;
+            --primary-green-dark: #059669;
+            --bg: #1d1d1f;
+            --bg-soft: #1c1c1e;
+            --text: #f5f5f7;
+            --text-dim: #9ca3af;
+            --card: #2a2a2e;
+            --border: #424245;
             --danger: #f97316;
-            --shadow: 0 20px 40px rgba(15, 23, 42, 0.45);
+            --shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
         }
 
         * {
@@ -25,8 +25,8 @@
 
         body {
             margin: 0;
-            font-family: "Avenir Next", "Avenir", "Futura", "Trebuchet MS", sans-serif;
-            background: radial-gradient(circle at top, #1e293b, #0b1120 55%, #05060d 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+            background: var(--bg);
             color: var(--text);
             min-height: 100vh;
         }
@@ -42,9 +42,8 @@
         }
 
         .app-title {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
-            letter-spacing: 0.5px;
         }
 
         .app-subtitle {
@@ -74,7 +73,7 @@
         .card {
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 18px;
+            border-radius: 16px;
             padding: 16px;
             box-shadow: var(--shadow);
             animation: fadeUp 0.4s ease both;
@@ -84,8 +83,8 @@
             font-size: 16px;
             margin: 0 0 12px;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--accent-soft);
+            letter-spacing: 0.8px;
+            color: var(--primary-green);
         }
 
         .card-header {
@@ -101,7 +100,7 @@
 
         .btn {
             border: none;
-            border-radius: 999px;
+            border-radius: 12px;
             padding: 10px 16px;
             font-size: 13px;
             font-weight: 600;
@@ -114,8 +113,8 @@
         }
 
         .btn-accent {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            color: #04130b;
+            background: var(--primary-green);
+            color: #0b1410;
         }
 
         .btn-ghost {
@@ -131,8 +130,8 @@
         }
 
         .event-card {
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(148, 163, 184, 0.15);
+            background: #2d2d31;
+            border: 1px solid var(--border);
             border-radius: 14px;
             padding: 12px;
             display: flex;
@@ -162,8 +161,8 @@
             border-radius: 999px;
             font-size: 11px;
             font-weight: 600;
-            background: rgba(34, 197, 94, 0.2);
-            color: var(--accent-soft);
+            background: rgba(16, 185, 129, 0.2);
+            color: #a7f3d0;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -190,8 +189,8 @@
         }
 
         .rsvp-actions button.active {
-            background: var(--accent);
-            color: #05210f;
+            background: var(--primary-green);
+            color: #0b1410;
         }
 
         .section-divider {
@@ -209,7 +208,7 @@
         .form-grid select,
         .form-grid textarea {
             width: 100%;
-            background: rgba(15, 23, 42, 0.8);
+            background: var(--bg-soft);
             border: 1px solid var(--border);
             color: var(--text);
             border-radius: 12px;
@@ -229,31 +228,31 @@
             max-height: 52vh;
             overflow-y: auto;
             padding: 6px 4px 6px 0;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.6));
+            background: linear-gradient(180deg, rgba(28, 28, 30, 0.4), rgba(28, 28, 30, 0.9));
             border-radius: 14px;
         }
 
         .chat-message {
-            background: rgba(30, 41, 59, 0.7);
+            background: #2d2d31;
             border-radius: 14px 14px 14px 4px;
             padding: 10px 12px;
             font-size: 13px;
             line-height: 1.4;
             max-width: 78%;
             align-self: flex-start;
-            border: 1px solid rgba(148, 163, 184, 0.12);
+            border: 1px solid var(--border);
         }
 
         .chat-message .sender {
             font-size: 11px;
-            color: var(--accent-soft);
+            color: #a7f3d0;
             margin-bottom: 6px;
             font-weight: 600;
         }
 
         .chat-message.own {
-            background: rgba(34, 197, 94, 0.18);
-            border: 1px solid rgba(34, 197, 94, 0.35);
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.35);
             color: #dcfce7;
             border-radius: 14px 14px 4px 14px;
             align-self: flex-end;
@@ -288,7 +287,7 @@
             display: inline-flex;
             gap: 6px;
             padding: 4px;
-            background: rgba(15, 23, 42, 0.7);
+            background: rgba(28, 28, 30, 0.8);
             border-radius: 999px;
             border: 1px solid var(--border);
         }
@@ -303,15 +302,15 @@
         }
 
         .wa-tabs .btn.active {
-            background: var(--accent);
-            color: #05210f;
+            background: var(--primary-green);
+            color: #0b1410;
         }
 
         .wa-input {
             display: flex;
             gap: 8px;
             align-items: center;
-            background: rgba(15, 23, 42, 0.8);
+            background: var(--bg-soft);
             border: 1px solid var(--border);
             border-radius: 999px;
             padding: 6px 8px 6px 12px;
@@ -351,15 +350,15 @@
             gap: 10px;
             padding: 10px 12px;
             border-radius: 14px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.12);
+            background: #2d2d31;
+            border: 1px solid var(--border);
             cursor: pointer;
             transition: background 0.2s ease, border 0.2s ease;
         }
 
         .chat-item.active {
-            background: rgba(34, 197, 94, 0.18);
-            border-color: rgba(34, 197, 94, 0.35);
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.35);
         }
 
         .chat-avatar {
@@ -425,7 +424,7 @@
         .back-btn {
             border: none;
             background: transparent;
-            color: var(--accent-soft);
+            color: #a7f3d0;
             font-weight: 600;
             font-size: 13px;
             cursor: pointer;
@@ -436,7 +435,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(29, 29, 31, 0.95);
             border-top: 1px solid var(--border);
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -459,7 +458,7 @@
         }
 
         .nav-item.active {
-            color: var(--accent-soft);
+            color: var(--primary-green);
         }
 
         .nav-icon {
@@ -496,7 +495,7 @@
 
         @media (min-width: 768px) {
             body {
-                background: radial-gradient(circle at top, #172554, #0f172a 55%, #020617 100%);
+                background: var(--bg);
                 display: flex;
                 justify-content: center;
             }
@@ -504,7 +503,7 @@
             .app {
                 max-width: 430px;
                 width: 100%;
-                box-shadow: 0 30px 80px rgba(2, 6, 23, 0.7);
+                box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65);
             }
         }
     </style>
