@@ -60,6 +60,22 @@ logger = logging.getLogger("pitchinsights.security")
 # SECURITY: Timed Serializer mit Ablaufzeit
 serializer = URLSafeTimedSerializer(SecurityConfig.SECRET_KEY)
 
+# Beta-Access Cookie (signiert)
+BETA_ACCESS_COOKIE_MAX_AGE = 86400 * 365  # 1 Jahr
+
+
+def _create_beta_access_cookie_token() -> str:
+    return serializer.dumps({"beta_access": True})
+
+
+def _is_beta_access_cookie_valid(token: str) -> bool:
+    if not token:
+        return False
+    try:
+        data = serializer.loads(token, max_age=BETA_ACCESS_COOKIE_MAX_AGE)
+        return data.get("beta_access") is True
+    except (SignatureExpired, BadSignature):
+        return False
 
 # ============================================
 # Helper Functions
@@ -450,14 +466,14 @@ async def login_page(request: Request, code: str = None, mode: str = None, redir
         )
         response.set_cookie(
             key="beta_access",
-            value="verified",
+            value=_create_beta_access_cookie_token(),
             httponly=True,
-            secure=False,  # True in Production
-            samesite="lax",
+            secure=SecurityConfig.COOKIE_SECURE,
+            samesite=SecurityConfig.COOKIE_SAMESITE,
             max_age=86400 * 30  # 30 Tage
         )
         return response
-    elif stored_code == "verified":
+    elif _is_beta_access_cookie_valid(stored_code):
         # Bereits verifiziert via Cookie
         csrf_token = generate_csrf_token("login_form")
         return templates.TemplateResponse(
@@ -982,14 +998,14 @@ async def register_page(request: Request, code: str = None):
         )
         response.set_cookie(
             key="beta_access",
-            value="verified",
+            value=_create_beta_access_cookie_token(),
             httponly=True,
-            secure=False,  # True in Production
-            samesite="lax",
+            secure=SecurityConfig.COOKIE_SECURE,
+            samesite=SecurityConfig.COOKIE_SAMESITE,
             max_age=86400 * 30  # 30 Tage
         )
         return response
-    elif stored_code == "verified":
+    elif _is_beta_access_cookie_valid(stored_code):
         # Bereits verifiziert via Cookie
         csrf_token = generate_csrf_token("register_form")
         return templates.TemplateResponse(
@@ -1269,10 +1285,29 @@ async def register(
 
 @router.get("/logout")
 async def logout(request: Request):
+    return JSONResponse({"error": "Methode nicht erlaubt"}, status_code=405)
+
+
+@router.post("/logout")
+async def logout_post(request: Request):
     """
     Logout-Endpunkt.
-    SECURITY: Cookie sicher löschen.
+    SECURITY: CSRF-geschützt und Cookie sicher löschen.
     """
+    csrf_token = ""
+    try:
+        data = await request.json()
+        csrf_token = str(data.get("csrf_token", "")).strip()
+    except Exception:
+        try:
+            form = await request.form()
+            csrf_token = str(form.get("csrf_token", "")).strip()
+        except Exception:
+            csrf_token = ""
+
+    if not validate_csrf_token(csrf_token, "logout_form"):
+        return JSONResponse({"error": "Ungültiges CSRF-Token"}, status_code=403)
+
     user = get_current_user(request)
     if user:
         log_audit_event(user["id"], "LOGOUT", "user", user["id"])
@@ -1282,7 +1317,7 @@ async def logout(request: Request):
         if token:
             secure_session_manager.invalidate_session(token)
 
-    response = RedirectResponse(url="/login", status_code=303)
+    response = JSONResponse({"success": True})
     response.delete_cookie("session", path="/")
     return response
 
@@ -1619,7 +1654,7 @@ async def dashboard(request: Request):
 
     return templates.TemplateResponse(
         "os.html",
-        {"request": request, "user": user}
+        {"request": request, "user": user, "logout_csrf_token": generate_csrf_token("logout_form")}
     )
 
 
@@ -3641,10 +3676,11 @@ async def join_page(request: Request, token: str):
     # Beta-Zugang gewähren - Cookie-Wert muss "verified" sein
     response.set_cookie(
         key="beta_access",
-        value="verified",
+        value=_create_beta_access_cookie_token(),
         max_age=86400 * 365,  # 1 Jahr
         httponly=True,
-        samesite="lax"
+        secure=SecurityConfig.COOKIE_SECURE,
+        samesite=SecurityConfig.COOKIE_SAMESITE
     )
 
     return response

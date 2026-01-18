@@ -7094,12 +7094,20 @@
             setTimeout(load2FAStatus, 500);
         });
 
+        const logoutCsrfToken = "{{ logout_csrf_token|e }}";
+
         function logout() {
             if (confirm('Möchtest du dich wirklich ausloggen?')) {
                 // SECURITY: Alle lokalen Daten löschen (kritisch für Datenschutz!)
                 appStorage.clear();
-                // Zur Logout-Endpoint weiterleiten (löscht auch Server-Session)
-                window.location.href = '/logout';
+                // CSRF-geschützter Logout
+                fetch('/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csrf_token: logoutCsrfToken })
+                }).finally(() => {
+                    window.location.href = '/login';
+                });
             }
         }
 
