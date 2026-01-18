@@ -332,8 +332,8 @@
         }
 
         .chat-layout {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
+            display: flex;
+            flex-direction: column;
             gap: 14px;
         }
 
@@ -414,10 +414,21 @@
             justify-content: space-between;
         }
 
-        @media (max-width: 520px) {
-            .chat-layout {
-                grid-template-columns: 1fr;
-            }
+        .chat-panel.hidden {
+            display: none;
+        }
+
+        .chat-list.hidden {
+            display: none;
+        }
+
+        .back-btn {
+            border: none;
+            background: transparent;
+            color: var(--accent-soft);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
         }
 
         .bottom-nav {
@@ -548,9 +559,10 @@
                     </div>
                     <div class="chat-layout">
                         <div class="chat-list" id="chatList"></div>
-                        <div class="chat-panel">
+                        <div class="chat-panel hidden" id="chatPanel">
                             <div class="chat-header">
                                 <div class="wa-title">
+                                    <button class="back-btn" id="chatBackBtn" type="button">Zurück</button>
                                     <div class="app-title" id="chatTitle">Teamchat</div>
                                     <span id="chatSubtitle">Alle Teammitglieder</span>
                                 </div>
@@ -642,6 +654,7 @@
             if (viewName === 'messenger') {
                 await loadChatList();
                 await loadMessages();
+                closeChatView();
             }
             if (viewName === 'profile') {
                 await loadProfile();
@@ -748,6 +761,7 @@
         let currentChatScope = 'team';
         let currentTrainerId = null;
         let trainerContacts = [];
+        let isChatOpen = false;
 
         async function loadChatList() {
             const list = document.getElementById('chatList');
@@ -810,6 +824,26 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function openChatView() {
+            const list = document.getElementById('chatList');
+            const panel = document.getElementById('chatPanel');
+            if (list && panel) {
+                list.classList.add('hidden');
+                panel.classList.remove('hidden');
+                isChatOpen = true;
+            }
+        }
+
+        function closeChatView() {
+            const list = document.getElementById('chatList');
+            const panel = document.getElementById('chatPanel');
+            if (list && panel) {
+                list.classList.remove('hidden');
+                panel.classList.add('hidden');
+                isChatOpen = false;
+            }
         }
 
         async function loadTrainerContacts() {
@@ -912,6 +946,11 @@
                 ? 'Nachricht an den Trainer'
                 : 'Nachricht an das Team';
             await loadMessages();
+            openChatView();
+        });
+
+        document.getElementById('chatBackBtn')?.addEventListener('click', () => {
+            closeChatView();
         });
 
         document.getElementById('toggleCalendar').addEventListener('click', () => {
