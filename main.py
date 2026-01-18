@@ -231,6 +231,9 @@ app.add_middleware(
 # Erlaubt auch Railway interne Health Checks
 allowed_hosts = os.environ.get(
     "PITCHINSIGHTS_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+allowed_hosts = [host.strip() for host in allowed_hosts if host.strip()]
+if os.path.exists("/app"):
+    allowed_hosts.append("*.up.railway.app")
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=allowed_hosts
