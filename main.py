@@ -210,13 +210,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-@app.middleware("http")
-async def healthcheck_bypass(request: Request, call_next):
-    if request.url.path in ["/health", "/_health"]:
-        return JSONResponse({"status": "healthy"})
-    return await call_next(request)
-
-
 # ============================================
 # Security Middleware
 # ============================================
@@ -454,6 +447,17 @@ async def security_headers_middleware(request: Request, call_next):
         response.headers["Expires"] = "0"
 
     return response
+
+
+# ============================================
+# Healthcheck Bypass (must run first)
+# ============================================
+
+@app.middleware("http")
+async def healthcheck_bypass(request: Request, call_next):
+    if request.url.path in ["/health", "/_health"]:
+        return JSONResponse({"status": "healthy"})
+    return await call_next(request)
 
 
 # ============================================
