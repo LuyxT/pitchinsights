@@ -4743,10 +4743,11 @@ async def get_player_next_events(request: Request):
               AND (
                     NOT EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id)
                     OR EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id AND er.user_id = ?)
+                    OR EXISTS (SELECT 1 FROM event_rsvps rr WHERE rr.event_id = e.id AND rr.user_id = ?)
                   )
             ORDER BY e.event_date, e.start_time
             LIMIT 5
-        """, [user["id"], db_user["team_id"], today, user["id"]])
+        """, [user["id"], db_user["team_id"], today, user["id"], user["id"]])
         events = [dict(row) for row in cursor.fetchall()]
 
     return JSONResponse({"events": events})
@@ -4835,10 +4836,11 @@ async def get_player_calendar(request: Request):
               AND (
                     NOT EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id)
                     OR EXISTS (SELECT 1 FROM event_roster er WHERE er.event_id = e.id AND er.user_id = ?)
+                    OR EXISTS (SELECT 1 FROM event_rsvps rr WHERE rr.event_id = e.id AND rr.user_id = ?)
                   )
             ORDER BY e.event_date, e.start_time
             LIMIT 200
-        """, [db_user["team_id"], user["id"]])
+        """, [db_user["team_id"], user["id"], user["id"]])
         rows = cursor.fetchall()
 
     events = []
