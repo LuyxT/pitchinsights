@@ -12,7 +12,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 import uvicorn
@@ -227,22 +226,46 @@ app.add_middleware(
     max_age=600,  # 10 Minuten Cache für Preflight
 )
 
-# SECURITY: Trusted Host Middleware
-# Erlaubt auch Railway interne Health Checks
+# SECURITY: Trusted Hosts (custom middleware for healthcheck allowlist)
 allowed_hosts = os.environ.get(
     "PITCHINSIGHTS_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-allowed_hosts = [host.strip() for host in allowed_hosts if host.strip()]
+allowed_hosts = [host.strip().lower() for host in allowed_hosts if host.strip()]
 if os.path.exists("/app"):
     allowed_hosts.append("*.up.railway.app")
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=allowed_hosts
-)
 
 
 # ============================================
 # HTTPS Redirect Middleware (Production)
 # ============================================
+
+def _is_allowed_host(host: str, allowed: list[str]) -> bool:
+    if not host:
+        return False
+    host = host.split(":", 1)[0].strip().lower()
+    for entry in allowed:
+        if entry == "*":
+            return True
+        if entry.startswith("*.") and host.endswith(entry[1:]):
+            return True
+        if host == entry:
+            return True
+    return False
+
+
+@app.middleware("http")
+async def trusted_host_middleware(request: Request, call_next):
+    """
+    Prüft erlaubte Hosts.
+    SECURITY: Blockt unzulässige Host-Header.
+    """
+    if request.url.path in ["/health", "/_health"]:
+        return await call_next(request)
+
+    host = request.headers.get("host", "")
+    if not _is_allowed_host(host, allowed_hosts):
+        return JSONResponse(status_code=400, content={"error": "Ungültiger Host"})
+
+    return await call_next(request)
 
 @app.middleware("http")
 async def https_redirect_middleware(request: Request, call_next):
