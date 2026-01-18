@@ -305,6 +305,9 @@ async def request_integrity_middleware(request: Request, call_next):
     """
     client_ip = get_client_ip(request)
 
+    if request.url.path in ["/health", "/_health"]:
+        return await call_next(request)
+
     # Validiere Request
     is_valid, error_reason = validate_request_integrity(request)
 
