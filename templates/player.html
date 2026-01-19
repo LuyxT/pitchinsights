@@ -860,6 +860,7 @@
             const container = document.getElementById('chatMessages');
             container.innerHTML = '';
             try {
+                await loadSharedClips();
                 let url = '/api/messages?scope=team';
                 if (currentChatScope === 'trainer') {
                     if (!currentTrainerId) {
@@ -871,11 +872,6 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 const messages = data.messages || [];
-                if (currentChatScope === 'trainer') {
-                    await loadSharedClips();
-                } else {
-                    sharedClips = [];
-                }
                 if (messages.length === 0) {
                     container.innerHTML = renderSharedClips();
                     if (!sharedClips.length) {
