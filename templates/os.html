@@ -11620,6 +11620,7 @@
         let currentChat = null;
         let currentAttachment = null;
         let currentChatPeerId = null;
+        let sentClipsForChat = [];
 
         function loadMessengerData() {
             const container = document.getElementById('messengerContacts');
@@ -11665,6 +11666,7 @@
         async function renderMessages() {
             const chatArea = document.getElementById('messengerChat');
             let messages = [];
+            let clipsHtml = '';
 
             if (currentChat === 'team') {
                 messages = await loadMessagesFromAPI();
@@ -11676,14 +11678,38 @@
                 } catch (e) {
                     messages = [];
                 }
+
+                try {
+                    const clipResponse = await fetch(`/api/shared-clips/sent?recipient_id=${currentChatPeerId}`);
+                    const clipData = await clipResponse.json();
+                    sentClipsForChat = clipData.shared_clips || [];
+                    if (sentClipsForChat.length) {
+                        clipsHtml = sentClipsForChat.map(clip => `
+                            <div style="align-self: flex-start; background: #2d2d31; border: 1px solid var(--border-light); padding: 10px 12px; border-radius: 12px; max-width: 70%;">
+                                <div style="font-size: 11px; opacity: 0.6; margin-bottom: 6px;">Geteilter Clip</div>
+                                <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(clip.video?.title || 'Video')}</div>
+                                <div style="font-size: 12px; opacity: 0.8; margin-bottom: 8px;">${escapeHtml(clip.clip?.title || 'Clip')}</div>
+                                ${clip.message ? `<div style="font-size: 12px; opacity: 0.8; margin-bottom: 8px;">${escapeHtml(clip.message)}</div>` : ''}
+                                <button onclick="watchSharedClipFromChat(${clip.share_id}, ${clip.video?.id || 0}, ${clip.clip?.start_time || 0})" style="padding: 8px 12px; border-radius: 8px; background: var(--primary-green); color: white; border: none; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                    ▶ Clip ansehen
+                                </button>
+                            </div>
+                        `).join('');
+                    }
+                } catch (e) {
+                    sentClipsForChat = [];
+                }
             }
 
-            if (!messages.length) {
+            if (!messages.length && !clipsHtml) {
                 chatArea.innerHTML = '<div style="text-align: center; opacity: 0.5; margin: auto;">Keine Nachrichten noch</div>';
                 return;
             }
 
             chatArea.innerHTML = '';
+            if (clipsHtml) {
+                chatArea.insertAdjacentHTML('beforeend', clipsHtml);
+            }
             messages.forEach(msg => {
                 const msgDiv = document.createElement('div');
                 const isOwn = msg.sender_id === currentUserId;
@@ -11697,6 +11723,23 @@
                 chatArea.appendChild(msgDiv);
             });
             chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        async function watchSharedClipFromChat(shareId, videoId, startTime) {
+            const modalVideo = document.getElementById('modalVideo');
+            if (!modalVideo) return;
+            currentVideoId = videoId;
+
+            const share = sentClipsForChat.find(s => s.share_id === shareId);
+            document.getElementById('playerVideoTitle').textContent = share?.video?.title || 'Video';
+            document.getElementById('playerVideoDescription').textContent = share?.message || '';
+
+            modalVideo.src = `/api/videos/${videoId}/stream`;
+            document.getElementById('videoPlayerModal').style.display = 'flex';
+            modalVideo.onloadedmetadata = () => {
+                modalVideo.currentTime = startTime;
+                modalVideo.play();
+            };
         }
 
         function attachFile() {

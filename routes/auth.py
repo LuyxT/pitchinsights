@@ -3466,6 +3466,68 @@ async def get_shared_clips(request: Request):
     }
 
 
+@router.get("/api/shared-clips/sent")
+async def get_sent_shared_clips(request: Request, recipient_id: int = None):
+    """
+    Vom User versendete Clips abrufen (optional gefiltert nach Empfänger).
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"shared_clips": []})
+
+    params = [user["id"], db_user["team_id"]]
+    recipient_filter = ""
+    if recipient_id:
+        recipient_filter = "AND s.recipient_id = ?"
+        params.append(recipient_id)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute(f"""
+            SELECT s.id as share_id, s.message, s.is_viewed, s.created_at, s.recipient_id,
+                   c.id as clip_id, c.title, c.start_time, c.end_time, c.note,
+                   v.id as video_id, v.title as video_title,
+                   u.vorname, u.nachname
+            FROM video_shares s
+            JOIN video_clips c ON s.clip_id = c.id
+            JOIN videos v ON c.video_id = v.id
+            JOIN users u ON s.recipient_id = u.id
+            WHERE s.sender_id = ? AND v.team_id = ? AND c.deleted_at IS NULL AND v.deleted_at IS NULL
+            {recipient_filter}
+            ORDER BY s.created_at DESC
+        """, params)
+        shares = cursor.fetchall()
+
+    return {
+        "shared_clips": [
+            {
+                "share_id": s["share_id"],
+                "message": s["message"] or "",
+                "is_viewed": bool(s["is_viewed"]),
+                "shared_at": s["created_at"],
+                "clip": {
+                    "id": s["clip_id"],
+                    "title": s["title"],
+                    "start_time": s["start_time"],
+                    "end_time": s["end_time"],
+                    "note": s["note"] or ""
+                },
+                "video": {
+                    "id": s["video_id"],
+                    "title": s["video_title"]
+                },
+                "recipient": f"{s['vorname'] or ''} {s['nachname'] or ''}".strip()
+            }
+            for s in shares
+        ]
+    }
+
+
 @router.post("/api/shared-clips/{share_id}/viewed")
 async def mark_clip_viewed(request: Request, share_id: int):
     """
@@ -3509,8 +3571,9 @@ async def stream_shared_clip(request: Request, share_id: int):
             FROM video_shares s
             JOIN video_clips c ON s.clip_id = c.id
             JOIN videos v ON c.video_id = v.id
-            WHERE s.id = ? AND s.recipient_id = ? AND v.team_id = ? AND v.deleted_at IS NULL
-        """, (share_id, user["id"], db_user["team_id"]))
+            WHERE s.id = ? AND v.team_id = ? AND v.deleted_at IS NULL
+              AND (s.recipient_id = ? OR s.sender_id = ?)
+        """, (share_id, db_user["team_id"], user["id"], user["id"]))
         row = cursor.fetchone()
 
     if not row:
