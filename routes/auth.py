@@ -48,7 +48,8 @@ from database import (
 )
 from email_service import (
     send_login_notification, send_password_changed_notification,
-    send_2fa_enabled_notification, send_activation_email, EmailConfig
+    send_2fa_enabled_notification, send_activation_email, send_2fa_code,
+    EmailConfig
 )
 
 router = APIRouter()
@@ -898,32 +899,45 @@ async def login(
         )
 
     # ======================================
-    # SECURITY: Two-Factor Authentication
+    # SECURITY: Email 2FA (immer aktiv)
     # ======================================
-    if is_2fa_enabled(user["id"]):
-        # 2FA ist aktiviert - speichere pending login und zeige 2FA-Seite
-        pending_token = serializer.dumps({
-            "user_id": user["id"],
-            "email": email,
-            "ip": client_ip,
-            "ts": datetime.now().timestamp()
-        })
+    if not EmailConfig.is_configured():
+        new_csrf = generate_csrf_token("login_form")
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": "E-Mail-Authentifizierung ist nicht konfiguriert.",
+                "csrf_token": new_csrf}
+        )
 
-        csrf_2fa = generate_csrf_token("2fa_form")
-        response = templates.TemplateResponse(
-            "2fa_verify.html",
-            {"request": request, "pending_token": pending_token,
-             "csrf_token": csrf_2fa, "email": email[:3] + "***"}
-        )
-        response.set_cookie(
-            "pending_2fa",
-            pending_token,
-            max_age=300,  # 5 Minuten
-            httponly=True,
-            secure=True,
-            samesite="strict"
-        )
-        return response
+    code = f"{secrets.randbelow(1000000):06d}"
+    code_hash = hashlib.sha256(
+        f"{code}{SecurityConfig.SECRET_KEY}".encode("utf-8")
+    ).hexdigest()
+    pending_token = serializer.dumps({
+        "user_id": user["id"],
+        "email": email,
+        "ip": client_ip,
+        "ts": datetime.now().timestamp(),
+        "code_hash": code_hash
+    })
+
+    send_2fa_code(email, code)
+
+    csrf_2fa = generate_csrf_token("2fa_form")
+    response = templates.TemplateResponse(
+        "2fa_verify.html",
+        {"request": request, "pending_token": pending_token,
+         "csrf_token": csrf_2fa, "email": email[:3] + "***"}
+    )
+    response.set_cookie(
+        "pending_2fa",
+        pending_token,
+        max_age=300,  # 5 Minuten
+        httponly=True,
+        secure=True,
+        samesite="strict"
+    )
+    return response
 
     # Erfolgreicher Login - Clear Lockouts
     exponential_lockout.clear(f"login:{email}")
@@ -5383,29 +5397,22 @@ async def verify_2fa(
              "csrf_token": generate_csrf_token("login_form")}
         )
 
-    # 2FA-Daten laden
-    tfa_data = get_user_2fa(user_id)
-    if not tfa_data or not tfa_data.get("totp_secret"):
-        logger.error(f"2FA data not found for user {user_id}")
-        return RedirectResponse(url="/auth/login", status_code=303)
-
-    # Replay-Attack prüfen
-    if check_replay_attack(user_id, code):
-        log_audit_event(user_id, "2FA_REPLAY_ATTACK", "user", user_id,
-                        f"code={code[:2]}***", client_ip,
-                        severity="CRITICAL", event_type="2FA_FAILED")
+    stored_code_hash = pending_data.get("code_hash")
+    if not stored_code_hash:
         return templates.TemplateResponse(
-            "2fa_verify.html",
-            {"request": request, "error": "Code bereits verwendet.",
-             "pending_token": pending_token, "csrf_token": generate_csrf_token("2fa_form")}
+            "login.html",
+            {"request": request, "error": "Sitzung abgelaufen. Bitte erneut anmelden.",
+             "csrf_token": generate_csrf_token("login_form")}
         )
 
-    # TOTP verifizieren
-    if not verify_totp(tfa_data["totp_secret"], code):
+    code_hash = hashlib.sha256(
+        f"{code}{SecurityConfig.SECRET_KEY}".encode("utf-8")
+    ).hexdigest()
+
+    if not constant_time_compare(stored_code_hash, code_hash):
         log_audit_event(user_id, "2FA_INVALID_CODE", "user", user_id,
                         None, client_ip, severity="WARNING", event_type="2FA_FAILED")
 
-        # Rate limiting für 2FA
         exponential_lockout.record_failure(f"2fa:{user_id}")
 
         return templates.TemplateResponse(
@@ -5413,9 +5420,6 @@ async def verify_2fa(
             {"request": request, "error": "Ungültiger Code. Bitte erneut versuchen.",
              "pending_token": pending_token, "csrf_token": generate_csrf_token("2fa_form")}
         )
-
-    # Code als verwendet markieren (Replay-Schutz)
-    update_2fa_last_used(user_id, code)
 
     # Login abschließen
     user = get_user_by_id(user_id)
@@ -5443,159 +5447,24 @@ async def verify_2fa(
 
 @router.get("/2fa/setup", response_class=HTMLResponse)
 async def setup_2fa_page(request: Request):
-    """Zeigt die 2FA-Setup-Seite."""
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/auth/login", status_code=303)
 
-    db_user = get_user_by_id(user["id"])
-    db_user = apply_active_membership(request, db_user)
-    if not db_user:
-        return RedirectResponse(url="/auth/login", status_code=303)
-
-    # Bereits aktiviert?
-    if is_2fa_enabled(user["id"]):
-        return templates.TemplateResponse(
-            "2fa_setup.html",
-            {"request": request, "success": "2FA ist bereits aktiviert.",
-             "csrf_token": generate_csrf_token("2fa_setup")}
-        )
-
-    # Neuen Secret generieren
-    secret = generate_totp_secret()
-    uri = get_totp_uri(secret, db_user["email"])
-    qr_code = generate_totp_qr_code(uri)
-    backup_codes = generate_backup_codes(10)
-
-    import json
-    backup_codes_json = json.dumps(backup_codes)
-
-    csrf_token = generate_csrf_token("2fa_setup")
-    return templates.TemplateResponse(
-        "2fa_setup.html",
-        {
-            "request": request,
-            "secret": secret,
-            "qr_code": qr_code,
-            "backup_codes": backup_codes,
-            "backup_codes_json": backup_codes_json,
-            "csrf_token": csrf_token
-        }
+    return HTMLResponse(
+        "<h2>E-Mail-Authentifizierung ist automatisch aktiv.</h2>",
+        status_code=200
     )
 
 
 @router.post("/2fa/activate", response_class=HTMLResponse)
-async def activate_2fa(
-    request: Request,
-    code: str = Form(...),
-    secret: str = Form(...),
-    backup_codes: str = Form(...),
-    csrf_token: str = Form("")
-):
-    """Aktiviert 2FA nach Verifikation des ersten Codes."""
-    user = get_current_user(request)
-    if not user:
-        return RedirectResponse(url="/auth/login", status_code=303)
-
-    client_ip = get_client_ip(request)
-
-    # CSRF validieren
-    if not validate_csrf_token(csrf_token, "2fa_setup"):
-        logger.warning(
-            f"CSRF validation failed for 2FA setup from {client_ip}")
-        return templates.TemplateResponse(
-            "2fa_setup.html",
-            {"request": request, "error": "Ungültige Anfrage. Bitte erneut versuchen.",
-             "csrf_token": generate_csrf_token("2fa_setup")}
-        )
-
-    # Secret validieren (muss 32 Zeichen Base32 sein)
-    if not secret or len(secret) != 32:
-        return templates.TemplateResponse(
-            "2fa_setup.html",
-            {"request": request, "error": "Ungültiger Secret. Bitte neu starten.",
-             "csrf_token": generate_csrf_token("2fa_setup")}
-        )
-
-    # TOTP-Code verifizieren
-    if not verify_totp(secret, code):
-        return templates.TemplateResponse(
-            "2fa_setup.html",
-            {"request": request, "error": "Ungültiger Code. Bitte erneut versuchen.",
-             "secret": secret, "csrf_token": generate_csrf_token("2fa_setup")}
-        )
-
-    # Backup-Codes hashen
-    import json
-    try:
-        codes_list = json.loads(backup_codes)
-        # Codes als JSON speichern (in Production: einzeln hashen)
-        codes_hash = json.dumps(codes_list)
-    except json.JSONDecodeError:
-        codes_hash = "[]"
-
-    # 2FA in DB speichern
-    setup_2fa(user["id"], secret, codes_hash)
-    enable_2fa(user["id"])
-
-    log_audit_event(user["id"], "2FA_ENABLED", "user", user["id"],
-                    None, client_ip, event_type="2FA_ENABLED")
-
-    logger.info(f"2FA enabled for user {user['id']}")
-
-    return templates.TemplateResponse(
-        "2fa_setup.html",
-        {"request": request, "success": "Zwei-Faktor-Authentifizierung wurde erfolgreich aktiviert!",
-         "csrf_token": generate_csrf_token("2fa_setup")}
-    )
+async def activate_2fa(request: Request):
+    return JSONResponse({"error": "Nicht verfügbar"}, status_code=404)
 
 
 @router.post("/2fa/disable", response_class=HTMLResponse)
-async def disable_2fa_route(
-    request: Request,
-    password: str = Form(...),
-    csrf_token: str = Form("")
-):
-    """Deaktiviert 2FA (erfordert Passwort-Bestätigung)."""
-    user = get_current_user(request)
-    if not user:
-        return RedirectResponse(url="/auth/login", status_code=303)
-
-    client_ip = get_client_ip(request)
-
-    # CSRF validieren
-    if not validate_csrf_token(csrf_token, "2fa_disable"):
-        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
-
-    # Passwort verifizieren
-    db_user = get_user_by_id(user["id"])
-    db_user = apply_active_membership(request, db_user)
-    if not db_user:
-        return JSONResponse({"error": "User nicht gefunden"}, status_code=400)
-
-    try:
-        peppered_password = f"{password}{SecurityConfig.PASSWORD_PEPPER}"
-        password_valid = bcrypt.checkpw(
-            peppered_password.encode('utf-8'),
-            db_user["password_hash"].encode('utf-8')
-        )
-    except Exception:
-        password_valid = False
-
-    if not password_valid:
-        log_audit_event(user["id"], "2FA_DISABLE_FAILED", "user", user["id"],
-                        "invalid_password", client_ip, severity="WARNING")
-        return JSONResponse({"error": "Falsches Passwort"}, status_code=400)
-
-    # 2FA deaktivieren
-    disable_2fa(user["id"])
-
-    log_audit_event(user["id"], "2FA_DISABLED", "user", user["id"],
-                    None, client_ip, severity="WARNING", event_type="2FA_DISABLED")
-
-    logger.info(f"2FA disabled for user {user['id']}")
-
-    return JSONResponse({"success": True, "message": "2FA wurde deaktiviert"})
+async def disable_2fa_route(request: Request):
+    return JSONResponse({"error": "Nicht verfügbar"}, status_code=404)
 
 
 @router.get("/2fa/status")
@@ -5605,10 +5474,7 @@ async def get_2fa_status(request: Request):
     if not user:
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
-    enabled = is_2fa_enabled(user["id"])
-    tfa_data = get_user_2fa(user["id"])
-
     return JSONResponse({
-        "enabled": enabled,
-        "enabled_at": tfa_data.get("enabled_at") if tfa_data else None
+        "enabled": True,
+        "method": "email"
     })
