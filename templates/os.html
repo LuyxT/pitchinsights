@@ -2900,6 +2900,14 @@
             pointer-events: auto;
         }
 
+        #videoPlayerModal {
+            background: var(--bg-light) !important;
+        }
+
+        body.dark-mode #videoPlayerModal {
+            background: #000 !important;
+        }
+
         .draw-tool-btn {
             width: 36px;
             height: 36px;
@@ -12454,8 +12462,8 @@
         style="display: none; position: fixed; top: 0; left: 280px; right: 0; bottom: 0; background: #000; z-index: 9999;">
 
         <!-- Video Container (takes full space, will go fullscreen) -->
-        <div id="videoPlayerContainer"
-            style="position: absolute; top: 0; left: 0; right: 280px; bottom: 0; display: flex; flex-direction: column;">
+            <div id="videoPlayerContainer"
+            style="position: absolute; top: 0; left: 0; right: 280px; bottom: 0; display: flex; flex-direction: column; background: var(--bg-light);">
 
             <!-- Video Wrapper -->
             <div id="videoWrapper"
