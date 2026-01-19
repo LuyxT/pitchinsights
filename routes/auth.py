@@ -898,46 +898,7 @@ async def login(
                 "csrf_token": new_csrf}
         )
 
-    # ======================================
-    # SECURITY: Email 2FA (immer aktiv)
-    # ======================================
-    if not EmailConfig.is_configured():
-        new_csrf = generate_csrf_token("login_form")
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "error": "E-Mail-Authentifizierung ist nicht konfiguriert.",
-                "csrf_token": new_csrf}
-        )
-
-    code = f"{secrets.randbelow(1000000):06d}"
-    code_hash = hashlib.sha256(
-        f"{code}{SecurityConfig.SECRET_KEY}".encode("utf-8")
-    ).hexdigest()
-    pending_token = serializer.dumps({
-        "user_id": user["id"],
-        "email": email,
-        "ip": client_ip,
-        "ts": datetime.now().timestamp(),
-        "code_hash": code_hash
-    })
-
-    send_2fa_code(email, code)
-
-    csrf_2fa = generate_csrf_token("2fa_form")
-    response = templates.TemplateResponse(
-        "2fa_verify.html",
-        {"request": request, "pending_token": pending_token,
-         "csrf_token": csrf_2fa, "email": email[:3] + "***"}
-    )
-    response.set_cookie(
-        "pending_2fa",
-        pending_token,
-        max_age=300,  # 5 Minuten
-        httponly=True,
-        secure=True,
-        samesite="strict"
-    )
-    return response
+    # 2FA deaktiviert
 
     # Erfolgreicher Login - Clear Lockouts
     exponential_lockout.clear(f"login:{email}")
@@ -5475,6 +5436,5 @@ async def get_2fa_status(request: Request):
         return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
 
     return JSONResponse({
-        "enabled": True,
-        "method": "email"
+        "enabled": False
     })

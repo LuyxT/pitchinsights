@@ -5418,7 +5418,7 @@
             <div class="list-container">
                 <div class="list-item security-item" onclick="openTwoFactorSetup()" style="cursor: pointer;">
                     <span>✉️ E-Mail-Bestätigung bei Login</span>
-                    <span id="2faStatus" style="opacity: 0.7;">Laden...</span>
+                    <span id="2faStatus" style="opacity: 0.7;">Deaktiviert</span>
                 </div>
                 <div class="list-item security-item" onclick="showChangePassword()" style="cursor: pointer;">
                     <span>🔑 Passwort ändern</span>
@@ -7022,7 +7022,7 @@
                 const data = await response.json();
                 const statusEl = document.getElementById('2faStatus');
                 if (statusEl) {
-                    statusEl.textContent = data.enabled ? '✅ Aktiviert (E-Mail)' : '❌ Deaktiviert';
+                    statusEl.textContent = data.enabled ? '✅ Aktiviert' : '❌ Deaktiviert';
                     statusEl.style.color = data.enabled ? '#10b981' : '#ef4444';
                 }
             } catch (e) {
@@ -7031,7 +7031,7 @@
         }
 
         function openTwoFactorSetup() {
-            showToast('E-Mail-Bestätigung ist automatisch aktiv.', 'info');
+            showToast('2FA ist deaktiviert.', 'info');
         }
 
         function showChangePassword() {
