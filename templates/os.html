@@ -474,6 +474,12 @@
             border-bottom: none;
         }
 
+        .security-item {
+            position: relative;
+            z-index: 5;
+            pointer-events: auto;
+        }
+
         .upload-area {
             background: var(--card-light);
             border: 2px dashed var(--primary-green);
@@ -5399,15 +5405,15 @@
 
             <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;">🔐 Sicherheit</h2>
             <div class="list-container">
-                <div class="list-item" onclick="openTwoFactorSetup()" style="cursor: pointer;">
+                <div class="list-item security-item" onclick="openTwoFactorSetup()" style="cursor: pointer;">
                     <span>🛡️ Zwei-Faktor-Authentifizierung</span>
                     <span id="2faStatus" style="opacity: 0.7;">Laden...</span>
                 </div>
-                <div class="list-item" onclick="showChangePassword()" style="cursor: pointer;">
+                <div class="list-item security-item" onclick="showChangePassword()" style="cursor: pointer;">
                     <span>🔑 Passwort ändern</span>
                     <span style="opacity: 0.5;">→</span>
                 </div>
-                <div class="list-item" onclick="showActiveSessions()" style="cursor: pointer;">
+                <div class="list-item security-item" onclick="showActiveSessions()" style="cursor: pointer;">
                     <span>📱 Aktive Sitzungen</span>
                     <span style="opacity: 0.5;">→</span>
                 </div>
