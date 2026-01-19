@@ -6021,6 +6021,7 @@
             ALL_APPS.filter(a => a.category === 'premium').forEach(app => {
                 const sidebarChecked = config[app.id]?.sidebar ? 'checked' : '';
                 const homeChecked = config[app.id]?.home ? 'checked' : '';
+                const disabled = 'disabled';
 
                 premiumHtml += `
                         <div class="store-app-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px;">
@@ -6028,12 +6029,12 @@
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; color: var(--text-color); font-size: 16px;">${app.name} <span style="background: #8b5cf6; color: white; padding: 2px 8px; border-radius: 8px; font-size: 10px; margin-left: 8px;">💎 Premium</span></div>
                                 <div style="display: flex; gap: 16px; margin-top: 12px;">
-                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="checkbox" ${sidebarChecked} onchange="toggleAppVisibility('${app.id}', 'sidebar')" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: not-allowed; opacity: 0.6;">
+                                        <input type="checkbox" ${sidebarChecked} ${disabled} style="width: 18px; height: 18px; cursor: not-allowed;">
                                         <span style="color: var(--secondary-text); font-size: 13px;">Sidebar</span>
                                     </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="checkbox" ${homeChecked} onchange="toggleAppVisibility('${app.id}', 'home')" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: not-allowed; opacity: 0.6;">
+                                        <input type="checkbox" ${homeChecked} ${disabled} style="width: 18px; height: 18px; cursor: not-allowed;">
                                         <span style="color: var(--secondary-text); font-size: 13px;">Home</span>
                                     </label>
                                 </div>
@@ -6048,6 +6049,7 @@
             ALL_APPS.filter(a => a.category === 'soon').forEach(app => {
                 const sidebarChecked = config[app.id]?.sidebar ? 'checked' : '';
                 const homeChecked = config[app.id]?.home ? 'checked' : '';
+                const disabled = 'disabled';
 
                 soonHtml += `
                         <div class="store-app-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px;">
@@ -6055,12 +6057,12 @@
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; color: var(--text-color); font-size: 16px;">${app.name} <span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 8px; font-size: 10px; margin-left: 8px;">🚀 Soon</span></div>
                                 <div style="display: flex; gap: 16px; margin-top: 12px;">
-                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="checkbox" ${sidebarChecked} onchange="toggleAppVisibility('${app.id}', 'sidebar')" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: not-allowed; opacity: 0.6;">
+                                        <input type="checkbox" ${sidebarChecked} ${disabled} style="width: 18px; height: 18px; cursor: not-allowed;">
                                         <span style="color: var(--secondary-text); font-size: 13px;">Sidebar</span>
                                     </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="checkbox" ${homeChecked} onchange="toggleAppVisibility('${app.id}', 'home')" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: not-allowed; opacity: 0.6;">
+                                        <input type="checkbox" ${homeChecked} ${disabled} style="width: 18px; height: 18px; cursor: not-allowed;">
                                         <span style="color: var(--secondary-text); font-size: 13px;">Home</span>
                                     </label>
                                 </div>
