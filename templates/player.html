@@ -421,6 +421,54 @@
             display: none;
         }
 
+        .shared-clip-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .shared-clip-modal.active {
+            display: flex;
+        }
+
+        .shared-clip-card {
+            width: min(92vw, 520px);
+            background: #1f1f23;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        }
+
+        .shared-clip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .shared-clip-close {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .shared-clip-video {
+            width: 100%;
+            border-radius: 12px;
+            background: #0f0f13;
+        }
+
         .back-btn {
             border: none;
             background: transparent;
@@ -614,6 +662,16 @@
                 Profil
             </button>
         </nav>
+    </div>
+
+    <div id="sharedClipModal" class="shared-clip-modal" role="dialog" aria-modal="true" onclick="if(event.target === this) closeSharedClipModal()">
+        <div class="shared-clip-card">
+            <div class="shared-clip-header">
+                <span>Trainer Clip</span>
+                <button class="shared-clip-close" type="button" onclick="closeSharedClipModal()">✕</button>
+            </div>
+            <video id="sharedClipVideo" class="shared-clip-video" controls playsinline></video>
+        </div>
     </div>
 
     <script>
@@ -936,7 +994,23 @@
             } catch (err) {
                 console.error('Mark shared clip viewed failed', err);
             }
-            window.open(`/api/shared-clips/${shareId}/stream`, '_blank');
+            const modal = document.getElementById('sharedClipModal');
+            const video = document.getElementById('sharedClipVideo');
+            if (!modal || !video) return;
+            video.src = `/api/shared-clips/${shareId}/stream`;
+            video.load();
+            modal.classList.add('active');
+        }
+
+        function closeSharedClipModal() {
+            const modal = document.getElementById('sharedClipModal');
+            const video = document.getElementById('sharedClipVideo');
+            if (video) {
+                video.pause();
+                video.removeAttribute('src');
+                video.load();
+            }
+            if (modal) modal.classList.remove('active');
         }
 
         async function loadProfile() {
