@@ -3487,6 +3487,104 @@ async def mark_clip_viewed(request: Request, share_id: int):
     return {"success": True}
 
 
+@router.get("/api/shared-clips/{share_id}/stream")
+async def stream_shared_clip(request: Request, share_id: int):
+    """
+    Shared Clip streamen (nur Empfänger).
+    SECURITY: Zugriff nur für Empfänger des Shares.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT v.filename
+            FROM video_shares s
+            JOIN video_clips c ON s.clip_id = c.id
+            JOIN videos v ON c.video_id = v.id
+            WHERE s.id = ? AND s.recipient_id = ? AND v.team_id = ? AND v.deleted_at IS NULL
+        """, (share_id, user["id"], db_user["team_id"]))
+        row = cursor.fetchone()
+
+    if not row:
+        return JSONResponse({"error": "Clip nicht gefunden"}, status_code=404)
+
+    team_dir = os.path.join(get_video_upload_dir(), str(db_user["team_id"]))
+    file_path = os.path.join(team_dir, row["filename"])
+    normalized_path = os.path.abspath(file_path)
+    if not normalized_path.startswith(os.path.abspath(team_dir) + os.sep):
+        return JSONResponse({"error": "Datei nicht gefunden"}, status_code=404)
+    if not os.path.exists(file_path):
+        return JSONResponse({"error": "Datei nicht gefunden"}, status_code=404)
+
+    file_size = os.path.getsize(file_path)
+    ext = os.path.splitext(row["filename"])[1].lower()
+    media_type = {
+        ".mp4": "video/mp4",
+        ".mov": "video/quicktime",
+        ".avi": "video/x-msvideo",
+        ".webm": "video/webm",
+        ".mkv": "video/x-matroska",
+    }.get(ext, "application/octet-stream")
+
+    range_header = request.headers.get("range")
+    if range_header:
+        range_value = range_header.replace("bytes=", "").strip()
+        if "-" not in range_value:
+            return JSONResponse({"error": "Ungültiger Range"}, status_code=416)
+        range_match = range_value.split("-", 1)
+        try:
+            start = int(range_match[0]) if range_match[0] else 0
+            end = int(range_match[1]) if range_match[1] else file_size - 1
+        except ValueError:
+            return JSONResponse({"error": "Ungültiger Range"}, status_code=416)
+
+        if start < 0 or end < start or start >= file_size:
+            return JSONResponse({"error": "Range nicht verfügbar"}, status_code=416)
+
+        end = min(end, file_size - 1)
+        chunk_size = end - start + 1
+
+        def iterfile():
+            with open(file_path, "rb") as f:
+                f.seek(start)
+                remaining = chunk_size
+                while remaining > 0:
+                    read_size = min(65536, remaining)
+                    data = f.read(read_size)
+                    if not data:
+                        break
+                    remaining -= len(data)
+                    yield data
+
+        headers = {
+            "Content-Range": f"bytes {start}-{end}/{file_size}",
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(chunk_size),
+            "Content-Type": media_type,
+        }
+
+        return StreamingResponse(
+            iterfile(),
+            status_code=206,
+            headers=headers,
+            media_type=media_type
+        )
+
+    return FileResponse(
+        file_path,
+        media_type=media_type,
+        headers={"Accept-Ranges": "bytes"}
+    )
+
+
 @router.post("/api/invitations")
 async def create_invitation_api(request: Request):
     """

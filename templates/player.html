@@ -919,15 +919,24 @@
                 <div class="chat-message">
                     <div class="sender">Trainer Clips</div>
                     ${sharedClips.map(clip => `
-                        <div style="margin: 8px 0; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.06);">
+                        <button type="button" onclick="openSharedClip(${clip.share_id})" style="width: 100%; text-align: left; margin: 8px 0; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); border: 1px solid transparent; cursor: pointer;">
                             <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(clip.video?.title || 'Video')}</div>
                             <div style="font-size: 12px; opacity: 0.7; margin-bottom: 6px;">${escapeHtml(clip.clip?.title || 'Clip')}</div>
                             ${clip.message ? `<div style="font-size: 12px; opacity: 0.8; margin-bottom: 6px;">${escapeHtml(clip.message)}</div>` : ''}
                             <div style="font-size: 11px; opacity: 0.6;">${new Date(clip.shared_at).toLocaleDateString('de-DE')}</div>
-                        </div>
+                        </button>
                     `).join('')}
                 </div>
             `;
+        }
+
+        async function openSharedClip(shareId) {
+            try {
+                await fetch(`/api/shared-clips/${shareId}/viewed`, { method: 'POST' });
+            } catch (err) {
+                console.error('Mark shared clip viewed failed', err);
+            }
+            window.open(`/api/shared-clips/${shareId}/stream`, '_blank');
         }
 
         async function loadProfile() {
