@@ -14,6 +14,7 @@
     <meta http-equiv="Expires" content="0">
     <title>PitchInsights OS</title>
     <link rel="manifest" href="/static/manifest.json">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/iconoir@latest/css/iconoir.css">
     <style>
         * {
             margin: 0;
@@ -3011,11 +3012,11 @@
             <!-- SETTINGS & STORE -->
             <div class="sidebar-section" style="margin-top: auto;">
                 <div class="app-item" onclick="switchApp('store')">
-                    <div class="app-icon-small">🛒</div>
+                    <div class="app-icon-small"><span class="iconoir-app-store"></span></div>
                     <div class="app-label">App Store</div>
                 </div>
                 <div class="app-item" onclick="switchApp('settings')">
-                    <div class="app-icon-small">⚙️</div>
+                    <div class="app-icon-small"><span class="iconoir-settings"></span></div>
                     <div class="app-label">Einstellungen</div>
                 </div>
             </div>
@@ -5572,25 +5573,25 @@
         // ========================
         const ALL_APPS = [
             // Persönliches Profil - immer sichtbar
-            { id: 'profil', name: 'Mein Profil', icon: '👤', category: 'free', canDisable: false },
+            { id: 'profil', name: 'Mein Profil', icon: '👤', sidebarIcon: 'iconoir-user', category: 'free', canDisable: false },
             // Kostenlose Apps
-            { id: 'home', name: 'Home', icon: '🏠', category: 'free', canDisable: false },
-            { id: 'kader', name: 'Kader', icon: '👥', category: 'free', canDisable: true },
-            { id: 'kalender', name: 'Kalender', icon: '📅', category: 'free', canDisable: true },
-            { id: 'messenger', name: 'Messenger', icon: '💬', category: 'free', canDisable: true },
-            { id: 'taktik', name: 'Taktik-Tafel', icon: '⚽', category: 'free', canDisable: true },
-            { id: 'upload', name: 'Video Upload', icon: '📹', category: 'free', canDisable: true },
-            { id: 'tipps', name: 'Tipps & Tutorials', icon: '💡', category: 'free', canDisable: true },
-            { id: 'verwaltung', name: 'Verwaltung', icon: '👔', category: 'free', canDisable: true },
-            { id: 'kasse', name: 'Mannschaftskasse', icon: '💵', category: 'free', canDisable: true },
+            { id: 'home', name: 'Home', icon: '🏠', sidebarIcon: 'iconoir-home', category: 'free', canDisable: false },
+            { id: 'kader', name: 'Kader', icon: '👥', sidebarIcon: 'iconoir-group', category: 'free', canDisable: true },
+            { id: 'kalender', name: 'Kalender', icon: '📅', sidebarIcon: 'iconoir-calendar', category: 'free', canDisable: true },
+            { id: 'messenger', name: 'Messenger', icon: '💬', sidebarIcon: 'iconoir-message', category: 'free', canDisable: true },
+            { id: 'taktik', name: 'Taktik-Tafel', icon: '⚽', sidebarIcon: 'iconoir-football-ball', category: 'free', canDisable: true },
+            { id: 'upload', name: 'Video Upload', icon: '📹', sidebarIcon: 'iconoir-video-camera', category: 'free', canDisable: true },
+            { id: 'tipps', name: 'Tipps & Tutorials', icon: '💡', sidebarIcon: 'iconoir-light-bulb', category: 'free', canDisable: true },
+            { id: 'verwaltung', name: 'Verwaltung', icon: '👔', sidebarIcon: 'iconoir-building', category: 'free', canDisable: true },
+            { id: 'kasse', name: 'Mannschaftskasse', icon: '💵', sidebarIcon: 'iconoir-wallet', category: 'free', canDisable: true },
             // Premium Apps
-            { id: 'analyse', name: 'Analyse', icon: '📈', category: 'premium', canDisable: true },
-            { id: 'training', name: 'Training', icon: '🏋️', category: 'premium', canDisable: true },
-            { id: 'medizin', name: 'Medizin', icon: '⚕️', category: 'premium', canDisable: true },
-            { id: 'finanzen', name: 'Finanzen', icon: '💰', category: 'premium', canDisable: true },
+            { id: 'analyse', name: 'Analyse', icon: '📈', sidebarIcon: 'iconoir-graph-up', category: 'premium', canDisable: true },
+            { id: 'training', name: 'Training', icon: '🏋️', sidebarIcon: 'iconoir-gym', category: 'premium', canDisable: true },
+            { id: 'medizin', name: 'Medizin', icon: '⚕️', sidebarIcon: 'iconoir-healthcare', category: 'premium', canDisable: true },
+            { id: 'finanzen', name: 'Finanzen', icon: '💰', sidebarIcon: 'iconoir-bank', category: 'premium', canDisable: true },
             // Coming Soon
-            { id: 'scouting', name: 'Scouting', icon: '🔍', category: 'soon', canDisable: true },
-            { id: 'liga', name: 'Liga', icon: '🏆', category: 'soon', canDisable: true }
+            { id: 'scouting', name: 'Scouting', icon: '🔍', sidebarIcon: 'iconoir-search', category: 'soon', canDisable: true },
+            { id: 'liga', name: 'Liga', icon: '🏆', sidebarIcon: 'iconoir-trophy', category: 'soon', canDisable: true }
         ];
 
         // Default: Alle kostenlosen Apps aktiv
@@ -5718,25 +5719,28 @@
 
                 if (config[app.id]?.sidebar) {
                     const isActive = document.getElementById(app.id)?.classList.contains('active') ? 'active' : '';
+                    const sidebarIcon = app.sidebarIcon ? `<span class="${app.sidebarIcon}"></span>` : app.icon;
 
                     if (app.category === 'premium') {
                         html += `
                                 <div class="app-item ${isActive}" onclick="switchApp('${app.id}')" style="position: relative;">
-                                    <div class="app-icon-small">${app.icon}</div>
+                                    <div class="app-icon-small">${sidebarIcon}</div>
                                     <div class="app-label">${app.name}</div>
-                                    <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: #8b5cf6; color: white; padding: 2px 6px; border-radius: 6px; font-size: 9px; font-weight: bold;">💎</span>
+                                    <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: #8b5cf6; color: white; padding: 2px 6px; border-radius: 6px; font-size: 9px; font-weight: bold; display: inline-flex; align-items: center;">
+                                        <span class="iconoir-crown" style="width: 10px; height: 10px;"></span>
+                                    </span>
                                 </div>`;
                     } else if (app.category === 'soon') {
                         html += `
                                 <div class="app-item" style="opacity: 0.6; cursor: not-allowed; position: relative;">
-                                    <div class="app-icon-small">${app.icon}</div>
+                                    <div class="app-icon-small">${sidebarIcon}</div>
                                     <div class="app-label">${app.name}</div>
                                     <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: #f59e0b; color: white; padding: 2px 6px; border-radius: 6px; font-size: 9px; font-weight: bold;">Soon</span>
                                 </div>`;
                     } else {
                         html += `
                                 <div class="app-item ${isActive}" onclick="switchApp('${app.id}')">
-                                    <div class="app-icon-small">${app.icon}</div>
+                                    <div class="app-icon-small">${sidebarIcon}</div>
                                     <div class="app-label">${app.name}</div>
                                 </div>`;
                     }
