@@ -162,6 +162,22 @@
             color: #00C7BE;
         }
 
+        .home-link {
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        .home-link a {
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .home-link a:hover {
+            color: #00C7BE;
+        }
+
         .features {
             margin-top: 30px;
             padding-top: 20px;
@@ -300,6 +316,9 @@
                 {% else %}
                 Noch kein Account? <a href="/register">Jetzt registrieren</a>
                 {% endif %}
+            </div>
+            <div class="home-link">
+                <a href="/">Zur Homepage</a>
             </div>
 
             <div class="features">
