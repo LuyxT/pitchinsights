@@ -2991,8 +2991,8 @@
 
 <body>
     <div class="menubar">
-        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Menü öffnen">☰</button>
-        <div class="menu-logo" id="appLogo">⚽ PitchInsights</div>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Menü öffnen"><span class="iconoir-menu"></span></button>
+        <div class="menu-logo" id="appLogo"><span class="iconoir-football-ball"></span> PitchInsights</div>
         <div class="menu-icons">
             <svg class="menu-icon" onclick="toggleTheme()" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="12" cy="12" r="5" />
@@ -3025,11 +3025,11 @@
         <div class="content-area">
             <!-- APP STORE -->
             <div id="store" class="app-view">
-                <h1>🛒 App Store</h1>
+                <h1><span class="iconoir-app-store"></span> App Store</h1>
                 <p class="subtitle">Wähle die Apps für deine Sidebar & Home</p>
 
                 <div style="margin-top: 20px;">
-                    <h2 style="font-size: 18px; margin-bottom: 16px; color: var(--text-color);">📱 Kostenlose Apps
+                    <h2 style="font-size: 18px; margin-bottom: 16px; color: var(--text-color);"><span class="iconoir-smartphone-device"></span> Kostenlose Apps
                     </h2>
                     <div id="storeAppsGrid"
                         style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
@@ -3038,7 +3038,7 @@
                 </div>
 
                 <div style="margin-top: 40px;">
-                    <h2 style="font-size: 18px; margin-bottom: 16px; color: #8b5cf6;">💎 Premium Apps</h2>
+                    <h2 style="font-size: 18px; margin-bottom: 16px; color: #8b5cf6;"><span class="iconoir-crown"></span> Premium Apps</h2>
                     <div id="storePremiumGrid"
                         style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
                         <!-- Wird dynamisch gefüllt -->
@@ -3046,7 +3046,7 @@
                 </div>
 
                 <div style="margin-top: 40px;">
-                    <h2 style="font-size: 18px; margin-bottom: 16px; color: #f59e0b;">🚀 Bald verfügbar</h2>
+                    <h2 style="font-size: 18px; margin-bottom: 16px; color: #f59e0b;"><span class="iconoir-rocket"></span> Bald verfügbar</h2>
                     <div id="storeComingSoonGrid"
                         style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
                         <!-- Wird dynamisch gefüllt -->
@@ -3062,7 +3062,7 @@
                 <!-- NO TEAM NOTICE -->
                 <div id="noTeamNotice"
                     style="display: none; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1)); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 30px; margin-bottom: 24px; text-align: center;">
-                    <div style="font-size: 48px; margin-bottom: 16px;">⚽</div>
+                    <div style="font-size: 48px; margin-bottom: 16px;"><span class="iconoir-football-ball"></span></div>
                     <h2 style="font-size: 22px; margin-bottom: 8px;">Noch kein Team</h2>
                     <p style="color: var(--text-secondary); margin-bottom: 20px;">Erstelle dein Team um loszulegen!
                     </p>
@@ -3113,7 +3113,7 @@
                     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center;">
                     <div
                         style="background: var(--card-light); border-radius: 24px; padding: 40px; width: 90%; max-width: 480px; box-shadow: 0 25px 80px rgba(0,0,0,0.4); text-align: center;">
-                        <div style="font-size: 64px; margin-bottom: 20px;">⭐</div>
+                        <div style="font-size: 64px; margin-bottom: 20px;"><span class="iconoir-star"></span></div>
                         <h2
                             style="margin-bottom: 12px; font-size: 26px; background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                             PitchInsights Pro</h2>
@@ -3134,13 +3134,13 @@
 
                         <ul style="text-align: left; margin-bottom: 28px; font-size: 15px; color: var(--text-light);">
                             <li style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;"><span
-                                    style="color: #22c55e;">✓</span> Unbegrenzte Spieler pro Mannschaft</li>
+                                    style="color: #22c55e;"><span class="iconoir-check"></span></span> Unbegrenzte Spieler pro Mannschaft</li>
                             <li style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;"><span
-                                    style="color: #22c55e;">✓</span> Separate Kalender & Statistiken</li>
+                                    style="color: #22c55e;"><span class="iconoir-check"></span></span> Separate Kalender & Statistiken</li>
                             <li style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;"><span
-                                    style="color: #22c55e;">✓</span> Eigene Mannschaftskasse</li>
+                                    style="color: #22c55e;"><span class="iconoir-check"></span></span> Eigene Mannschaftskasse</li>
                             <li style="display: flex; align-items: center; gap: 10px;"><span
-                                    style="color: #22c55e;">✓</span> Prioritäts-Support</li>
+                                    style="color: #22c55e;"><span class="iconoir-check"></span></span> Prioritäts-Support</li>
                         </ul>
 
                         <div style="display: flex; gap: 12px;">
@@ -3284,13 +3284,13 @@
                 }
             </style>
             <div id="profil" class="app-view">
-                <h1>👤 Mein Profil</h1>
+                <h1><span class="iconoir-user"></span> Mein Profil</h1>
                 <p class="subtitle">Deine persönlichen Daten verwalten</p>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 1000px;">
                     <!-- Linke Spalte: Basis-Profil -->
                     <div class="profil-card">
-                        <div class="profil-avatar" id="profilAvatar">👤</div>
+                        <div class="profil-avatar" id="profilAvatar"><span class="iconoir-user"></span></div>
                         <h3 style="text-align: center; margin-bottom: 24px; font-size: 18px;">Persönliche Daten</h3>
 
                         <div class="profil-field">
@@ -3330,7 +3330,7 @@
                     <div>
                         <!-- TEAM MANAGER (nur Hauptadmin) -->
                         <div class="profil-card" id="teamManagerCard" style="margin-bottom: 20px; display: none;">
-                            <h3 style="margin-bottom: 12px; font-size: 18px;">🏟️ Mannschaften</h3>
+                            <h3 style="margin-bottom: 12px; font-size: 18px;"><span class="iconoir-soccer-ball"></span> Mannschaften</h3>
                             <div id="teamList"
                                 style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
                                 <span style="opacity: 0.7; font-size: 13px;">Lade Mannschaften...</span>
@@ -3348,18 +3348,18 @@
 
                         <!-- PROFIL-TYP WÄHLER (für Admin sichtbar) -->
                         <div class="profil-card" id="profilTypWaehler" style="margin-bottom: 20px; display: none;">
-                            <h3 style="margin-bottom: 16px; font-size: 18px;">🎭 Profil-Typ</h3>
+                            <h3 style="margin-bottom: 16px; font-size: 18px;"><span class="iconoir-mask-square"></span> Profil-Typ</h3>
                             <p style="font-size: 13px; opacity: 0.7; margin-bottom: 12px;">
                                 Als Admin kannst du wählen, welche Profilfelder du bearbeiten möchtest:
                             </p>
                             <div style="display: flex; gap: 12px;">
                                 <button onclick="setProfilTyp('trainer')" id="btnProfilTrainer"
                                     style="flex: 1; padding: 12px; border: 2px solid var(--border-light); border-radius: 10px; background: transparent; color: var(--text-light); cursor: pointer; font-size: 14px; transition: all 0.2s;">
-                                    🎯 Trainer
+                                    <span class="iconoir-user-crown"></span> Trainer
                                 </button>
                                 <button onclick="setProfilTyp('spieler')" id="btnProfilSpieler"
                                     style="flex: 1; padding: 12px; border: 2px solid var(--border-light); border-radius: 10px; background: transparent; color: var(--text-light); cursor: pointer; font-size: 14px; transition: all 0.2s;">
-                                    ⚽ Spieler
+                                    <span class="iconoir-football-ball"></span> Spieler
                                 </button>
                             </div>
                         </div>
@@ -3367,7 +3367,7 @@
                         <!-- SPIELER-PROFIL (nur für Spieler sichtbar) -->
                         <div class="profil-card spieler-profil" id="spielerProfilCard"
                             style="margin-bottom: 20px; display: none;">
-                            <h3 style="margin-bottom: 20px; font-size: 18px;">⚽ Spieler-Daten</h3>
+                            <h3 style="margin-bottom: 20px; font-size: 18px;"><span class="iconoir-football-ball"></span> Spieler-Daten</h3>
 
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                                 <div class="profil-field">
@@ -3421,7 +3421,7 @@
                         <!-- TRAINER-PROFIL (nur für Trainer sichtbar) -->
                         <div class="profil-card trainer-profil" id="trainerProfilCard"
                             style="margin-bottom: 20px; display: none;">
-                            <h3 style="margin-bottom: 20px; font-size: 18px;">🎯 Trainer-Daten</h3>
+                            <h3 style="margin-bottom: 20px; font-size: 18px;"><span class="iconoir-user-crown"></span> Trainer-Daten</h3>
 
                             <div class="profil-field">
                                 <label>Bevorzugtes Spielsystem</label>
@@ -3467,7 +3467,7 @@
 
                         <!-- Team-Zugehörigkeit -->
                         <div class="profil-card" style="margin-bottom: 20px;">
-                            <h3 style="margin-bottom: 20px; font-size: 18px;">⚽ Team-Zugehörigkeit</h3>
+                            <h3 style="margin-bottom: 20px; font-size: 18px;"><span class="iconoir-football-ball"></span> Team-Zugehörigkeit</h3>
 
                             <div id="profilTeamInfo">
                                 <p style="color: var(--text-light); opacity: 0.7;">Laden...</p>
@@ -3477,12 +3477,12 @@
                         <!-- Speichern-Button -->
                         <button onclick="saveProfile()"
                             style="width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s; margin-bottom: 20px;">
-                            💾 Profil speichern
+                            <span class="iconoir-floppy-disk"></span> Profil speichern
                         </button>
 
                         <!-- Gefahrenzone -->
                         <div class="profil-card" style="border-color: rgba(239, 68, 68, 0.3);">
-                            <h3 style="margin-bottom: 16px; font-size: 18px; color: #ef4444;">⚠️ Gefahrenzone</h3>
+                            <h3 style="margin-bottom: 16px; font-size: 18px; color: #ef4444;"><span class="iconoir-shield-alert"></span> Gefahrenzone</h3>
                             <p style="font-size: 13px; color: var(--text-light); opacity: 0.7; margin-bottom: 16px;">
                                 Wenn du dein Konto löschst, werden alle deine Daten unwiderruflich entfernt.
                             </p>
@@ -3504,70 +3504,70 @@
 
                     <h4
                         style="font-size: 12px; text-transform: uppercase; opacity: 0.6; margin: 16px 0 8px; letter-spacing: 1px;">
-                        📱 App Widgets</h4>
+                        <span class="iconoir-smartphone-device"></span> App Widgets</h4>
                     <div class="widget-options">
                         <div class="widget-option" onclick="addWidget('kader')">
-                            <div class="widget-option-title">👥 Kader</div>
+                            <div class="widget-option-title"><span class="iconoir-group"></span> Kader</div>
                             <div class="widget-option-desc">Spieler-Status auf einen Blick</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('kalender')">
-                            <div class="widget-option-title">📅 Kalender</div>
+                            <div class="widget-option-title"><span class="iconoir-calendar"></span> Kalender</div>
                             <div class="widget-option-desc">Wochenübersicht der Events</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('messenger')">
-                            <div class="widget-option-title">💬 Messenger</div>
+                            <div class="widget-option-title"><span class="iconoir-message"></span> Messenger</div>
                             <div class="widget-option-desc">Letzte Nachrichten</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('kasse')">
-                            <div class="widget-option-title">💵 Mannschaftskasse</div>
+                            <div class="widget-option-title"><span class="iconoir-wallet"></span> Mannschaftskasse</div>
                             <div class="widget-option-desc">Aktueller Kontostand</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('taktik')">
-                            <div class="widget-option-title">⚽ Taktik</div>
+                            <div class="widget-option-title"><span class="iconoir-football-ball"></span> Taktik</div>
                             <div class="widget-option-desc">Schnellzugriff auf Taktik-Tafel</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('upload')">
-                            <div class="widget-option-title">📹 Videos</div>
+                            <div class="widget-option-title"><span class="iconoir-video-camera"></span> Videos</div>
                             <div class="widget-option-desc">Hochgeladene Videos</div>
                         </div>
                     </div>
 
                     <h4
                         style="font-size: 12px; text-transform: uppercase; opacity: 0.6; margin: 20px 0 8px; letter-spacing: 1px;">
-                        💎 Premium Widgets</h4>
+                        <span class="iconoir-crown"></span> Premium Widgets</h4>
                     <div class="widget-options">
                         <div class="widget-option" onclick="addWidget('analyse')">
-                            <div class="widget-option-title">📈 Analyse</div>
+                            <div class="widget-option-title"><span class="iconoir-graph-up"></span> Analyse</div>
                             <div class="widget-option-desc">Video-Analyse Ergebnisse</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('training')">
-                            <div class="widget-option-title">🏋️ Training</div>
+                            <div class="widget-option-title"><span class="iconoir-gym"></span> Training</div>
                             <div class="widget-option-desc">Nächste Trainingseinheiten</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('medizin')">
-                            <div class="widget-option-title">⚕️ Medizin</div>
+                            <div class="widget-option-title"><span class="iconoir-healthcare"></span> Medizin</div>
                             <div class="widget-option-desc">Verletzungsübersicht</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('finanzen')">
-                            <div class="widget-option-title">💰 Finanzen</div>
+                            <div class="widget-option-title"><span class="iconoir-money-square"></span> Finanzen</div>
                             <div class="widget-option-desc">Finanzübersicht</div>
                         </div>
                     </div>
 
                     <h4
                         style="font-size: 12px; text-transform: uppercase; opacity: 0.6; margin: 20px 0 8px; letter-spacing: 1px;">
-                        🔧 Utility Widgets</h4>
+                        <span class="iconoir-wrench"></span> Utility Widgets</h4>
                     <div class="widget-options">
                         <div class="widget-option" onclick="addWidget('quick_links')">
-                            <div class="widget-option-title">🔗 Schnellzugriffe</div>
+                            <div class="widget-option-title"><span class="iconoir-link"></span> Schnellzugriffe</div>
                             <div class="widget-option-desc">Schnelle Links zu deinen Apps</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('stats')">
-                            <div class="widget-option-title">📊 Statistiken</div>
+                            <div class="widget-option-title"><span class="iconoir-stats-up-square"></span> Statistiken</div>
                             <div class="widget-option-desc">Videos, Spieler und Matches</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('upcoming')">
-                            <div class="widget-option-title">📅 Nächste Spiele</div>
+                            <div class="widget-option-title"><span class="iconoir-calendar"></span> Nächste Spiele</div>
                             <div class="widget-option-desc">Deine kommenden Matches</div>
                         </div>
                     </div>
@@ -3762,7 +3762,7 @@
                 <div class="modal-window" style="max-width: 700px;">
                     <div class="modal-header">
                         <h2>Spieler hinzufügen</h2>
-                        <button class="modal-close" onclick="closeAddPlayerModal()">✕</button>
+                        <button class="modal-close" onclick="closeAddPlayerModal()"><span class="iconoir-xmark"></span></button>
                     </div>
 
                     <!-- Name -->
@@ -3786,23 +3786,23 @@
                                 style="font-size: 12px; opacity: 0.7; display: block; margin-bottom: 4px;">Nationalität</label>
                             <select id="playerCountry"
                                 style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box; width: 100%;">
-                                <option value="DE">🇩🇪 Deutschland</option>
-                                <option value="AT">🇦🇹 Österreich</option>
-                                <option value="CH">🇨🇭 Schweiz</option>
-                                <option value="FR">🇫🇷 Frankreich</option>
-                                <option value="ES">🇪🇸 Spanien</option>
-                                <option value="IT">🇮🇹 Italien</option>
-                                <option value="NL">🇳🇱 Niederlande</option>
-                                <option value="BE">🇧🇪 Belgien</option>
-                                <option value="PT">🇵🇹 Portugal</option>
-                                <option value="GB">🇬🇧 England</option>
-                                <option value="PL">🇵🇱 Polen</option>
-                                <option value="HR">🇭🇷 Kroatien</option>
-                                <option value="RS">🇷🇸 Serbien</option>
-                                <option value="TR">🇹🇷 Türkei</option>
-                                <option value="BR">🇧🇷 Brasilien</option>
-                                <option value="AR">🇦🇷 Argentinien</option>
-                                <option value="US">🇺🇸 USA</option>
+                                <option value="DE">Deutschland</option>
+                                <option value="AT">Österreich</option>
+                                <option value="CH">Schweiz</option>
+                                <option value="FR">Frankreich</option>
+                                <option value="ES">Spanien</option>
+                                <option value="IT">Italien</option>
+                                <option value="NL">Niederlande</option>
+                                <option value="BE">Belgien</option>
+                                <option value="PT">Portugal</option>
+                                <option value="GB">England</option>
+                                <option value="PL">Polen</option>
+                                <option value="HR">Kroatien</option>
+                                <option value="RS">Serbien</option>
+                                <option value="TR">Türkei</option>
+                                <option value="BR">Brasilien</option>
+                                <option value="AR">Argentinien</option>
+                                <option value="US">USA</option>
                                 <option value="OTHER">Andere</option>
                             </select>
                         </div>
@@ -3831,7 +3831,7 @@
                         </select>
                         <div id="noTeamsWarning"
                             style="display: none; color: #ef4444; font-size: 12px; margin-top: 6px;">
-                            ⚠️ Bitte erstelle erst eine Mannschaft bevor du einen Spieler anlegst
+                            <span class="iconoir-shield-alert"></span> Bitte erstelle erst eine Mannschaft bevor du einen Spieler anlegst
                         </div>
                     </div>
 
@@ -3917,7 +3917,7 @@
                 <div class="modal-window" style="max-width: 700px;">
                     <div class="modal-header">
                         <h2>Spieler bearbeiten</h2>
-                        <button class="modal-close" onclick="closeEditPlayerModal()">✕</button>
+                        <button class="modal-close" onclick="closeEditPlayerModal()"><span class="iconoir-xmark"></span></button>
                     </div>
                     <input type="hidden" id="editPlayerId">
 
@@ -3942,23 +3942,23 @@
                                 style="font-size: 12px; opacity: 0.7; display: block; margin-bottom: 4px;">Nationalität</label>
                             <select id="editPlayerCountry"
                                 style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box; width: 100%;">
-                                <option value="DE">🇩🇪 Deutschland</option>
-                                <option value="AT">🇦🇹 Österreich</option>
-                                <option value="CH">🇨🇭 Schweiz</option>
-                                <option value="FR">🇫🇷 Frankreich</option>
-                                <option value="ES">🇪🇸 Spanien</option>
-                                <option value="IT">🇮🇹 Italien</option>
-                                <option value="NL">🇳🇱 Niederlande</option>
-                                <option value="BE">🇧🇪 Belgien</option>
-                                <option value="PT">🇵🇹 Portugal</option>
-                                <option value="GB">🇬🇧 England</option>
-                                <option value="PL">🇵🇱 Polen</option>
-                                <option value="HR">🇭🇷 Kroatien</option>
-                                <option value="RS">🇷🇸 Serbien</option>
-                                <option value="TR">🇹🇷 Türkei</option>
-                                <option value="BR">🇧🇷 Brasilien</option>
-                                <option value="AR">🇦🇷 Argentinien</option>
-                                <option value="US">🇺🇸 USA</option>
+                                <option value="DE">Deutschland</option>
+                                <option value="AT">Österreich</option>
+                                <option value="CH">Schweiz</option>
+                                <option value="FR">Frankreich</option>
+                                <option value="ES">Spanien</option>
+                                <option value="IT">Italien</option>
+                                <option value="NL">Niederlande</option>
+                                <option value="BE">Belgien</option>
+                                <option value="PT">Portugal</option>
+                                <option value="GB">England</option>
+                                <option value="PL">Polen</option>
+                                <option value="HR">Kroatien</option>
+                                <option value="RS">Serbien</option>
+                                <option value="TR">Türkei</option>
+                                <option value="BR">Brasilien</option>
+                                <option value="AR">Argentinien</option>
+                                <option value="US">USA</option>
                                 <option value="OTHER">Andere</option>
                             </select>
                         </div>
@@ -4201,7 +4201,7 @@
                                         style="width: 18px; height: 18px; accent-color: var(--primary-green);"
                                         onchange="updateVisibilityStyle()">
                                     <div>
-                                        <div style="font-weight: 600; font-size: 13px;">🔒 Privat</div>
+                                        <div style="font-weight: 600; font-size: 13px;"><span class="iconoir-lock"></span> Privat</div>
                                         <div style="font-size: 11px; color: #888;">Nur für mich</div>
                                     </div>
                                 </label>
@@ -4212,7 +4212,7 @@
                                         style="width: 18px; height: 18px; accent-color: var(--primary-green);"
                                         onchange="updateVisibilityStyle()">
                                     <div>
-                                        <div style="font-weight: 600; font-size: 13px;">👥 Team</div>
+                                        <div style="font-weight: 600; font-size: 13px;"><span class="iconoir-group"></span> Team</div>
                                         <div style="font-size: 11px; color: #888;">Mit Zu-/Absagen</div>
                                     </div>
                                 </label>
@@ -4293,9 +4293,9 @@
                                     style="padding: 10px 12px; background: var(--primary-green); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 18px;"
                                     title="Neue Gruppe">+</button>
                             </div>
-                            <div id="teamChatBtn" onclick="selectChat('team', '👥 Team')"
+                            <div id="teamChatBtn" onclick="selectChat('team', 'Team', true)"
                                 style="padding: 12px; background: var(--primary-green); color: white; border-radius: 8px; cursor: pointer; font-weight: 600; text-align: center; margin-bottom: 8px;">
-                                👥 Team Chat</div>
+                                <span class="iconoir-group"></span> Team Chat</div>
                             <div style="font-size: 12px; font-weight: 600; opacity: 0.6; margin-top: 8px;">SPIELER
                             </div>
                         </div>
@@ -4323,7 +4323,7 @@
                                 style="display: none;" onchange="attachFile()">
                             <button onclick="document.getElementById('messengerFileInput').click()"
                                 style="padding: 10px 12px; background: #999; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;"
-                                title="Datei anhängen">📎</button>
+                                title="Datei anhängen"><span class="iconoir-attachment"></span></button>
                             <input type="text" id="messengerInput" placeholder="Nachricht schreiben..."
                                 style="flex: 1; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; box-sizing: border-box;"
                                 disabled onkeypress="if(event.key==='Enter') sendMessage()">
@@ -4335,7 +4335,7 @@
                                 style="background: #f0f0f0; padding: 8px; border-radius: 6px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
                                 <span id="attachmentName">Datei angehängt</span>
                                 <button onclick="clearAttachment()"
-                                    style="background: none; border: none; cursor: pointer; font-weight: 600;">✕</button>
+                                    style="background: none; border: none; cursor: pointer; font-weight: 600;"><span class="iconoir-xmark"></span></button>
                             </div>
                         </div>
                     </div>
@@ -4372,15 +4372,15 @@
                     style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px;">
                     <button id="tabMeineVideos" onclick="switchVideoTab('meineVideos')" class="video-tab-btn active"
                         style="padding: 10px 20px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;">
-                        📁 Meine Videos
+                        <span class="iconoir-folder"></span> Meine Videos
                     </button>
                     <button id="tabUpload" onclick="switchVideoTab('upload')" class="video-tab-btn"
                         style="padding: 10px 20px; background: var(--card-light); color: var(--text-light); border: 1px solid var(--border-light); border-radius: 10px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s;">
-                        ⬆️ Hochladen
+                        <span class="iconoir-upload"></span> Hochladen
                     </button>
                     <button id="tabShared" onclick="switchVideoTab('shared')" class="video-tab-btn"
                         style="padding: 10px 20px; background: var(--card-light); color: var(--text-light); border: 1px solid var(--border-light); border-radius: 10px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s; position: relative;">
-                        📨 Geteilte Clips
+                        <span class="iconoir-mail-in"></span> Geteilte Clips
                         <span id="sharedClipsBadge"
                             style="display: none; position: absolute; top: -4px; right: -4px; background: #ef4444; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; min-width: 16px; text-align: center;">0</span>
                     </button>
@@ -4390,13 +4390,13 @@
                 <div id="tabContentMeineVideos" class="video-tab-content">
                     <div id="videoListEmpty"
                         style="text-align: center; padding: 60px 20px; background: var(--card-light); border-radius: 16px; border: 2px dashed var(--border-light);">
-                        <span style="font-size: 64px; display: block; margin-bottom: 16px; opacity: 0.5;">🎬</span>
+                        <span style="font-size: 64px; display: block; margin-bottom: 16px; opacity: 0.5;"><span class="iconoir-movie"></span></span>
                         <h3 style="margin-bottom: 8px; opacity: 0.8;">Noch keine Videos</h3>
                         <p style="opacity: 0.6; margin-bottom: 20px;">Lade dein erstes Spielvideo hoch um mit der
                             Analyse zu starten</p>
                         <button onclick="switchVideoTab('upload')"
                             style="padding: 12px 24px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600;">
-                            ⬆️ Video hochladen
+                            <span class="iconoir-upload"></span> Video hochladen
                         </button>
                     </div>
                     <div id="videoListGrid"
@@ -4412,7 +4412,7 @@
                         <div class="upload-area" id="videoDropZone"
                             onclick="document.getElementById('videoInput').click()"
                             style="border: 2px dashed var(--border-light); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s;">
-                            <div style="font-size: 48px; margin-bottom: 12px;">📹</div>
+                            <div style="font-size: 48px; margin-bottom: 12px;"><span class="iconoir-video-camera"></span></div>
                             <h3 style="margin-bottom: 8px;">Video auswählen</h3>
                             <p style="opacity: 0.6;">Ziehe eine Datei hierher oder klicke zum Auswählen</p>
                             <p style="font-size: 12px; opacity: 0.5; margin-top: 12px;">MP4, MOV, AVI, WebM bis
@@ -4439,13 +4439,13 @@
                             </div>
                             <div id="selectedFileInfo"
                                 style="margin-top: 12px; padding: 12px; background: var(--bg-light); border-radius: 8px; display: flex; align-items: center; gap: 12px;">
-                                <span style="font-size: 24px;">📄</span>
+                                <span style="font-size: 24px;"><span class="iconoir-page"></span></span>
                                 <div style="flex: 1;">
                                     <div id="selectedFileName" style="font-weight: 500;"></div>
                                     <div id="selectedFileSize" style="font-size: 12px; opacity: 0.6;"></div>
                                 </div>
                                 <button onclick="clearVideoSelection()"
-                                    style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">✕</button>
+                                    style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;"><span class="iconoir-xmark"></span></button>
                             </div>
 
                             <!-- Upload Progress -->
@@ -4464,7 +4464,7 @@
 
                             <button id="startUploadBtn" onclick="startVideoUpload()"
                                 style="width: 100%; margin-top: 16px; padding: 14px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                ⬆️ Video hochladen
+                                <span class="iconoir-upload"></span> Video hochladen
                             </button>
                         </div>
                     </div>
@@ -4474,7 +4474,7 @@
                 <div id="tabContentShared" class="video-tab-content" style="display: none;">
                     <div id="sharedClipsEmpty"
                         style="text-align: center; padding: 60px 20px; background: var(--card-light); border-radius: 16px; border: 2px dashed var(--border-light);">
-                        <span style="font-size: 64px; display: block; margin-bottom: 16px; opacity: 0.5;">📭</span>
+                        <span style="font-size: 64px; display: block; margin-bottom: 16px; opacity: 0.5;"><span class="iconoir-mail-open"></span></span>
                         <h3 style="margin-bottom: 8px; opacity: 0.8;">Keine geteilten Clips</h3>
                         <p style="opacity: 0.6;">Hier erscheinen Clips die dein Trainer mit dir teilt</p>
                     </div>
@@ -4525,7 +4525,7 @@
 
         <!-- FINANZEN (PREMIUM) -->
         <div id="finanzen" class="app-view">
-            <h1>🔒 Finanzen</h1>
+            <h1><span class="iconoir-lock"></span> Finanzen</h1>
             <p class="subtitle">Premium Feature - Budget & Kosten Management</p>
 
             <div class="stats-grid">
@@ -4562,7 +4562,7 @@
 
         <!-- MEDIZIN (PREMIUM) -->
         <div id="medizin" class="app-view">
-            <h1>🔒 Medizin</h1>
+            <h1><span class="iconoir-lock"></span> Medizin</h1>
             <p class="subtitle">Premium Feature - Spieler Gesundheit & Fitness</p>
 
             <div class="stats-grid">
@@ -4591,7 +4591,7 @@
 
         <!-- SCOUTING (PREMIUM) -->
         <div id="scouting" class="app-view">
-            <h1>🔒 Scouting</h1>
+            <h1><span class="iconoir-lock"></span> Scouting</h1>
             <p class="subtitle">Premium Feature - Spieler Bewertung & Analyse</p>
 
             <div class="stats-grid">
@@ -4612,15 +4612,15 @@
             <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;">Top Kandidaten</h2>
             <div class="list-container">
                 <div class="list-item">
-                    <span>⭐⭐⭐⭐⭐ Vinicius Jr.</span>
+                    <span><span class="iconoir-star"></span><span class="iconoir-star"></span><span class="iconoir-star"></span><span class="iconoir-star"></span><span class="iconoir-star"></span> Vinicius Jr.</span>
                     <span style="opacity: 0.7;">9.2</span>
                 </div>
                 <div class="list-item">
-                    <span>⭐⭐⭐⭐⭐ Erling Haaland</span>
+                    <span><span class="iconoir-star"></span><span class="iconoir-star"></span><span class="iconoir-star"></span><span class="iconoir-star"></span><span class="iconoir-star"></span> Erling Haaland</span>
                     <span style="opacity: 0.7;">9.1</span>
                 </div>
                 <div class="list-item">
-                    <span>⭐⭐⭐⭐ Florian Wirtz</span>
+                    <span><span class="iconoir-star"></span><span class="iconoir-star"></span><span class="iconoir-star"></span><span class="iconoir-star"></span> Florian Wirtz</span>
                     <span style="opacity: 0.7;">8.7</span>
                 </div>
             </div>
@@ -4628,7 +4628,7 @@
 
         <!-- ANALYSE (PREMIUM) -->
         <div id="analyse" class="app-view">
-            <h1>🔒 Analyse</h1>
+            <h1><span class="iconoir-lock"></span> Analyse</h1>
             <p class="subtitle">Premium Feature - Erweiterte Video Analyse</p>
 
             <div class="stats-grid">
@@ -4863,7 +4863,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            🚀</div>
+                            <span class="iconoir-rocket"></span></div>
                         <div id="tipps-video-1"
                             style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none;">
                             <!-- Video wird hier eingefügt -->
@@ -4885,7 +4885,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            👥</div>
+                            <span class="iconoir-group"></span></div>
                     </div>
                     <div style="padding: 16px;">
                         <h3 style="margin: 0 0 8px 0; font-size: 16px;">Kader verwalten</h3>
@@ -4903,7 +4903,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            📅</div>
+                            <span class="iconoir-calendar"></span></div>
                     </div>
                     <div style="padding: 16px;">
                         <h3 style="margin: 0 0 8px 0; font-size: 16px;">Kalender nutzen</h3>
@@ -4920,7 +4920,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            ⚽</div>
+                            <span class="iconoir-football-ball"></span></div>
                     </div>
                     <div style="padding: 16px;">
                         <h3 style="margin: 0 0 8px 0; font-size: 16px;">Taktik-Tafel</h3>
@@ -4938,7 +4938,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            💬</div>
+                            <span class="iconoir-message"></span></div>
                     </div>
                     <div style="padding: 16px;">
                         <h3 style="margin: 0 0 8px 0; font-size: 16px;">Messenger</h3>
@@ -4955,7 +4955,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            📹</div>
+                            <span class="iconoir-video-camera"></span></div>
                     </div>
                     <div style="padding: 16px;">
                         <h3 style="margin: 0 0 8px 0; font-size: 16px;">Video Upload</h3>
@@ -4973,7 +4973,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #64748b 0%, #475569 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            👔</div>
+                            <span class="iconoir-building"></span></div>
                     </div>
                     <div style="padding: 16px;">
                         <h3 style="margin: 0 0 8px 0; font-size: 16px;">Verwaltung</h3>
@@ -4991,7 +4991,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            💵</div>
+                            <span class="iconoir-wallet"></span></div>
                     </div>
                     <div style="padding: 16px;">
                         <h3 style="margin: 0 0 8px 0; font-size: 16px;">Mannschaftskasse</h3>
@@ -5008,7 +5008,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            📈</div>
+                            <span class="iconoir-graph-up"></span></div>
                         <span
                             style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px;">PREMIUM</span>
                     </div>
@@ -5028,7 +5028,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            🏋️</div>
+                            <span class="iconoir-gym"></span></div>
                         <span
                             style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px;">PREMIUM</span>
                     </div>
@@ -5048,7 +5048,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            ⚕️</div>
+                            <span class="iconoir-healthcare"></span></div>
                         <span
                             style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px;">PREMIUM</span>
                     </div>
@@ -5068,7 +5068,7 @@
                         style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);">
                         <div
                             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            💰</div>
+                            <span class="iconoir-money-square"></span></div>
                         <span
                             style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px;">PREMIUM</span>
                     </div>
@@ -5091,13 +5091,13 @@
             <!-- Tabs -->
             <div class="verwaltung-tabs" style="display: flex; gap: 10px; margin-bottom: 24px;">
                 <button class="verwaltung-tab active" data-tab="mitglieder" onclick="switchVerwaltungTab('mitglieder')">
-                    👥 Mitglieder
+                    <span class="iconoir-group"></span> Mitglieder
                 </button>
                 <button class="verwaltung-tab" data-tab="rollen" onclick="switchVerwaltungTab('rollen')">
-                    🎭 Rollen
+                    <span class="iconoir-mask-square"></span> Rollen
                 </button>
                 <button class="verwaltung-tab" data-tab="einladungen" onclick="switchVerwaltungTab('einladungen')">
-                    ✉️ Einladungen
+                    <span class="iconoir-mail"></span> Einladungen
                 </button>
             </div>
 
@@ -5152,7 +5152,7 @@
                     <label style="display: block; margin: 16px 0 8px; font-weight: 500;">Beschreibung</label>
                     <input type="text" id="new-role-description" class="input-field" placeholder="Kurze Beschreibung">
 
-                    <label style="display: block; margin: 24px 0 12px; font-weight: 500;">🔐
+                    <label style="display: block; margin: 24px 0 12px; font-weight: 500;"><span class="iconoir-lock"></span>
                         App-Berechtigungen</label>
                     <p style="font-size: 13px; opacity: 0.7; margin-bottom: 16px;">Wähle die Apps, die diese
                         Rolle sehen darf:</p>
@@ -5165,7 +5165,7 @@
                 <div
                     style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-light);">
                     <button class="btn-secondary" onclick="closeModal('create-role-modal')">Abbrechen</button>
-                    <button class="btn-primary" onclick="createRole()">✅ Rolle erstellen</button>
+                    <button class="btn-primary" onclick="createRole()"><span class="iconoir-check-circle"></span> Rolle erstellen</button>
                 </div>
             </div>
         </div>
@@ -5198,12 +5198,12 @@
             onclick="if(event.target === this) closeModal('invitation-link-modal')">
             <div class="modal-content"
                 style="max-width: 500px; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-                <h2 style="margin-bottom: 20px;">✅ Einladungslink erstellt</h2>
+                <h2 style="margin-bottom: 20px;"><span class="iconoir-check-circle"></span> Einladungslink erstellt</h2>
                 <div style="margin: 20px 0;">
                     <p style="margin-bottom: 12px;">Teile diesen Link mit der Person:</p>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="invitation-link-display" class="input-field" readonly style="flex: 1;">
-                        <button class="btn-primary" onclick="copyInvitationLink()">📋 Kopieren</button>
+                        <button class="btn-primary" onclick="copyInvitationLink()"><span class="iconoir-list"></span> Kopieren</button>
                     </div>
                 </div>
                 <div style="display: flex; justify-content: flex-end;">
@@ -5217,7 +5217,7 @@
             onclick="if(event.target === this) closeModal('edit-permissions-modal')">
             <div class="modal-content"
                 style="max-width: 600px; background: var(--card-light); border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-                <h2 style="margin-bottom: 10px;">🔐 Berechtigungen bearbeiten</h2>
+                <h2 style="margin-bottom: 10px;"><span class="iconoir-lock"></span> Berechtigungen bearbeiten</h2>
                 <p id="edit-permissions-role-name" style="opacity: 0.7; margin-bottom: 20px;"></p>
 
                 <div style="margin: 20px 0;">
@@ -5232,7 +5232,7 @@
 
                 <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
                     <button class="btn-secondary" onclick="closeModal('edit-permissions-modal')">Abbrechen</button>
-                    <button class="btn-primary" onclick="saveRolePermissions()">💾 Speichern</button>
+                    <button class="btn-primary" onclick="saveRolePermissions()"><span class="iconoir-floppy-disk"></span> Speichern</button>
                 </div>
             </div>
         </div>
@@ -5262,7 +5262,7 @@
             <!-- Chart Container -->
             <div
                 style="background: var(--card-light); border-radius: 16px; padding: 20px; margin-bottom: 24px; border: 1px solid var(--border-light);">
-                <h3 style="margin: 0 0 16px 0; font-size: 16px;">📈 Kassenverlauf</h3>
+                <h3 style="margin: 0 0 16px 0; font-size: 16px;"><span class="iconoir-graph-up"></span> Kassenverlauf</h3>
                 <div style="height: 200px; position: relative;">
                     <canvas id="kasseChart"></canvas>
                 </div>
@@ -5272,18 +5272,18 @@
             <div style="display: flex; gap: 12px; margin-bottom: 24px;">
                 <button onclick="openKasseModal('income')"
                     style="flex: 1; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 14px;">
-                    ➕ Einnahme
+                    <span class="iconoir-plus"></span> Einnahme
                 </button>
                 <button onclick="openKasseModal('expense')"
                     style="flex: 1; padding: 14px; background: #ef4444; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 14px;">
-                    ➖ Ausgabe
+                    <span class="iconoir-minus"></span> Ausgabe
                 </button>
             </div>
 
             <!-- Transaktionsliste -->
             <div
                 style="background: var(--card-light); border-radius: 16px; padding: 20px; border: 1px solid var(--border-light);">
-                <h3 style="margin: 0 0 16px 0; font-size: 16px;">📋 Letzte Transaktionen</h3>
+                <h3 style="margin: 0 0 16px 0; font-size: 16px;"><span class="iconoir-list"></span> Letzte Transaktionen</h3>
                 <div id="kasseTransactionsList" style="display: flex; flex-direction: column; gap: 12px;">
                     <p style="text-align: center; opacity: 0.6; padding: 20px;">Noch keine Transaktionen</p>
                 </div>
@@ -5356,7 +5356,7 @@
             <h1>Einstellungen</h1>
             <p class="subtitle">Profil & App Konfiguration</p>
 
-            <h2 style="margin-bottom: 20px; font-size: 20px;">👤 Mein Profil</h2>
+            <h2 style="margin-bottom: 20px; font-size: 20px;"><span class="iconoir-user"></span> Mein Profil</h2>
             <div class="list-container" style="padding: 20px;">
                 <div style="display: grid; gap: 15px;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -5402,12 +5402,12 @@
                     </div>
                     <button onclick="saveProfile()"
                         style="width: 100%; padding: 14px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;">
-                        💾 Profil speichern
+                        <span class="iconoir-floppy-disk"></span> Profil speichern
                     </button>
                 </div>
             </div>
 
-            <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;">⚙️ App Einstellungen</h2>
+            <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;"><span class="iconoir-settings"></span> App Einstellungen</h2>
             <div class="list-container">
                 <div class="list-item">
                     <span>Dark Mode</span>
@@ -5427,18 +5427,18 @@
                 </div>
             </div>
 
-            <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;">🔐 Sicherheit</h2>
+            <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;"><span class="iconoir-lock"></span> Sicherheit</h2>
             <div class="list-container">
                 <div class="list-item security-item" onclick="openTwoFactorSetup()" style="cursor: pointer;">
-                    <span>✉️ E-Mail-Bestätigung bei Login</span>
+                    <span><span class="iconoir-mail"></span> E-Mail-Bestätigung bei Login</span>
                     <span id="2faStatus" style="opacity: 0.7;">Deaktiviert</span>
                 </div>
                 <div class="list-item security-item" onclick="showChangePassword()" style="cursor: pointer;">
-                    <span>🔑 Passwort ändern</span>
+                    <span><span class="iconoir-key"></span> Passwort ändern</span>
                     <span style="opacity: 0.5;">→</span>
                 </div>
                 <div class="list-item security-item" onclick="showActiveSessions()" style="cursor: pointer;">
-                    <span>📱 Aktive Sitzungen</span>
+                    <span><span class="iconoir-smartphone-device"></span> Aktive Sitzungen</span>
                     <span style="opacity: 0.5;">→</span>
                 </div>
             </div>
@@ -5446,11 +5446,11 @@
             <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;">Konto</h2>
             <div class="list-container">
                 <div class="list-item" onclick="logout()" style="cursor: pointer;">
-                    <span>🚪 Ausloggen</span>
+                    <span><span class="iconoir-home-simple-door"></span> Ausloggen</span>
                     <span style="opacity: 0.5;">→</span>
                 </div>
                 <div class="list-item" onclick="confirmDeleteAccount()" style="cursor: pointer;">
-                    <span style="color: #ef4444;">🗑️ Account löschen</span>
+                    <span style="color: #ef4444;"><span class="iconoir-trash"></span> Account löschen</span>
                     <span style="opacity: 0.5;">→</span>
                 </div>
             </div>
@@ -5573,25 +5573,25 @@
         // ========================
         const ALL_APPS = [
             // Persönliches Profil - immer sichtbar
-            { id: 'profil', name: 'Mein Profil', icon: '👤', sidebarIcon: 'iconoir-user', category: 'free', canDisable: false },
+            { id: 'profil', name: 'Mein Profil', icon: '<span class="iconoir-user"></span>', sidebarIcon: 'iconoir-user', category: 'free', canDisable: false },
             // Kostenlose Apps
-            { id: 'home', name: 'Home', icon: '🏠', sidebarIcon: 'iconoir-home', category: 'free', canDisable: false },
-            { id: 'kader', name: 'Kader', icon: '👥', sidebarIcon: 'iconoir-group', category: 'free', canDisable: true },
-            { id: 'kalender', name: 'Kalender', icon: '📅', sidebarIcon: 'iconoir-calendar', category: 'free', canDisable: true },
-            { id: 'messenger', name: 'Messenger', icon: '💬', sidebarIcon: 'iconoir-message', category: 'free', canDisable: true },
-            { id: 'taktik', name: 'Taktik-Tafel', icon: '⚽', sidebarIcon: 'iconoir-football-ball', category: 'free', canDisable: true },
-            { id: 'upload', name: 'Video Upload', icon: '📹', sidebarIcon: 'iconoir-video-camera', category: 'free', canDisable: true },
-            { id: 'tipps', name: 'Tipps & Tutorials', icon: '💡', sidebarIcon: 'iconoir-light-bulb', category: 'free', canDisable: true },
-            { id: 'verwaltung', name: 'Verwaltung', icon: '👔', sidebarIcon: 'iconoir-building', category: 'free', canDisable: true },
-            { id: 'kasse', name: 'Mannschaftskasse', icon: '💵', sidebarIcon: 'iconoir-wallet', category: 'free', canDisable: true },
+            { id: 'home', name: 'Home', icon: '<span class="iconoir-home"></span>', sidebarIcon: 'iconoir-home', category: 'free', canDisable: false },
+            { id: 'kader', name: 'Kader', icon: '<span class="iconoir-group"></span>', sidebarIcon: 'iconoir-group', category: 'free', canDisable: true },
+            { id: 'kalender', name: 'Kalender', icon: '<span class="iconoir-calendar"></span>', sidebarIcon: 'iconoir-calendar', category: 'free', canDisable: true },
+            { id: 'messenger', name: 'Messenger', icon: '<span class="iconoir-message"></span>', sidebarIcon: 'iconoir-message', category: 'free', canDisable: true },
+            { id: 'taktik', name: 'Taktik-Tafel', icon: '<span class="iconoir-football-ball"></span>', sidebarIcon: 'iconoir-football-ball', category: 'free', canDisable: true },
+            { id: 'upload', name: 'Video Upload', icon: '<span class="iconoir-video-camera"></span>', sidebarIcon: 'iconoir-video-camera', category: 'free', canDisable: true },
+            { id: 'tipps', name: 'Tipps & Tutorials', icon: '<span class="iconoir-light-bulb"></span>', sidebarIcon: 'iconoir-light-bulb', category: 'free', canDisable: true },
+            { id: 'verwaltung', name: 'Verwaltung', icon: '<span class="iconoir-building"></span>', sidebarIcon: 'iconoir-building', category: 'free', canDisable: true },
+            { id: 'kasse', name: 'Mannschaftskasse', icon: '<span class="iconoir-wallet"></span>', sidebarIcon: 'iconoir-wallet', category: 'free', canDisable: true },
             // Premium Apps
-            { id: 'analyse', name: 'Analyse', icon: '📈', sidebarIcon: 'iconoir-graph-up', category: 'premium', canDisable: true },
-            { id: 'training', name: 'Training', icon: '🏋️', sidebarIcon: 'iconoir-gym', category: 'premium', canDisable: true },
-            { id: 'medizin', name: 'Medizin', icon: '⚕️', sidebarIcon: 'iconoir-healthcare', category: 'premium', canDisable: true },
-            { id: 'finanzen', name: 'Finanzen', icon: '💰', sidebarIcon: 'iconoir-bank', category: 'premium', canDisable: true },
+            { id: 'analyse', name: 'Analyse', icon: '<span class="iconoir-graph-up"></span>', sidebarIcon: 'iconoir-graph-up', category: 'premium', canDisable: true },
+            { id: 'training', name: 'Training', icon: '<span class="iconoir-gym"></span>', sidebarIcon: 'iconoir-gym', category: 'premium', canDisable: true },
+            { id: 'medizin', name: 'Medizin', icon: '<span class="iconoir-healthcare"></span>', sidebarIcon: 'iconoir-healthcare', category: 'premium', canDisable: true },
+            { id: 'finanzen', name: 'Finanzen', icon: '<span class="iconoir-money-square"></span>', sidebarIcon: 'iconoir-bank', category: 'premium', canDisable: true },
             // Coming Soon
-            { id: 'scouting', name: 'Scouting', icon: '🔍', sidebarIcon: 'iconoir-search', category: 'soon', canDisable: true },
-            { id: 'liga', name: 'Liga', icon: '🏆', sidebarIcon: 'iconoir-trophy', category: 'soon', canDisable: true }
+            { id: 'scouting', name: 'Scouting', icon: '<span class="iconoir-search"></span>', sidebarIcon: 'iconoir-search', category: 'soon', canDisable: true },
+            { id: 'liga', name: 'Liga', icon: '<span class="iconoir-trophy"></span>', sidebarIcon: 'iconoir-trophy', category: 'soon', canDisable: true }
         ];
 
         // Default: Alle kostenlosen Apps aktiv
@@ -5810,7 +5810,7 @@
 
                     let badgeHtml = '';
                     if (app.category === 'premium') {
-                        badgeHtml = '<span style="position: absolute; top: -6px; right: -6px; background: #8b5cf6; color: white; padding: 2px 5px; border-radius: 6px; font-size: 8px; font-weight: bold;">💎</span>';
+                        badgeHtml = '<span style="position: absolute; top: -6px; right: -6px; background: #8b5cf6; color: white; padding: 2px 5px; border-radius: 6px; font-size: 8px; font-weight: bold;"><span class="iconoir-crown"></span></span>';
                         tile.onclick = () => switchApp(app.id);
                     } else if (app.category === 'soon') {
                         badgeHtml = '<span style="position: absolute; top: -6px; right: -6px; background: #f59e0b; color: white; padding: 2px 5px; border-radius: 6px; font-size: 8px; font-weight: bold;">Soon</span>';
@@ -5910,7 +5910,7 @@
                         widget.innerHTML = `
                                 <div class="widget-header" style="display: flex; justify-content: space-between; align-items: center;">
                                     <span style="flex: 1;">${headerText}</span>
-                                    <span class="widget-delete" onclick="event.stopPropagation(); deleteWidget('${id}')">✕</span>
+                                    <span class="widget-delete" onclick="event.stopPropagation(); deleteWidget('${id}')"><span class="iconoir-xmark"></span></span>
                                 </div>
                                 ${restContent}
                             `;
@@ -6060,7 +6060,7 @@
                         <div class="store-app-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px;">
                             <div style="font-size: 40px;">${app.icon}</div>
                             <div style="flex: 1;">
-                                <div style="font-weight: 600; color: var(--text-color); font-size: 16px;">${app.name} <span style="background: #8b5cf6; color: white; padding: 2px 8px; border-radius: 8px; font-size: 10px; margin-left: 8px;">💎 Premium</span></div>
+                                <div style="font-weight: 600; color: var(--text-color); font-size: 16px;">${app.name} <span style="background: #8b5cf6; color: white; padding: 2px 8px; border-radius: 8px; font-size: 10px; margin-left: 8px;"><span class="iconoir-crown"></span> Premium</span></div>
                                 <div style="display: flex; gap: 16px; margin-top: 12px;">
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: not-allowed; opacity: 0.6;">
                                         <input type="checkbox" ${sidebarChecked} ${disabled} style="width: 18px; height: 18px; cursor: not-allowed;">
@@ -6088,7 +6088,7 @@
                         <div class="store-app-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px;">
                             <div style="font-size: 40px;">${app.icon}</div>
                             <div style="flex: 1;">
-                                <div style="font-weight: 600; color: var(--text-color); font-size: 16px;">${app.name} <span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 8px; font-size: 10px; margin-left: 8px;">🚀 Soon</span></div>
+                                <div style="font-weight: 600; color: var(--text-color); font-size: 16px;">${app.name} <span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 8px; font-size: 10px; margin-left: 8px;"><span class="iconoir-rocket"></span> Soon</span></div>
                                 <div style="display: flex; gap: 16px; margin-top: 12px;">
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: not-allowed; opacity: 0.6;">
                                         <input type="checkbox" ${sidebarChecked} ${disabled} style="width: 18px; height: 18px; cursor: not-allowed;">
@@ -6443,7 +6443,7 @@
                     if (team.has_team) {
                         teamInfoDiv.innerHTML = `
                             <div class="profil-team-badge">
-                                <span style="font-size: 24px;">⚽</span>
+                                <span style="font-size: 24px;"><span class="iconoir-football-ball"></span></span>
                                 <div>
                                     <div style="font-weight: 600;">${escapeHtml(team.verein || team.team_name || 'Team')}</div>
                                     <div style="font-size: 12px; opacity: 0.7;">${escapeHtml(team.mannschaft || '')}</div>
@@ -6451,13 +6451,13 @@
                             </div>
                             <div style="margin-top: 16px; font-size: 14px;">
                                 <div style="margin-bottom: 8px;"><strong>Rolle:</strong> ${escapeHtml(team.role_name || 'Mitglied')}</div>
-                                ${team.is_admin ? '<div style="color: #22c55e;">✓ Team-Administrator</div>' : ''}
+                                ${team.is_admin ? '<div style="color: #22c55e;"><span class="iconoir-check"></span> Team-Administrator</div>' : ''}
                             </div>
                         `;
                     } else {
                         teamInfoDiv.innerHTML = `
                             <div style="text-align: center; padding: 20px;">
-                                <div style="font-size: 40px; margin-bottom: 12px;">🏟️</div>
+                                <div style="font-size: 40px; margin-bottom: 12px;"><span class="iconoir-soccer-ball"></span></div>
                                 <p style="margin-bottom: 16px;">Du bist noch keinem Team beigetreten.</p>
                                 <button onclick="switchApp('home')" 
                                     style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer;">
@@ -6601,8 +6601,8 @@
                                         ${escapeHtml(m.role_name) || 'Keine Rolle'}
                                     </span>
                                     ${m.is_admin ? '<span style="font-size: 10px; opacity: 0.5;">Admin</span>' : `
-                                        ${isTeamAdmin ? `<button onclick="changeMemberRole(${parseInt(m.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;">✏️</button>` : ''}
-                                        ${canManageMembers ? `<button onclick="removeMember(${parseInt(m.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;">🗑️</button>` : ''}
+                                        ${isTeamAdmin ? `<button onclick="changeMemberRole(${parseInt(m.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;"><span class="iconoir-edit-pencil"></span></button>` : ''}
+                                        ${canManageMembers ? `<button onclick="removeMember(${parseInt(m.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;"><span class="iconoir-trash"></span></button>` : ''}
                                     `}
                                 </div>
                             </div>
@@ -6638,7 +6638,7 @@
                                         <h3 style="margin: 0; font-size: 16px;">${escapeHtml(r.name)}</h3>
                                         <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.7;">${escapeHtml(r.description || '')}</p>
                                     </div>
-                                    ${!r.is_default ? `<button onclick="deleteRole(${parseInt(r.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;">🗑️</button>` : ''}
+                                    ${!r.is_default ? `<button onclick="deleteRole(${parseInt(r.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;"><span class="iconoir-trash"></span></button>` : ''}
                                 </div>
                                 <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                                     ${permsHtml}
@@ -6675,9 +6675,9 @@
                                 </div>
                                 <div style="display: flex; gap: 8px;">
                                     <button onclick="copyLink('${window.location.origin}/join/${escapeHtml(inv.token)}')" style="background: var(--primary-color); color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">
-                                        📋 Link kopieren
+                                        <span class="iconoir-list"></span> Link kopieren
                                     </button>
-                                    <button onclick="deleteInvitation(${parseInt(inv.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;">🗑️</button>
+                                    <button onclick="deleteInvitation(${parseInt(inv.id)})" style="background: none; border: none; cursor: pointer; font-size: 16px;"><span class="iconoir-trash"></span></button>
                                 </div>
                             </div>
                         `).join('');
@@ -6700,7 +6700,7 @@
                         <input type="checkbox" name="new-role-app" value="${escapeHtml(app.id)}" 
                             onchange="this.parentElement.style.borderColor = this.checked ? 'var(--primary-color)' : 'var(--border-light)'"
                             style="width: 18px; height: 18px; accent-color: var(--primary-color);">
-                        <span style="font-size: 18px;">${escapeHtml(app.icon)}</span>
+                        <span style="font-size: 18px;">${app.icon}</span>
                         <span style="font-size: 13px; font-weight: 500;">${escapeHtml(app.name)}</span>
                     </label>
                 `).join('');
@@ -6817,7 +6817,7 @@
                 if (data.success) {
                     closeModal('create-role-modal');
                     loadTeamRoles();
-                    alert('✅ Rolle erfolgreich erstellt!');
+                    alert('Rolle erfolgreich erstellt!');
                 } else {
                     alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
                 }
@@ -6866,12 +6866,12 @@
             const input = document.getElementById('invitation-link-display');
             input.select();
             document.execCommand('copy');
-            alert('✅ Link kopiert!');
+            alert('Link kopiert!');
         }
 
         function copyLink(link) {
             navigator.clipboard.writeText(link).then(() => {
-                alert('✅ Link kopiert!');
+                alert('Link kopiert!');
             });
         }
 
@@ -6936,18 +6936,18 @@
 
         // Alle verfügbaren Apps für Berechtigungen
         const ALL_PERMISSION_APPS = [
-            { id: 'dashboard', name: 'Dashboard', icon: '📊' },
-            { id: 'kader', name: 'Kader', icon: '👥' },
-            { id: 'kalender', name: 'Kalender', icon: '📅' },
-            { id: 'messenger', name: 'Messenger', icon: '💬' },
-            { id: 'taktik', name: 'Taktik-Tafel', icon: '⚽' },
-            { id: 'upload', name: 'Video Upload', icon: '📹' },
-            { id: 'tipps', name: 'Tipps & Tutorials', icon: '💡' },
-            { id: 'analyse', name: 'Analyse', icon: '📈' },
-            { id: 'training', name: 'Training', icon: '🏋️' },
-            { id: 'medizin', name: 'Medizin', icon: '⚕️' },
-            { id: 'finanzen', name: 'Finanzen', icon: '💰' },
-            { id: 'verwaltung', name: 'Verwaltung', icon: '👔' }
+            { id: 'dashboard', name: 'Dashboard', icon: '<span class="iconoir-stats-up-square"></span>' },
+            { id: 'kader', name: 'Kader', icon: '<span class="iconoir-group"></span>' },
+            { id: 'kalender', name: 'Kalender', icon: '<span class="iconoir-calendar"></span>' },
+            { id: 'messenger', name: 'Messenger', icon: '<span class="iconoir-message"></span>' },
+            { id: 'taktik', name: 'Taktik-Tafel', icon: '<span class="iconoir-football-ball"></span>' },
+            { id: 'upload', name: 'Video Upload', icon: '<span class="iconoir-video-camera"></span>' },
+            { id: 'tipps', name: 'Tipps & Tutorials', icon: '<span class="iconoir-light-bulb"></span>' },
+            { id: 'analyse', name: 'Analyse', icon: '<span class="iconoir-graph-up"></span>' },
+            { id: 'training', name: 'Training', icon: '<span class="iconoir-gym"></span>' },
+            { id: 'medizin', name: 'Medizin', icon: '<span class="iconoir-healthcare"></span>' },
+            { id: 'finanzen', name: 'Finanzen', icon: '<span class="iconoir-money-square"></span>' },
+            { id: 'verwaltung', name: 'Verwaltung', icon: '<span class="iconoir-building"></span>' }
         ];
 
         let currentEditingRoleId = null;
@@ -7018,7 +7018,7 @@
                 if (data.success) {
                     closeModal('edit-permissions-modal');
                     loadTeamRoles();
-                    alert('✅ Berechtigungen gespeichert!');
+                    alert('Berechtigungen gespeichert!');
                 } else {
                     alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
                 }
@@ -7038,7 +7038,7 @@
                 const data = await response.json();
                 const statusEl = document.getElementById('2faStatus');
                 if (statusEl) {
-                    statusEl.textContent = data.enabled ? '✅ Aktiviert' : '❌ Deaktiviert';
+                    statusEl.innerHTML = data.enabled ? '<span class="iconoir-check-circle"></span> Aktiviert' : '<span class="iconoir-xmark-circle"></span> Deaktiviert';
                     statusEl.style.color = data.enabled ? '#10b981' : '#ef4444';
                 }
             } catch (e) {
@@ -7060,7 +7060,7 @@
             `;
             modal.innerHTML = `
                 <div style="background: var(--card-bg); border-radius: 16px; padding: 24px; max-width: 400px; width: 90%;">
-                    <h3 style="margin-bottom: 20px;">🔑 Passwort ändern</h3>
+                    <h3 style="margin-bottom: 20px;"><span class="iconoir-key"></span> Passwort ändern</h3>
                     <div style="display: grid; gap: 15px;">
                         <input type="password" id="currentPassword" placeholder="Aktuelles Passwort"
                             style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color);">
@@ -7147,7 +7147,7 @@
         }
 
         function confirmDeleteAccount() {
-            const confirmed = confirm('⚠️ ACHTUNG!\n\nMöchtest du deinen Account wirklich löschen?\n\nAlle deine Daten (Spieler, Kalender, Nachrichten, Taktiken) werden unwiderruflich gelöscht!\n\nDiese Aktion kann NICHT rückgängig gemacht werden.');
+            const confirmed = confirm('ACHTUNG!\n\nMöchtest du deinen Account wirklich löschen?\n\nAlle deine Daten (Spieler, Kalender, Nachrichten, Taktiken) werden unwiderruflich gelöscht!\n\nDiese Aktion kann NICHT rückgängig gemacht werden.');
 
             if (confirmed) {
                 const doubleConfirm = confirm('Bist du dir wirklich sicher?\n\nGib "OK" um deinen Account endgültig zu löschen.');
@@ -7266,7 +7266,7 @@
             gridEl.innerHTML = teamVideos.map(video => `
                     <div class="video-card" style="background: var(--card-light); border: 1px solid var(--border-light); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onclick="openVideoPlayer(${video.id})" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
                         <div style="height: 140px; background: var(--video-thumb-bg, linear-gradient(135deg, #e8e8ed, #d1d1d6)); display: flex; align-items: center; justify-content: center; position: relative;">
-                            <span style="font-size: 48px; opacity: 0.5;">🎬</span>
+                            <span style="font-size: 48px; opacity: 0.5;"><span class="iconoir-movie"></span></span>
                             <span style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-family: monospace;">
                                 ${formatDuration(video.duration)}
                             </span>
@@ -7338,7 +7338,7 @@
                 // Fullscreen aktivieren - nur der Container (Video + Toolbar + Clip-Bar)
                 container.requestFullscreen().then(() => {
                     isVideoFullscreen = true;
-                    btn.innerHTML = '✕';
+                    btn.innerHTML = '<span class="iconoir-xmark"></span>';
                     btn.style.background = 'rgba(16,185,129,0.9)';
                     // Container nimmt jetzt ganzen Bildschirm ein
                     container.style.right = '0';
@@ -7353,7 +7353,7 @@
                 // Fullscreen beenden
                 document.exitFullscreen().then(() => {
                     isVideoFullscreen = false;
-                    btn.innerHTML = '⛶';
+                    btn.innerHTML = '<span class="iconoir-expand"></span>';
                     btn.style.background = 'rgba(0,0,0,0.6)';
                     // Container wieder Platz für Sidebar lassen
                     container.style.right = '280px';
@@ -7374,7 +7374,7 @@
             if (!document.fullscreenElement && isVideoFullscreen) {
                 isVideoFullscreen = false;
                 if (btn) {
-                    btn.innerHTML = '⛶';
+                    btn.innerHTML = '<span class="iconoir-expand"></span>';
                     btn.style.background = 'rgba(0,0,0,0.6)';
                 }
                 // Container wieder Platz für Sidebar lassen
@@ -7781,7 +7781,7 @@
                     <span style="flex: 1; font-size: 12px; color: var(--text-light); opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(marker.label) || 'Marker'}</span>
                     <button onclick="event.stopPropagation(); deleteMarker(${marker.id})" 
                             style="background: none; border: none; color: var(--text-light); opacity: 0.4; cursor: pointer; font-size: 14px; padding: 2px 6px;"
-                            title="Löschen">✕</button>
+                            title="Löschen"><span class="iconoir-xmark"></span></button>
                 </div>
             `).join('');
         }
@@ -7832,10 +7832,10 @@
                                 <span style="font-family: monospace; font-size: 12px; color: #ef4444;">${formatTime(clip.end_time)}</span>
                             </div>
                             <button onclick="openShareModal(${clip.id})" title="Teilen" style="width: 28px; height: 28px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
-                                📤
+                                <span class="iconoir-send"></span>
                             </button>
                             <button onclick="deleteClip(${clip.id})" title="Löschen" style="width: 28px; height: 28px; background: rgba(220,38,38,0.2); color: #ef4444; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
-                                🗑️
+                                <span class="iconoir-trash"></span>
                             </button>
                         </div>
                         <div style="font-size: 11px; color: var(--text-light); opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(clip.note || 'Kein Kommentar')}</div>
@@ -8002,9 +8002,9 @@
                             </span>
                         </div>
                         ${share.message ? `<p style="margin: 0 0 12px 0; padding: 8px; background: var(--bg-light); border-radius: 8px; font-size: 13px; font-style: italic;">"${escapeHtml(share.message)}"</p>` : ''}
-                        ${share.clip?.note ? `<p style="margin: 0 0 12px 0; font-size: 13px; opacity: 0.8;">📝 ${escapeHtml(share.clip.note)}</p>` : ''}
+                        ${share.clip?.note ? `<p style="margin: 0 0 12px 0; font-size: 13px; opacity: 0.8;"><span class="iconoir-edit-pencil"></span> ${escapeHtml(share.clip.note)}</p>` : ''}
                         <button onclick="watchSharedClip(${share.share_id}, ${share.video?.id || 0}, ${share.clip?.start_time || 0})" style="padding: 10px 20px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
-                            ▶ Clip ansehen
+                            <span class="iconoir-play"></span> Clip ansehen
                         </button>
                     </div>
                 `).join('');
@@ -8229,7 +8229,7 @@
         const widgetTemplates = {
             // KADER WIDGET
             kader: () => `
-                <div class="widget-header">👥 Kader</div>
+                <div class="widget-header"><span class="iconoir-group"></span> Kader</div>
                 <div class="widget-content" id="widget-kader-content">
                     <div class="widget-stat">
                         <span class="widget-stat-label"><span class="status-dot fit"></span>Fit</span>
@@ -8251,7 +8251,7 @@
             `,
             // KALENDER WIDGET
             kalender: () => `
-                <div class="widget-header">📅 Kalender</div>
+                <div class="widget-header"><span class="iconoir-calendar"></span> Kalender</div>
                 <div class="widget-content">
                     <div class="widget-week-grid" id="widget-kalender-grid">
                         <div class="widget-week-day"><span class="widget-day-label">Mo</span><span class="widget-day-dot"></span></div>
@@ -8266,28 +8266,28 @@
             `,
             // MESSENGER WIDGET
             messenger: () => `
-                <div class="widget-header">💬 Messenger</div>
+                <div class="widget-header"><span class="iconoir-message"></span> Messenger</div>
                 <div class="widget-content" id="widget-messenger-content">
                     <span style="opacity: 0.6; font-size: 12px;">Keine neuen Nachrichten</span>
                 </div>
             `,
             // ANALYSE WIDGET (Premium)
             analyse: () => `
-                <div class="widget-header">📈 Analyse <span style="background: #8b5cf6; color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; margin-left: 6px;">💎</span></div>
+                <div class="widget-header"><span class="iconoir-graph-up"></span> Analyse <span style="background: #8b5cf6; color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; margin-left: 6px;"><span class="iconoir-crown"></span></span></div>
                 <div class="widget-content">
                     <span style="opacity: 0.6; font-size: 12px;">Noch keine Analyse vorhanden</span>
                 </div>
             `,
             // TRAINING WIDGET
             training: () => `
-                <div class="widget-header">🏋️ Training</div>
+                <div class="widget-header"><span class="iconoir-gym"></span> Training</div>
                 <div class="widget-content" id="widget-training-content">
                     <span style="opacity: 0.6; font-size: 12px;">Kein Training geplant</span>
                 </div>
             `,
             // MEDIZIN WIDGET
             medizin: () => `
-                <div class="widget-header">⚕️ Medizin</div>
+                <div class="widget-header"><span class="iconoir-healthcare"></span> Medizin</div>
                 <div class="widget-content">
                     <div class="widget-stat">
                         <span class="widget-stat-label">Verletzt</span>
@@ -8297,21 +8297,21 @@
             `,
             // FINANZEN WIDGET
             finanzen: () => `
-                <div class="widget-header">💰 Finanzen</div>
+                <div class="widget-header"><span class="iconoir-money-square"></span> Finanzen</div>
                 <div class="widget-content" id="widget-finanzen-content">
                     <span style="opacity: 0.6; font-size: 12px;">Keine Finanzdaten</span>
                 </div>
             `,
             // VIDEO WIDGET
             video: () => `
-                <div class="widget-header">🎬 Video</div>
+                <div class="widget-header"><span class="iconoir-movie"></span> Video</div>
                 <div class="widget-content" id="widget-video-content">
                     <span style="opacity: 0.6; font-size: 12px;">Keine Videos</span>
                 </div>
             `,
             // KASSE WIDGET
             kasse: () => `
-                <div class="widget-header">💵 Kasse</div>
+                <div class="widget-header"><span class="iconoir-wallet"></span> Kasse</div>
                 <div class="widget-content">
                     <div class="widget-stat">
                         <span class="widget-stat-label">Kontostand</span>
@@ -8321,30 +8321,30 @@
             `,
             // TAKTIK WIDGET
             taktik: () => `
-                <div class="widget-header">⚽ Taktik</div>
+                <div class="widget-header"><span class="iconoir-football-ball"></span> Taktik</div>
                 <div class="widget-content">
                     <span style="opacity: 0.6; font-size: 12px;">Taktik-Tafel öffnen</span>
                 </div>
             `,
             // UPLOAD WIDGET
             upload: () => `
-                <div class="widget-header">📹 Videos</div>
+                <div class="widget-header"><span class="iconoir-video-camera"></span> Videos</div>
                 <div class="widget-content" id="widget-upload-content">
                     <span style="opacity: 0.6; font-size: 12px;">Keine Videos hochgeladen</span>
                 </div>
             `,
             // QUICK LINKS WIDGET
             quick_links: () => `
-                <div class="widget-header">🔗 Schnellzugriffe</div>
+                <div class="widget-header"><span class="iconoir-link"></span> Schnellzugriffe</div>
                 <div class="widget-content" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <span onclick="switchApp('kader')" style="cursor: pointer; padding: 4px 8px; background: rgba(16,185,129,0.1); border-radius: 6px; font-size: 12px;">👥 Kader</span>
-                    <span onclick="switchApp('kalender')" style="cursor: pointer; padding: 4px 8px; background: rgba(59,130,246,0.1); border-radius: 6px; font-size: 12px;">📅 Kalender</span>
-                    <span onclick="switchApp('taktik')" style="cursor: pointer; padding: 4px 8px; background: rgba(245,158,11,0.1); border-radius: 6px; font-size: 12px;">⚽ Taktik</span>
+                    <span onclick="switchApp('kader')" style="cursor: pointer; padding: 4px 8px; background: rgba(16,185,129,0.1); border-radius: 6px; font-size: 12px;"><span class="iconoir-group"></span> Kader</span>
+                    <span onclick="switchApp('kalender')" style="cursor: pointer; padding: 4px 8px; background: rgba(59,130,246,0.1); border-radius: 6px; font-size: 12px;"><span class="iconoir-calendar"></span> Kalender</span>
+                    <span onclick="switchApp('taktik')" style="cursor: pointer; padding: 4px 8px; background: rgba(245,158,11,0.1); border-radius: 6px; font-size: 12px;"><span class="iconoir-football-ball"></span> Taktik</span>
                 </div>
             `,
             // STATS WIDGET
             stats: () => `
-                <div class="widget-header">📊 Statistiken</div>
+                <div class="widget-header"><span class="iconoir-stats-up-square"></span> Statistiken</div>
                 <div class="widget-content">
                     <div class="widget-stat">
                         <span class="widget-stat-label">Spieler</span>
@@ -8362,7 +8362,7 @@
             `,
             // UPCOMING WIDGET
             upcoming: () => `
-                <div class="widget-header">📅 Nächste Spiele</div>
+                <div class="widget-header"><span class="iconoir-calendar"></span> Nächste Spiele</div>
                 <div class="widget-content" id="widget-upcoming-content">
                     <span style="opacity: 0.6; font-size: 12px;">Keine Spiele geplant</span>
                 </div>
@@ -8411,7 +8411,7 @@
             widget.innerHTML = `
                 <div class="widget-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="flex: 1;">${headerText}</span>
-                    <span class="widget-delete" onclick="event.stopPropagation(); deleteWidget('${widgetId}')">✕</span>
+                    <span class="widget-delete" onclick="event.stopPropagation(); deleteWidget('${widgetId}')"><span class="iconoir-xmark"></span></span>
                 </div>
                 ${restContent}
             `;
@@ -8543,7 +8543,7 @@
                             const eventDate = new Date(e.date);
                             const dateStr = eventDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
                             const type = e.type || 'event';
-                            const typeIcon = type === 'match' || type === 'spiel' ? '⚽' : type === 'training' ? '🏋️' : '📅';
+                            const typeIcon = type === 'match' || type === 'spiel' ? '<span class="iconoir-football-ball"></span>' : type === 'training' ? '<span class="iconoir-gym"></span>' : '<span class="iconoir-calendar"></span>';
                             return `<div style="margin-bottom: 8px; font-size: 12px;">
                                     <span>${typeIcon}</span> <strong>${e.title || 'Event'}</strong>
                                     <div style="opacity: 0.6; font-size: 11px;">${dateStr}</div>
@@ -8883,7 +8883,7 @@
                     if (team.has_team) {
                         teamInfoDiv.innerHTML = `
                                 <div class="profil-team-badge">
-                                    <span style="font-size: 24px;">⚽</span>
+                                    <span style="font-size: 24px;"><span class="iconoir-football-ball"></span></span>
                                     <div>
                                         <div style="font-weight: 600;">${escapeHtml(team.verein || team.team_name || 'Team')}</div>
                                         <div style="font-size: 12px; opacity: 0.7;">${escapeHtml(team.mannschaft || '')}</div>
@@ -8891,7 +8891,7 @@
                                 </div>
                                 <div style="margin-top: 16px; font-size: 14px;">
                                     <div style="margin-bottom: 8px;"><strong>Rolle:</strong> ${escapeHtml(team.role_name || 'Mitglied')}</div>
-                                    ${team.is_admin ? '<div style="color: #22c55e;">✓ Team-Administrator</div>' : ''}
+                                    ${team.is_admin ? '<div style="color: #22c55e;"><span class="iconoir-check"></span> Team-Administrator</div>' : ''}
                                 </div>
                             `;
 
@@ -8900,7 +8900,7 @@
                     } else {
                         teamInfoDiv.innerHTML = `
                                 <div style="text-align: center; padding: 20px;">
-                                    <div style="font-size: 40px; margin-bottom: 12px;">🏟️</div>
+                                    <div style="font-size: 40px; margin-bottom: 12px;"><span class="iconoir-soccer-ball"></span></div>
                                     <p style="margin-bottom: 16px;">Du bist noch keinem Team beigetreten.</p>
                                     <button onclick="switchApp('home')" 
                                         style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer;">
@@ -9492,10 +9492,10 @@
             typeInput.value = type;
 
             if (type === 'income') {
-                title.textContent = '➕ Neue Einnahme';
+                title.innerHTML = '<span class="iconoir-plus"></span> Neue Einnahme';
                 saveBtn.style.background = '#10b981';
             } else {
-                title.textContent = '➖ Neue Ausgabe';
+                title.innerHTML = '<span class="iconoir-minus"></span> Neue Ausgabe';
                 saveBtn.style.background = '#ef4444';
             }
 
@@ -9597,7 +9597,7 @@
                                     <span style="font-weight: 700; font-size: 16px; color: ${isIncome ? '#10b981' : '#ef4444'};">
                                         ${isIncome ? '+' : '-'}${formatCurrency(t.amount)}
                                     </span>
-                                    <button onclick="deleteKasseTransaction(${t.id})" style="background: none; border: none; cursor: pointer; opacity: 0.5; font-size: 16px;" title="Löschen">🗑️</button>
+                                    <button onclick="deleteKasseTransaction(${t.id})" style="background: none; border: none; cursor: pointer; opacity: 0.5; font-size: 16px;" title="Löschen"><span class="iconoir-trash"></span></button>
                                 </div>
                             </div>
                         `;
@@ -9614,16 +9614,16 @@
 
         function getCategoryEmoji(category) {
             const emojis = {
-                'beitrag': '💳',
-                'spende': '🎁',
-                'sponsor': '🤝',
-                'ausruestung': '👕',
-                'platzmiete': '🏟️',
-                'transport': '🚌',
-                'verpflegung': '🍕',
-                'sonstiges': '📦'
+                'beitrag': '<span class="iconoir-credit-card"></span>',
+                'spende': '<span class="iconoir-gift"></span>',
+                'sponsor': '<span class="iconoir-people-tag"></span>',
+                'ausruestung': '<span class="iconoir-shirt"></span>',
+                'platzmiete': '<span class="iconoir-soccer-ball"></span>',
+                'transport': '<span class="iconoir-bus"></span>',
+                'verpflegung': '<span class="iconoir-pizza-slice"></span>',
+                'sonstiges': '<span class="iconoir-package"></span>'
             };
-            return emojis[category] || '📦';
+            return emojis[category] || '<span class="iconoir-package"></span>';
         }
 
         function renderKasseChart() {
@@ -10167,8 +10167,8 @@
                 if (isTeamEvent) {
                     rsvpHtml = `
                             <div class="event-rsvp-info" style="display: flex; gap: 8px; margin-top: 4px; font-size: 11px;">
-                                <span style="color: #34c759;">✓ ${yesCount}</span>
-                                <span style="color: #ff3b30;">✗ ${noCount}</span>
+                                <span style="color: #34c759;"><span class="iconoir-check"></span> ${yesCount}</span>
+                                <span style="color: #ff3b30;"><span class="iconoir-xmark"></span> ${noCount}</span>
                                 <span style="color: #ff9500;">? ${maybeCount}</span>
                             </div>
                             <div class="event-rsvp-buttons" style="display: flex; gap: 4px; margin-top: 6px;">
@@ -10191,7 +10191,7 @@
                         `;
                 }
 
-                const visibilityIcon = isTeamEvent ? '👥' : '🔒';
+                const visibilityIcon = isTeamEvent ? '<span class="iconoir-group"></span>' : '<span class="iconoir-lock"></span>';
 
                 html += `
                 <div class="timeline-event ${event.type}" 
@@ -10201,8 +10201,8 @@
                     <div class="event-name">${event.title}</div>
                     ${rsvpHtml}
                     <div class="event-actions">
-                        <button class="event-btn event-edit-btn" data-event-index="${eventIndex}" title="Bearbeiten">✎</button>
-                        <button class="event-btn event-delete-btn" data-event-index="${eventIndex}" title="Löschen">✕</button>
+                        <button class="event-btn event-edit-btn" data-event-index="${eventIndex}" title="Bearbeiten"><span class="iconoir-edit-pencil"></span></button>
+                        <button class="event-btn event-delete-btn" data-event-index="${eventIndex}" title="Löschen"><span class="iconoir-xmark"></span></button>
                     </div>
                     <div class="event-resize-handle"></div>
                 </div>
@@ -10695,7 +10695,7 @@
                         registeredClub = { name: teamInfo.verein || teamInfo.team_name || '', id: teamInfo.team_id };
                         const logo = document.querySelector('.logo');
                         if (logo && registeredClub?.name) {
-                            logo.innerHTML = `⚽ ${escapeHtml(registeredClub.name)}`;
+                            logo.innerHTML = `<span class="iconoir-football-ball"></span> ${escapeHtml(registeredClub.name)}`;
                         }
                     }
                 }
@@ -10709,7 +10709,7 @@
         function updateAppLogo() {
             const logo = document.getElementById('appLogo');
             if (registeredClub && logo) {
-                logo.innerHTML = `⚽ ${escapeHtml(registeredClub.name)}`;
+                logo.innerHTML = `<span class="iconoir-football-ball"></span> ${escapeHtml(registeredClub.name)}`;
             }
         }
 
@@ -10741,7 +10741,7 @@
                         if (data.team) {
                             const logo = document.getElementById('appLogo');
                             if (logo) {
-                                logo.innerHTML = `⚽ ${escapeHtml(data.team.verein)}`;
+                                logo.innerHTML = `<span class="iconoir-football-ball"></span> ${escapeHtml(data.team.verein)}`;
                             }
                         }
                     }
@@ -10794,7 +10794,7 @@
                     // Logo aktualisieren
                     const logo = document.getElementById('appLogo');
                     if (logo) {
-                        logo.innerHTML = `⚽ ${escapeHtml(verein)}`;
+                        logo.innerHTML = `<span class="iconoir-football-ball"></span> ${escapeHtml(verein)}`;
                     }
 
                     // Seite neu laden für vollständige Aktualisierung
@@ -11602,7 +11602,7 @@
                 } else {
                     dashboardContainer.innerHTML = kaderTeams.map(team => `
                         <div style="display: flex; align-items: center; gap: 12px; background: ${cardBg}; padding: 16px 20px; border-radius: 12px; border: 1px solid ${borderColor}; min-width: 200px;">
-                            <div style="width: 40px; height: 40px; background: ${team.color || '#10b981'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">⚽</div>
+                            <div style="width: 40px; height: 40px; background: ${team.color || '#10b981'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;"><span class="iconoir-football-ball"></span></div>
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; color: ${textColor};">${team.name}</div>
                                 <div style="font-size: 12px; color: ${textColor}; opacity: 0.6;">${team.category}</div>
@@ -11651,8 +11651,8 @@
             let html = '';
 
             const isTeamActive = currentChat === 'team' ? 'background: var(--primary-green); color: white;' : '';
-            html += `<div onclick="selectChat('team', '👥 Team')" style="padding: 12px; border-bottom: 1px solid var(--border-light); cursor: pointer; ${isTeamActive}">
-                <div style="font-weight: 600; font-size: 13px;">👥 Team Chat</div>
+            html += `<div onclick="selectChat('team', 'Team', true)" style="padding: 12px; border-bottom: 1px solid var(--border-light); cursor: pointer; ${isTeamActive}">
+                <div style="font-weight: 600; font-size: 13px;"><span class="iconoir-group"></span> Team Chat</div>
             </div>`;
 
             const linkedPlayers = (kaderPlayers || []).filter(p => p.user_id);
@@ -11671,7 +11671,7 @@
             container.innerHTML = html || '<div style="padding: 12px; text-align: center; opacity: 0.5; font-size: 12px;">Keine Kontakte</div>';
         }
 
-        async function selectChat(convKey, contactName) {
+        async function selectChat(convKey, contactName, isTeam = false) {
             currentChat = convKey;
             currentChatPeerId = null;
 
@@ -11679,7 +11679,12 @@
                 currentChatPeerId = parseInt(convKey.replace('chat_', ''), 10);
             }
 
-            document.getElementById('messengerHeader').innerHTML = `<span>${contactName}</span>`;
+            const header = document.getElementById('messengerHeader');
+            if (isTeam) {
+                header.innerHTML = `<span class="iconoir-group"></span> ${escapeHtml(contactName)}`;
+            } else {
+                header.textContent = contactName;
+            }
             document.getElementById('messengerInput').disabled = false;
 
             await renderMessages();
@@ -11714,7 +11719,7 @@
                                 <div style="font-size: 12px; opacity: 0.8; margin-bottom: 8px;">${escapeHtml(clip.clip?.title || 'Clip')}</div>
                                 ${clip.message ? `<div style="font-size: 12px; opacity: 0.8; margin-bottom: 8px;">${escapeHtml(clip.message)}</div>` : ''}
                                 <button onclick="watchSharedClipFromChat(${clip.share_id}, ${clip.video?.id || 0}, ${clip.clip?.start_time || 0})" style="padding: 8px 12px; border-radius: 8px; background: var(--primary-green); color: white; border: none; cursor: pointer; font-size: 12px; font-weight: 600;">
-                                    ▶ Clip ansehen
+                                    <span class="iconoir-play"></span> Clip ansehen
                                 </button>
                             </div>
                         `).join('');
@@ -11777,7 +11782,7 @@
                     data: e.target.result,
                     type: file.type
                 };
-                document.getElementById('attachmentName').textContent = '📎 ' + file.name;
+                document.getElementById('attachmentName').innerHTML = '<span class="iconoir-attachment"></span> ' + escapeHtml(file.name);
                 document.getElementById('attachmentPreview').style.display = 'block';
             };
             reader.readAsDataURL(file);
@@ -12492,23 +12497,23 @@
                     style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; z-index: 100;">
                     <button onclick="addVideoMarker()" id="addMarkerBtn" type="button" title="Marker setzen"
                         style="width: 44px; height: 44px; background: rgba(245,158,11,0.9); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
-                        📍
+                        <span class="iconoir-map-pin"></span>
                     </button>
                     <button onclick="toggleDrawMode()" id="drawModeBtn" type="button" title="Zeichnen"
                         style="width: 44px; height: 44px; background: rgba(0,0,0,0.6); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
-                        ✏️
+                        <span class="iconoir-edit-pencil"></span>
                     </button>
                     <button onclick="clearVideoDrawing()" type="button" title="Zeichnung löschen"
                         style="width: 44px; height: 44px; background: rgba(0,0,0,0.6); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
-                        🧹
+                        <span class="iconoir-sweep-3d"></span>
                     </button>
                     <button onclick="toggleVideoFadeMode()" id="fadeModeBtn" type="button" title="Auto-Fade (AN)"
                         style="width: 44px; height: 44px; background: rgba(139,92,246,0.9); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
-                        ⏱️
+                        <span class="iconoir-timer"></span>
                     </button>
                     <button onclick="toggleVideoFullscreen()" id="fullscreenBtn" type="button" title="Vollbild"
                         style="width: 44px; height: 44px; background: rgba(0,0,0,0.6); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
-                        ⛶
+                        <span class="iconoir-expand"></span>
                     </button>
                 </div>
 
@@ -12517,7 +12522,7 @@
                     style="position: absolute; top: 16px; left: 16px; display: flex; align-items: center; gap: 12px; z-index: 100;">
                     <button onclick="closeVideoPlayer()" type="button" title="Schließen"
                         style="width: 44px; height: 44px; background: rgba(0,0,0,0.6); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
-                        ✕
+                        <span class="iconoir-xmark"></span>
                     </button>
                     <h2 id="playerVideoTitle"
                         style="margin: 0; font-size: 14px; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
@@ -12530,7 +12535,7 @@
                 <!-- Delete Button (top right corner) -->
                 <button onclick="deleteCurrentVideo()" type="button" title="Video löschen"
                     style="position: absolute; top: 16px; right: 300px; width: 44px; height: 44px; background: rgba(220,38,38,0.9); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); z-index: 100;">
-                    🗑️
+                    <span class="iconoir-trash"></span>
                 </button>
             </div>
 
@@ -12539,13 +12544,13 @@
                 style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                 <button onclick="setClipStart()"
                     style="padding: 8px 14px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">
-                    ▶ Start
+                    <span class="iconoir-play"></span> Start
                 </button>
                 <span id="clipStartTime"
                     style="font-family: monospace; color: #10b981; min-width: 50px; font-size: 14px;">--:--</span>
                 <button onclick="setClipEnd()"
                     style="padding: 8px 14px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">
-                    ⏹ Ende
+                    <span class="iconoir-square"></span> Ende
                 </button>
                 <span id="clipEndTime"
                     style="font-family: monospace; color: #ef4444; min-width: 50px; font-size: 14px;">--:--</span>
@@ -12553,7 +12558,7 @@
                     style="flex: 1; min-width: 120px; padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; font-size: 13px;">
                 <button onclick="saveVideoClip()" id="saveClipBtn" type="button" disabled
                     style="padding: 8px 18px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; opacity: 0.5; font-size: 13px;">
-                    💾 Clip speichern
+                    <span class="iconoir-floppy-disk"></span> Clip speichern
                 </button>
             </div>
         </div>
@@ -12565,7 +12570,7 @@
             <!-- Markers Section -->
             <div style="border-bottom: 1px solid var(--border-light);">
                 <div style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="margin: 0; color: var(--text-light); font-size: 14px;">📍 Marker</h3>
+                    <h3 style="margin: 0; color: var(--text-light); font-size: 14px;"><span class="iconoir-map-pin"></span> Marker</h3>
                     <span id="markerCount" style="color: var(--text-light); opacity: 0.5; font-size: 12px;">0</span>
                 </div>
                 <div id="videoMarkersList" style="max-height: 180px; overflow-y: auto; padding: 0 12px 12px;">
@@ -12579,7 +12584,7 @@
             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <div
                     style="padding: 12px 16px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="margin: 0; color: var(--text-light); font-size: 14px;">📎 Clips</h3>
+                    <h3 style="margin: 0; color: var(--text-light); font-size: 14px;"><span class="iconoir-attachment"></span> Clips</h3>
                     <span id="clipCount" style="color: var(--text-light); opacity: 0.5; font-size: 12px;">0</span>
                 </div>
                 <div id="videoClipsList" style="flex: 1; overflow-y: auto; padding: 12px;">
@@ -12596,9 +12601,9 @@
         <div
             style="background: var(--card-light); border: 1px solid var(--border-light); border-radius: 16px; padding: 24px; max-width: 500px; width: 90%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin: 0; font-size: 18px; color: var(--text-light);">📤 Clip teilen</h2>
+                <h2 style="margin: 0; font-size: 18px; color: var(--text-light);"><span class="iconoir-send"></span> Clip teilen</h2>
                 <button onclick="closeShareModal()"
-                    style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-light); opacity: 0.6;">✕</button>
+                    style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-light); opacity: 0.6;"><span class="iconoir-xmark"></span></button>
             </div>
             <p style="color: var(--text-light); opacity: 0.7; margin-bottom: 16px;">Wähle Spieler aus deinem Team:</p>
             <div id="sharePlayersList"
@@ -12608,7 +12613,7 @@
                 style="width: 100%; margin-top: 16px; padding: 12px; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 8px; color: var(--text-light);">
             <button onclick="sendClipToPlayers()"
                 style="width: 100%; margin-top: 16px; padding: 14px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600;">
-                📤 An ausgewählte Spieler senden
+                <span class="iconoir-send"></span> An ausgewählte Spieler senden
             </button>
         </div>
     </div>

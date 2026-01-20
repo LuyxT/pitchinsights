@@ -196,16 +196,17 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/static/css/iconoir-subset.css">
 </head>
 
 <body>
     <div class="container">
-        <div class="logo-icon">⚽</div>
+        <div class="logo-icon"><span class="iconoir-football-ball"></span></div>
         <h1>Fast geschafft!</h1>
         <p class="subtitle">Dein Account wurde erstellt</p>
 
         <div class="success-badge">
-            <span>✓</span>
+            <span><span class="iconoir-check"></span></span>
             <span>Registrierung erfolgreich</span>
         </div>
 
@@ -215,7 +216,7 @@
         </div>
 
         <div class="important-note">
-            <h4>✅ Hinweis</h4>
+            <h4><span class="iconoir-check-circle"></span> Hinweis</h4>
             <p>
                 In der Pilotphase ist der Zugang kostenlos. Du kannst dich direkt anmelden und loslegen.
             </p>
@@ -228,7 +229,7 @@
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 // Kurze visuelle Bestätigung
-                event.target.textContent = '✓';
+                event.target.innerHTML = '<span class="iconoir-check"></span>';
                 setTimeout(() => {
                     event.target.textContent = 'Kopieren';
                 }, 1500);

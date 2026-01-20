@@ -191,13 +191,14 @@
             font-weight: 500;
         }
     </style>
+    <link rel="stylesheet" href="/static/css/iconoir-subset.css">
 </head>
 
 <body>
     <div class="join-container">
         <div class="join-card">
             <div class="logo">
-                <div class="logo-icon">⚽</div>
+                <div class="logo-icon"><span class="iconoir-football-ball"></span></div>
                 <h1>PitchInsights</h1>
             </div>
 
@@ -218,7 +219,7 @@
             <!-- User ist bereits eingeloggt - nur beitreten -->
             <form method="POST" action="/join/{{ token }}">
                 <button type="submit" class="btn-primary">
-                    ✅ Team beitreten
+                    <span class="iconoir-check-circle"></span> Team beitreten
                 </button>
             </form>
             <a href="/os" class="btn-secondary">Abbrechen</a>

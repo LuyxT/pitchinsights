@@ -196,11 +196,12 @@
             text-decoration: none;
         }
     </style>
+    <link rel="stylesheet" href="/static/css/iconoir-subset.css">
 </head>
 
 <body>
     <div class="setup-container">
-        <h2>🔐 Zwei-Faktor-Authentifizierung</h2>
+        <h2><span class="iconoir-lock"></span> Zwei-Faktor-Authentifizierung</h2>
         <p class="subtitle">Schützen Sie Ihren Account mit einer zusätzlichen Sicherheitsebene.</p>
 
         {% if error %}
@@ -247,7 +248,7 @@
         </div>
 
         <div class="backup-codes">
-            <h4>⚠️ Backup-Codes sichern!</h4>
+            <h4><span class="iconoir-shield-alert"></span> Backup-Codes sichern!</h4>
             <p>Speichern Sie diese Codes sicher. Sie können sie verwenden, falls Sie den Zugriff auf Ihre
                 Authenticator-App verlieren.</p>
             <div class="codes-grid">

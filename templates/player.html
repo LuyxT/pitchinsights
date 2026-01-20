@@ -555,6 +555,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/static/css/iconoir-subset.css">
 </head>
 
 <body>
@@ -668,7 +669,7 @@
         <div class="shared-clip-card">
             <div class="shared-clip-header">
                 <span>Trainer Clip</span>
-                <button class="shared-clip-close" type="button" onclick="closeSharedClipModal()">✕</button>
+                <button class="shared-clip-close" type="button" onclick="closeSharedClipModal()"><span class="iconoir-xmark"></span></button>
             </div>
             <video id="sharedClipVideo" class="shared-clip-video" controls playsinline></video>
         </div>
@@ -834,7 +835,7 @@
                 name: 'Teamchat',
                 subtitle: 'Alle Teammitglieder',
                 scope: 'team',
-                avatar: '👥'
+                avatar: '<span class="iconoir-group"></span>'
             }].concat(trainerContacts.map(contact => {
                 const name = `${contact.vorname || ''} ${contact.nachname || ''}`.trim() || contact.email;
                 return {
@@ -842,7 +843,7 @@
                     name,
                     subtitle: contact.role_name || 'Trainer',
                     scope: 'trainer',
-                    avatar: '⚽'
+                    avatar: '<span class="iconoir-football-ball"></span>'
                 };
             }));
 
