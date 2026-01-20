@@ -2031,6 +2031,30 @@ async def delete_account(request: Request):
 
     client_ip = get_client_ip(request)
 
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT tm.team_id, t.name as team_name, COUNT(tm2.user_id) as admin_count
+            FROM team_members tm
+            JOIN roles r ON tm.role_id = r.id
+            JOIN teams t ON tm.team_id = t.id
+            JOIN team_members tm2 ON tm2.team_id = tm.team_id
+            JOIN roles r2 ON tm2.role_id = r2.id
+            WHERE tm.user_id = ? AND LOWER(r.name) = 'admin'
+              AND LOWER(r2.name) = 'admin'
+            GROUP BY tm.team_id
+            HAVING admin_count <= 1
+        """, (user["id"],))
+        blocked_teams = cursor.fetchall()
+
+    if blocked_teams:
+        team_names = [row["team_name"] or "Team" for row in blocked_teams]
+        return JSONResponse(
+            {"error": "Bitte benenne zuerst einen Admin.",
+             "teams": team_names},
+            status_code=400
+        )
+
     # DSGVO-konformes Soft Delete
     success = soft_delete_user(user["id"])
 

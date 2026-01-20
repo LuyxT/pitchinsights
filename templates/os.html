@@ -7166,6 +7166,13 @@
                         'Content-Type': 'application/json'
                     }
                 });
+                const data = await response.json();
+                if (!response.ok) {
+                    const teams = (data.teams || []).join(', ');
+                    const hint = teams ? `\nTeams: ${teams}` : '';
+                    alert((data.error || 'Account konnte nicht gelöscht werden.') + hint);
+                    return;
+                }
 
                 alert('Dein Account wurde erfolgreich gelöscht. Auf Wiedersehen!');
                 window.location.href = '/login';
