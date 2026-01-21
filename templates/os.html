@@ -8478,15 +8478,16 @@
 
                 // Kader Widget
                 document.querySelectorAll('.widget-kader-fit').forEach(el => el.textContent = data.fit || 0);
-                document.querySelectorAll('.widget-kader-limited').forEach(el => el.textContent = data.belastet || 0);
-                document.querySelectorAll('.widget-kader-injured').forEach(el => el.textContent = data.verletzt || 0);
+                document.querySelectorAll('.widget-kader-training').forEach(el => el.textContent = data.training || 0);
+                document.querySelectorAll('.widget-kader-reha').forEach(el => el.textContent = data.reha || 0);
+                document.querySelectorAll('.widget-kader-ausfall').forEach(el => el.textContent = data.ausfall || 0);
 
                 // Medizin Widget
-                document.querySelectorAll('.widget-medizin-injured').forEach(el => el.textContent = data.verletzt || 0);
-                document.querySelectorAll('.widget-medizin-limited').forEach(el => el.textContent = data.belastet || 0);
+                const medicalCount = (data.reha || 0) + (data.ausfall || 0);
+                document.querySelectorAll('.widget-medizin-injured').forEach(el => el.textContent = medicalCount);
 
                 // Stats Widget
-                const totalPlayers = (data.fit || 0) + (data.belastet || 0) + (data.verletzt || 0);
+                const totalPlayers = (data.fit || 0) + (data.training || 0) + (data.reha || 0) + (data.ausfall || 0);
                 document.querySelectorAll('.widget-stats-players').forEach(el => el.textContent = totalPlayers);
             } catch (e) {
                 console.error('Fehler beim Laden der Kader-Widget-Daten:', e);
