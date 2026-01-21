@@ -11,7 +11,7 @@
 
     <style>
         :root {
-            --bg: #0b0e14;
+            --bg: #ffffff;
             --ink: #f5f7ff;
             --muted: rgba(245, 247, 255, 0.7);
             --glass: rgba(12, 16, 26, 0.55);
@@ -46,7 +46,7 @@
             width: 100vw;
             height: 100vh;
             display: block;
-            background: #000;
+            background: #fff;
         }
 
         .scroll-area {
@@ -172,6 +172,23 @@
             text-transform: uppercase;
         }
 
+        .title-overlay {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #0b0e14;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+        }
+
         @media (max-width: 800px) {
             .overlay-layer {
                 justify-content: center;
@@ -191,6 +208,7 @@
 
 <body>
     <canvas id="frame-canvas"></canvas>
+    <div class="title-overlay">PitchInsights</div>
 
     <div class="overlay-layer" aria-hidden="true">
         <div class="overlay-stack" id="overlayStack">
@@ -315,7 +333,8 @@
 
             const canvasWidth = canvas.width / dpr;
             const canvasHeight = canvas.height / dpr;
-            const scale = Math.min(canvasWidth / img.naturalWidth, canvasHeight / img.naturalHeight);
+            const baseScale = Math.min(canvasWidth / img.naturalWidth, canvasHeight / img.naturalHeight);
+            const scale = baseScale * 1.15;
             const drawWidth = img.naturalWidth * scale;
             const drawHeight = img.naturalHeight * scale;
             const offsetX = (canvasWidth - drawWidth) / 2;
