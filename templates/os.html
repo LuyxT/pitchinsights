@@ -652,6 +652,10 @@
         .add-widget .add-icon {
             font-size: 28px;
             color: var(--secondary-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
         }
 
         .add-widget .add-text {
@@ -5849,7 +5853,7 @@
             }
 
             addBtn.innerHTML = `
-                    <div class="add-icon">+</div>
+                    <div class="add-icon"><span class="iconoir-plus"></span></div>
                     <div class="add-text">Apps</div>
                 `;
             homeGrid.appendChild(addBtn);
@@ -12621,7 +12625,7 @@
 
     <!-- FLOATING ADD WIDGET BUTTON - Home only -->
     <button id="floatingAddWidget" class="add-widget-btn" onclick="openWidgetModal()"
-        title="Widget hinzufügen">+</button>
+        title="Widget hinzufügen"><span class="iconoir-plus"></span></button>
 
 </body>
 
