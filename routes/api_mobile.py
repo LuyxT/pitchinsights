@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any, List
 
 from fastapi import APIRouter, Request, HTTPException, Depends, Header
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 import bcrypt
 
 from config import SecurityConfig
@@ -42,12 +42,12 @@ active_tokens: Dict[str, Dict] = {}
 # ============================================
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(min_length=5, max_length=254)
     password: str = Field(min_length=6, max_length=128)
 
 
 class RegisterRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(min_length=5, max_length=254)
     password: str = Field(min_length=8, max_length=128)
     firstName: str = Field(min_length=1, max_length=100)
     lastName: str = Field(min_length=1, max_length=100)
