@@ -9197,7 +9197,7 @@
 
         async function loadMessagesFromAPI() {
             try {
-                const response = await fetch('/api/messages');
+                const response = await fetch('/api/messages?scope=team');
                 if (!response.ok) return [];
 
                 const data = await response.json();
