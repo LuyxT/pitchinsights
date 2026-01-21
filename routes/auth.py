@@ -438,6 +438,12 @@ async def home(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
+@router.get("/landing", response_class=HTMLResponse)
+async def landing_page(request: Request):
+    """Öffentliche Landingpage ohne Login-Redirect."""
+    return templates.TemplateResponse("landing.html", {"request": request})
+
+
 # Access-Code für geschützten Login-Bereich (aus Umgebungsvariable oder Fallback)
 ACCESS_CODE = os.environ.get("PITCHINSIGHTS_ACCESS_CODE", "pitch2026")
 
