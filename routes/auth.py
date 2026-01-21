@@ -48,7 +48,7 @@ from database import (
 )
 from email_service import (
     send_login_notification, send_password_changed_notification,
-    send_2fa_enabled_notification, send_activation_email, send_2fa_code,
+    send_2fa_enabled_notification, send_2fa_code,
     EmailConfig
 )
 
@@ -158,27 +158,6 @@ def user_has_role_in_any_team(user_id: int, role_name: str) -> bool:
         """, (user_id, role_name))
         return cursor.fetchone() is not None
 
-
-def create_email_verification(user_id: int, email: str, request: Request) -> bool:
-    """
-    Erstellt Verifikations-Token und verschickt Aktivierungs-Mail.
-    """
-    if not EmailConfig.is_configured():
-        return False
-
-    token = secrets.token_urlsafe(32)
-    expires_at = (datetime.now() + timedelta(days=2)).isoformat()
-    verify_url = f"{request.base_url}verify-email/{token}"
-
-    with get_db_connection() as db:
-        cursor = db.cursor()
-        cursor.execute("""
-            INSERT INTO email_verifications (user_id, token, expires_at)
-            VALUES (?, ?, ?)
-        """, (user_id, token, expires_at))
-        db.commit()
-
-    return send_activation_email(email, verify_url)
 
 def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
     """
@@ -1194,7 +1173,7 @@ async def register(
             role_id = player_role["id"] if player_role else invitation_data["role_id"]
             cursor.execute("""
                 INSERT INTO users (email, password_hash, onboarding_complete, is_active, payment_status)
-                VALUES (?, ?, 1, 0, 'paid')
+                VALUES (?, ?, 1, 1, 'paid')
             """, (email, password_hash))
             user_id = cursor.lastrowid
 
@@ -1216,26 +1195,17 @@ async def register(
             logger.info(
                 f"New user registered with invitation: user_id={user_id}, team_id={invitation_data['team_id']}")
 
-            sent = create_email_verification(user_id, email, request)
-            if not sent:
-                new_csrf = generate_csrf_token("register_form")
-                return templates.TemplateResponse(
-                    "register.html",
-                    {"request": request, "error": "Aktivierungs-E-Mail konnte nicht gesendet werden.",
-                     "csrf_token": new_csrf}
-                )
-
             new_csrf = generate_csrf_token("register_form")
             response = templates.TemplateResponse(
                 "register.html",
-                {"request": request, "success": "Bitte bestätige deine E-Mail, um den Account zu aktivieren.",
+                {"request": request, "success": "Account erstellt. Du kannst dich jetzt einloggen.",
                  "csrf_token": new_csrf}
             )
         else:
             # Pilotphase: Kostenloser Zugang ohne Paywall
             cursor.execute("""
                 INSERT INTO users (email, password_hash, onboarding_complete, is_active, payment_status)
-                VALUES (?, ?, 0, 0, 'paid')
+                VALUES (?, ?, 0, 1, 'paid')
             """, (email, password_hash))
             user_id = cursor.lastrowid
             db.commit()
@@ -1244,19 +1214,10 @@ async def register(
             logger.info(
                 f"New user registered (free pilot): user_id={user_id}, email={email}")
 
-            sent = create_email_verification(user_id, email, request)
-            if not sent:
-                new_csrf = generate_csrf_token("register_form")
-                return templates.TemplateResponse(
-                    "register.html",
-                    {"request": request, "error": "Aktivierungs-E-Mail konnte nicht gesendet werden.",
-                     "csrf_token": new_csrf}
-                )
-
             new_csrf = generate_csrf_token("register_form")
             response = templates.TemplateResponse(
                 "register.html",
-                {"request": request, "success": "Bitte bestätige deine E-Mail, um den Account zu aktivieren.",
+                {"request": request, "success": "Account erstellt. Du kannst dich jetzt einloggen.",
                  "csrf_token": new_csrf}
             )
             return response
@@ -4073,7 +4034,7 @@ async def join_team(request: Request, token: str):
 
                 cursor.execute("""
                     INSERT INTO users (email, password_hash, onboarding_complete, is_active, payment_status, vorname, nachname, position, telefon, geburtsdatum)
-                    VALUES (?, ?, 1, 0, 'paid', ?, ?, ?, ?, ?)
+                    VALUES (?, ?, 1, 1, 'paid', ?, ?, ?, ?, ?)
                 """, (email, password_hash, vorname, nachname,
                       player_row["position"] or "", player_row["telefon"] or "", player_row["geburtsdatum"]))
                 user_id = cursor.lastrowid
@@ -4109,18 +4070,9 @@ async def join_team(request: Request, token: str):
 
                 db.commit()
 
-            sent = create_email_verification(user_id, email, request)
-            if not sent:
-                return templates.TemplateResponse(
-                    "join.html",
-                    {"request": request, "error": "Aktivierungs-E-Mail konnte nicht gesendet werden.",
-                     "token": token, "logged_in": False, "team_name": invitation_info["team_name"],
-                     "role_name": "Spieler", "available_players": available_players}
-                )
-
             return templates.TemplateResponse(
                 "join.html",
-                {"request": request, "success": "Bitte bestätige deine E-Mail, um den Account zu aktivieren.",
+                {"request": request, "success": "Account erstellt. Du kannst dich jetzt einloggen.",
                  "token": token, "logged_in": False, "team_name": invitation_info["team_name"],
                  "role_name": "Spieler", "available_players": available_players}
             )
