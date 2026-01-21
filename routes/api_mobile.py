@@ -208,8 +208,8 @@ async def register(request: Request, data: RegisterRequest):
     # Validate input
     try:
         InputValidator.validate_email(data.email)
-        InputValidator.validate_name(data.firstName)
-        InputValidator.validate_name(data.lastName)
+        InputValidator.validate_name(data.firstName, field_name="Vorname", required=True)
+        InputValidator.validate_name(data.lastName, field_name="Nachname", required=True)
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
