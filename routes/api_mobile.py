@@ -203,22 +203,26 @@ async def register(request: Request, data: RegisterRequest):
         client_ip = get_client_ip(request)
 
         # Rate limiting (10 requests per minute)
-        allowed, _ = api_rate_limiter.is_allowed(f"register:{client_ip}", max_requests=10, window_seconds=60)
+        allowed, _ = api_rate_limiter.is_allowed(
+            f"register:{client_ip}", max_requests=10, window_seconds=60)
         if not allowed:
             raise HTTPException(status_code=429, detail="Too many requests")
 
         # Validate input
         try:
             InputValidator.validate_email(data.email)
-            InputValidator.validate_name(data.firstName, field_name="Vorname", required=True)
-            InputValidator.validate_name(data.lastName, field_name="Nachname", required=True)
+            InputValidator.validate_name(
+                data.firstName, field_name="Vorname", required=True)
+            InputValidator.validate_name(
+                data.lastName, field_name="Nachname", required=True)
         except ValidationError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
         # Check if email exists
         existing_user = get_user_by_email(data.email)
         if existing_user:
-            raise HTTPException(status_code=409, detail="Email already registered")
+            raise HTTPException(
+                status_code=409, detail="Email already registered")
 
         # Hash password
         password_hash = bcrypt.hashpw(
@@ -256,7 +260,8 @@ async def register(request: Request, data: RegisterRequest):
         raise
     except Exception as e:
         logger.error(f"Registration error: {e}")
-        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Registration failed: {str(e)}")
 
 
 @router.post("/auth/login")
@@ -265,14 +270,16 @@ async def login(request: Request, data: LoginRequest):
     client_ip = get_client_ip(request)
 
     # Rate limiting (20 requests per minute)
-    allowed, _ = api_rate_limiter.is_allowed(f"login:{client_ip}", max_requests=20, window_seconds=60)
+    allowed, _ = api_rate_limiter.is_allowed(
+        f"login:{client_ip}", max_requests=20, window_seconds=60)
     if not allowed:
         raise HTTPException(status_code=429, detail="Too many requests")
 
-    # Check if blocked
-    if is_login_blocked(data.email, client_ip):
+    # Check if blocked - is_login_blocked returns (is_blocked, remaining_seconds)
+    is_blocked, remaining_seconds = is_login_blocked(data.email, client_ip)
+    if is_blocked:
         raise HTTPException(
-            status_code=429, detail="Too many failed attempts. Please try again later.")
+            status_code=429, detail=f"Too many failed attempts. Please try again in {remaining_seconds // 60} minutes.")
 
     # Find user
     user = get_user_by_email(data.email)
