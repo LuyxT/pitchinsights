@@ -258,6 +258,7 @@
         let targetFrame = 0;
         let ticking = false;
         const zoomFactor = 1.2;
+        let renderScale = 1;
 
         const framePath = (index) => {
             const padded = String(index).padStart(3, '0');
@@ -266,10 +267,12 @@
 
         const setCanvasSize = () => {
             const { innerWidth, innerHeight, devicePixelRatio } = window;
+            const scaleBoost = 1.5;
+            renderScale = Math.min(devicePixelRatio * scaleBoost, 3);
             canvas.style.width = `${innerWidth}px`;
             canvas.style.height = `${innerHeight}px`;
-            canvas.width = innerWidth * devicePixelRatio;
-            canvas.height = innerHeight * devicePixelRatio;
+            canvas.width = Math.floor(innerWidth * renderScale);
+            canvas.height = Math.floor(innerHeight * renderScale);
         };
 
         const drawFrame = (index) => {
@@ -278,10 +281,9 @@
                 return;
             }
 
-            const dpr = window.devicePixelRatio || 1;
-            const canvasWidth = canvas.width / dpr;
-            const canvasHeight = canvas.height / dpr;
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const canvasWidth = canvas.width / renderScale;
+            const canvasHeight = canvas.height / renderScale;
+            ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
