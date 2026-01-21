@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any, List
 
 from fastapi import APIRouter, Request, HTTPException, Depends, Header
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 import bcrypt
 
 from config import SecurityConfig
@@ -49,30 +49,40 @@ class LoginRequest(BaseModel):
 class RegisterRequest(BaseModel):
     email: str = Field(min_length=5, max_length=254)
     password: str = Field(min_length=8, max_length=128)
-    firstName: str = Field(min_length=1, max_length=100)
-    lastName: str = Field(min_length=1, max_length=100)
-    invitationCode: Optional[str] = None
+    first_name: str = Field(min_length=1, max_length=100, alias="firstName")
+    last_name: str = Field(min_length=1, max_length=100, alias="lastName")
+    invitation_code: Optional[str] = Field(default=None, alias="invitationCode")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class RefreshTokenRequest(BaseModel):
-    refreshToken: str
+    refresh_token: str = Field(alias="refreshToken")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class JoinTeamRequest(BaseModel):
-    invitationCode: str
+    invitation_code: str = Field(alias="invitationCode")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class UpdateStatusRequest(BaseModel):
     status: str = Field(pattern="^(available|limited|injured|sick|absent)$")
     note: Optional[str] = Field(default=None, max_length=500)
-    availableFrom: Optional[str] = None
+    available_from: Optional[str] = Field(default=None, alias="availableFrom")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class UpdateProfileRequest(BaseModel):
-    firstName: Optional[str] = Field(default=None, max_length=100)
-    lastName: Optional[str] = Field(default=None, max_length=100)
+    first_name: Optional[str] = Field(default=None, max_length=100, alias="firstName")
+    last_name: Optional[str] = Field(default=None, max_length=100, alias="lastName")
     position: Optional[str] = None
-    jerseyNumber: Optional[int] = Field(default=None, ge=1, le=99)
+    jersey_number: Optional[int] = Field(default=None, ge=1, le=99, alias="jerseyNumber")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 # ============================================
@@ -212,9 +222,9 @@ async def register(request: Request, data: RegisterRequest):
         try:
             InputValidator.validate_email(data.email)
             InputValidator.validate_name(
-                data.firstName, field_name="Vorname", required=True)
+                data.first_name, field_name="Vorname", required=True)
             InputValidator.validate_name(
-                data.lastName, field_name="Nachname", required=True)
+                data.last_name, field_name="Nachname", required=True)
         except ValidationError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
@@ -234,13 +244,13 @@ async def register(request: Request, data: RegisterRequest):
             cursor.execute("""
                 INSERT INTO users (email, password_hash, vorname, nachname, is_active)
                 VALUES (?, ?, ?, ?, 1)
-            """, (data.email.lower(), password_hash, data.firstName, data.lastName))
+            """, (data.email.lower(), password_hash, data.first_name, data.last_name))
             conn.commit()
             user_id = cursor.lastrowid
 
         # Handle invitation code if provided
-        if data.invitationCode:
-            result = use_invitation(data.invitationCode, user_id)
+        if data.invitation_code:
+            result = use_invitation(data.invitation_code, user_id)
             if not result.get("success"):
                 logger.warning(
                     f"Invitation code failed for new user: {result.get('error')}")
@@ -320,7 +330,7 @@ async def refresh_token(data: RefreshTokenRequest):
     """Refresh access token using refresh token."""
     # Find token by refresh token
     for access_token, token_data in list(active_tokens.items()):
-        if token_data.get("refresh_token") == data.refreshToken:
+        if token_data.get("refresh_token") == data.refresh_token:
             if datetime.utcnow() > token_data.get("refresh_expires_at", datetime.min):
                 del active_tokens[access_token]
                 raise HTTPException(
@@ -376,7 +386,7 @@ async def get_teams(user: Dict = Depends(get_current_user)):
 @router.post("/teams/join")
 async def join_team(data: JoinTeamRequest, user: Dict = Depends(get_current_user)):
     """Join a team using invitation code."""
-    result = use_invitation(data.invitationCode, user["id"])
+    result = use_invitation(data.invitation_code, user["id"])
 
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get(
@@ -535,7 +545,7 @@ async def update_player_status(data: UpdateStatusRequest, user: Dict = Depends(g
         "status": {
             "current": data.status,
             "note": data.note,
-            "availableFrom": data.availableFrom,
+            "availableFrom": data.available_from,
             "updatedAt": datetime.utcnow().isoformat()
         }
     })
@@ -547,12 +557,12 @@ async def update_player_profile(data: UpdateProfileRequest, user: Dict = Depends
     updates = []
     params = []
 
-    if data.firstName:
+    if data.first_name:
         updates.append("vorname = ?")
-        params.append(data.firstName)
-    if data.lastName:
+        params.append(data.first_name)
+    if data.last_name:
         updates.append("nachname = ?")
-        params.append(data.lastName)
+        params.append(data.last_name)
 
     if updates:
         params.append(user["id"])
