@@ -4596,6 +4596,19 @@ async def get_player_stats(request: Request):
 
     with get_db_connection() as db:
         cursor = db.cursor()
+        dummy_names = ["Max Müller", "John Schmidt", "Tom Klaus", "Chris Davis"]
+        placeholders = ",".join("?" * len(dummy_names))
+        cursor.execute(f"""
+            UPDATE players
+            SET deleted_at = CURRENT_TIMESTAMP
+            WHERE team_id = ?
+              AND deleted_at IS NULL
+              AND user_id IS NULL
+              AND name IN ({placeholders})
+              AND (email IS NULL OR email = '')
+              AND (telefon IS NULL OR telefon = '')
+              AND (notizen IS NULL OR notizen = '')
+        """, [db_user["team_id"], *dummy_names])
         cursor.execute("""
             SELECT 
                 COUNT(*) as total,
