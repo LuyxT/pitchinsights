@@ -495,6 +495,7 @@ async def not_found_handler(request: Request, exc):
 # ============================================
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/frames", StaticFiles(directory="landingpage scrol animation.jpg"), name="frames")
 
 
 # ============================================
