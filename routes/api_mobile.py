@@ -199,57 +199,63 @@ def get_team_member_count(team_id: int) -> int:
 @router.post("/auth/register")
 async def register(request: Request, data: RegisterRequest):
     """Register a new user account."""
-    client_ip = get_client_ip(request)
-
-    # Rate limiting
-    if not api_rate_limiter.is_allowed(f"register:{client_ip}"):
-        raise HTTPException(status_code=429, detail="Too many requests")
-
-    # Validate input
     try:
-        InputValidator.validate_email(data.email)
-        InputValidator.validate_name(data.firstName, field_name="Vorname", required=True)
-        InputValidator.validate_name(data.lastName, field_name="Nachname", required=True)
-    except ValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        client_ip = get_client_ip(request)
 
-    # Check if email exists
-    existing_user = get_user_by_email(data.email)
-    if existing_user:
-        raise HTTPException(status_code=409, detail="Email already registered")
+        # Rate limiting
+        if not api_rate_limiter.is_allowed(f"register:{client_ip}"):
+            raise HTTPException(status_code=429, detail="Too many requests")
 
-    # Hash password
-    password_hash = bcrypt.hashpw(
-        data.password.encode(), bcrypt.gensalt()).decode()
+        # Validate input
+        try:
+            InputValidator.validate_email(data.email)
+            InputValidator.validate_name(data.firstName, field_name="Vorname", required=True)
+            InputValidator.validate_name(data.lastName, field_name="Nachname", required=True)
+        except ValidationError as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
-    # Create user
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO users (email, password_hash, vorname, nachname, is_active)
-            VALUES (?, ?, ?, ?, 1)
-        """, (data.email.lower(), password_hash, data.firstName, data.lastName))
-        conn.commit()
-        user_id = cursor.lastrowid
+        # Check if email exists
+        existing_user = get_user_by_email(data.email)
+        if existing_user:
+            raise HTTPException(status_code=409, detail="Email already registered")
 
-    # Handle invitation code if provided
-    if data.invitationCode:
-        result = use_invitation(data.invitationCode, user_id)
-        if not result.get("success"):
-            logger.warning(
-                f"Invitation code failed for new user: {result.get('error')}")
+        # Hash password
+        password_hash = bcrypt.hashpw(
+            data.password.encode(), bcrypt.gensalt()).decode()
 
-    # Generate tokens
-    tokens = generate_tokens(user_id)
-    user = get_user_by_id(user_id)
+        # Create user
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO users (email, password_hash, vorname, nachname, is_active)
+                VALUES (?, ?, ?, ?, 1)
+            """, (data.email.lower(), password_hash, data.firstName, data.lastName))
+            conn.commit()
+            user_id = cursor.lastrowid
 
-    logger.info(f"New user registered via mobile API: user_id={user_id}")
+        # Handle invitation code if provided
+        if data.invitationCode:
+            result = use_invitation(data.invitationCode, user_id)
+            if not result.get("success"):
+                logger.warning(
+                    f"Invitation code failed for new user: {result.get('error')}")
 
-    return JSONResponse({
-        "user": user_to_json(dict(user), include_private=True),
-        "tokens": tokens,
-        "teams": get_user_teams(user_id)
-    })
+        # Generate tokens
+        tokens = generate_tokens(user_id)
+        user = get_user_by_id(user_id)
+
+        logger.info(f"New user registered via mobile API: user_id={user_id}")
+
+        return JSONResponse({
+            "user": user_to_json(dict(user), include_private=True),
+            "tokens": tokens,
+            "teams": get_user_teams(user_id)
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 
 @router.post("/auth/login")
