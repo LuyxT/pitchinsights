@@ -202,8 +202,9 @@ async def register(request: Request, data: RegisterRequest):
     try:
         client_ip = get_client_ip(request)
 
-        # Rate limiting
-        if not api_rate_limiter.is_allowed(f"register:{client_ip}"):
+        # Rate limiting (10 requests per minute)
+        allowed, _ = api_rate_limiter.is_allowed(f"register:{client_ip}", max_requests=10, window_seconds=60)
+        if not allowed:
             raise HTTPException(status_code=429, detail="Too many requests")
 
         # Validate input
@@ -263,8 +264,9 @@ async def login(request: Request, data: LoginRequest):
     """Authenticate user and return tokens."""
     client_ip = get_client_ip(request)
 
-    # Rate limiting
-    if not api_rate_limiter.is_allowed(f"login:{client_ip}"):
+    # Rate limiting (20 requests per minute)
+    allowed, _ = api_rate_limiter.is_allowed(f"login:{client_ip}", max_requests=20, window_seconds=60)
+    if not allowed:
         raise HTTPException(status_code=429, detail="Too many requests")
 
     # Check if blocked
