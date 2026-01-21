@@ -8,10 +8,14 @@
     <meta name="description"
         content="Die zentrale Plattform für Kader, Kalender, Kommunikation und Taktik. Entwickelt für ambitionierte Fußballvereine.">
 
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="/static/images/favicon.png">
 
-    <!-- Scroll to top immediately -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
     <script>
         if ('scrollRestoration' in history) {
             history.scrollRestoration = 'manual';
@@ -19,14 +23,12 @@
         window.scrollTo(0, 0);
         if (document.documentElement) document.documentElement.scrollTop = 0;
 
-        // Also on load
         window.addEventListener('load', function () {
             window.scrollTo(0, 0);
             if (document.documentElement) document.documentElement.scrollTop = 0;
             if (document.body) document.body.scrollTop = 0;
         });
 
-        // And on DOMContentLoaded
         document.addEventListener('DOMContentLoaded', function () {
             window.scrollTo(0, 0);
             if (document.body) document.body.scrollTop = 0;
@@ -34,9 +36,20 @@
     </script>
 
     <style>
-        /* ========================
-           RESET & BASE
-           ======================== */
+        :root {
+            --bg: #0b0e14;
+            --bg-soft: #111622;
+            --card: rgba(17, 22, 34, 0.75);
+            --card-strong: #151b2b;
+            --ink: #f5f7ff;
+            --muted: rgba(245, 247, 255, 0.7);
+            --subtle: rgba(245, 247, 255, 0.45);
+            --accent: #6cf2a4;
+            --accent-2: #3f8cff;
+            --line: rgba(255, 255, 255, 0.08);
+            --shadow: 0 30px 80px rgba(6, 10, 20, 0.45);
+        }
+
         *,
         *::before,
         *::after {
@@ -52,270 +65,353 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 17px;
-            line-height: 1.5;
-            color: #1d1d1f;
-            background: #fff;
+            font-family: 'Instrument Sans', sans-serif;
+            background: radial-gradient(1200px 900px at 15% -10%, rgba(66, 140, 255, 0.3), transparent 60%),
+                radial-gradient(900px 600px at 85% 10%, rgba(108, 242, 164, 0.25), transparent 55%),
+                var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        /* ========================
-           TYPOGRAPHY
-           ======================== */
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(transparent, rgba(11, 14, 20, 0.92));
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 64px 64px;
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: 0;
+        }
+
         h1,
         h2,
         h3 {
+            font-family: 'Space Grotesk', sans-serif;
             font-weight: 600;
             letter-spacing: -0.02em;
-            line-height: 1.1;
+            line-height: 1.05;
         }
 
         h1 {
-            font-size: clamp(40px, 6vw, 64px);
-            letter-spacing: -0.03em;
+            font-size: clamp(42px, 6vw, 72px);
         }
 
         h2 {
-            font-size: clamp(32px, 4vw, 48px);
+            font-size: clamp(30px, 4.2vw, 52px);
         }
 
         h3 {
-            font-size: 24px;
-            font-weight: 500;
+            font-size: 22px;
         }
 
         p {
-            color: #86868b;
+            color: var(--muted);
         }
 
-        /* ========================
-           LAYOUT
-           ======================== */
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
         .container {
-            max-width: 1080px;
+            max-width: 1140px;
             margin: 0 auto;
             padding: 0 24px;
+            position: relative;
+            z-index: 1;
         }
 
         section {
             padding: 120px 0;
         }
 
-        /* ========================
-           HEADER / NAV
-           ======================== */
         header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 100;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            background: rgba(11, 14, 20, 0.6);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--line);
         }
 
         nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 64px;
-            max-width: 1080px;
+            height: 68px;
+            max-width: 1140px;
             margin: 0 auto;
             padding: 0 24px;
         }
 
         .logo {
-            font-size: 21px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
             font-weight: 600;
-            color: #1d1d1f;
-            text-decoration: none;
+            color: var(--ink);
             letter-spacing: -0.01em;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .nav-link {
             font-size: 14px;
-            font-weight: 400;
-            color: #1d1d1f;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            transition: background 220ms ease;
+            padding: 10px 16px;
+            border-radius: 999px;
+            color: var(--muted);
+            transition: color 200ms ease, background 200ms ease;
         }
 
         .nav-link:hover {
-            background: rgba(0, 0, 0, 0.04);
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.06);
         }
 
         .nav-link.primary {
-            background: #0071e3;
-            color: #fff;
+            color: #0b0e14;
+            background: var(--accent);
+            font-weight: 600;
         }
 
         .nav-link.primary:hover {
-            background: #0077ed;
+            background: #7af7b1;
         }
 
-        /* ========================
-           HERO SECTION
-           ======================== */
         .hero {
             min-height: 100vh;
             display: flex;
             align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding-top: 64px;
+            padding-top: 120px;
         }
 
-        .hero-content {
-            max-width: 720px;
+        .hero-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 64px;
+            align-items: center;
         }
 
-        .hero h1 {
-            margin-bottom: 24px;
+        .hero-tag {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--subtle);
+            margin-bottom: 20px;
         }
 
         .hero p {
-            font-size: 21px;
-            max-width: 540px;
-            margin: 0 auto 40px;
+            font-size: 18px;
+            max-width: 520px;
+            margin: 24px 0 36px;
         }
 
-        .hero-cta {
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .hero-actions .cta {
+            padding: 14px 22px;
+            border-radius: 14px;
+            background: var(--accent-2);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 18px 40px rgba(63, 140, 255, 0.35);
+            transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .hero-actions .cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 22px 50px rgba(63, 140, 255, 0.45);
+        }
+
+        .hero-actions .ghost {
+            color: var(--muted);
+            font-size: 15px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-size: 17px;
-            font-weight: 400;
-            color: #0071e3;
-            text-decoration: none;
-            transition: opacity 220ms ease;
+            transition: color 200ms ease;
         }
 
-        .hero-cta:hover {
-            opacity: 0.7;
+        .hero-actions .ghost:hover {
+            color: var(--ink);
         }
 
-        .hero-cta::after {
-            content: '→';
-            transition: transform 220ms ease;
+        .hero-preview {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(24px);
         }
 
-        .hero-cta:hover::after {
-            transform: translateX(4px);
+        .preview-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
         }
 
-        /* ========================
-           PROBLEM SECTION
-           ======================== */
+        .preview-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .preview-dots span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .preview-label {
+            font-size: 13px;
+            color: var(--subtle);
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .preview-card {
+            background: var(--card-strong);
+            border-radius: 18px;
+            padding: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .preview-card span {
+            font-size: 12px;
+            color: var(--subtle);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .preview-card h4 {
+            font-size: 16px;
+            margin-top: 10px;
+            color: var(--ink);
+        }
+
+        .preview-card p {
+            font-size: 13px;
+            margin-top: 8px;
+            color: var(--subtle);
+        }
+
+        .preview-card.full {
+            grid-column: span 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-pill {
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(108, 242, 164, 0.12);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
         .problem {
-            background: #f5f5f7;
+            background: rgba(10, 12, 20, 0.5);
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
         }
 
         .problem-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 40px;
-            margin-top: 64px;
+            gap: 28px;
+            margin-top: 48px;
         }
 
         .problem-item {
-            transition: transform 240ms ease, box-shadow 240ms ease;
+            background: var(--card);
+            border-radius: 20px;
+            padding: 28px;
+            border: 1px solid var(--line);
+            transition: transform 220ms ease, border-color 220ms ease;
         }
 
         .problem-item:hover {
             transform: translateY(-4px);
+            border-color: rgba(108, 242, 164, 0.35);
         }
 
-        .problem-item h3 {
-            margin-bottom: 12px;
-            color: #1d1d1f;
+        .solution {
+            position: relative;
         }
 
-        .problem-item p {
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        /* ========================
-           SOLUTION SECTION
-           ======================== */
         .solution-intro {
             text-align: center;
-            max-width: 600px;
-            margin: 0 auto 80px;
-        }
-
-        .solution-intro h2 {
-            margin-bottom: 20px;
+            max-width: 640px;
+            margin: 0 auto 72px;
         }
 
         .solution-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
         }
 
         .solution-card {
-            background: #f5f5f7;
-            border-radius: 20px;
-            padding: 48px;
+            background: var(--card);
+            border-radius: 22px;
+            padding: 30px;
+            border: 1px solid var(--line);
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             transition: transform 220ms ease, box-shadow 220ms ease;
         }
 
         .solution-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            transform: translateY(-6px);
+            box-shadow: 0 24px 50px rgba(5, 10, 20, 0.4);
         }
 
-        .solution-card h3 {
-            margin-bottom: 12px;
-            color: #1d1d1f;
-        }
-
-        .solution-card p {
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        /* Feature card spanning full width */
         .solution-card.wide {
             grid-column: span 2;
         }
 
-        /* ========================
-           PILOT SECTION
-           ======================== */
         .pilot {
-            background: #1d1d1f;
-            color: #fff;
-        }
-
-        .pilot h2 {
-            color: #fff;
-        }
-
-        .pilot p {
-            color: #a1a1a6;
+            background: linear-gradient(180deg, rgba(21, 27, 43, 0.95) 0%, rgba(11, 14, 20, 1) 100%);
+            border-top: 1px solid var(--line);
         }
 
         .pilot-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 80px;
+            gap: 64px;
             align-items: center;
-        }
-
-        .pilot-text h2 {
-            margin-bottom: 24px;
-        }
-
-        .pilot-text p {
-            font-size: 17px;
-            line-height: 1.7;
-            margin-bottom: 16px;
         }
 
         .pilot-features {
@@ -323,115 +419,61 @@
         }
 
         .pilot-features li {
-            font-size: 17px;
-            color: #f5f5f7;
-            padding: 16px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 220ms ease;
-        }
-
-        .pilot-features li:last-child {
-            border-bottom: none;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--muted);
+            transition: transform 200ms ease, color 200ms ease;
         }
 
         .pilot-features li:hover {
             transform: translateX(6px);
+            color: var(--ink);
         }
 
-        /* ========================
-           WAITLIST SECTION
-           ======================== */
+        .pilot-form input,
+        .pilot-form button {
+            font-family: inherit;
+        }
+
+        .pilot-form input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--ink);
+        }
+
+        .pilot-form input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .pilot-form button {
+            color: #0b0e14;
+            background: var(--accent);
+            transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .pilot-form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 40px rgba(108, 242, 164, 0.35);
+        }
+
         .waitlist {
             text-align: center;
-            padding: 160px 0;
-        }
-
-        .waitlist h2 {
-            margin-bottom: 20px;
-        }
-
-        .waitlist>.container>p {
-            font-size: 19px;
-            max-width: 480px;
-            margin: 0 auto 48px;
-        }
-
-        .waitlist-form {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            max-width: 480px;
-            margin: 0 auto;
         }
 
         .waitlist-form input {
-            flex: 1;
-            padding: 16px 20px;
-            font-size: 17px;
-            font-family: inherit;
-            border: 1px solid #d2d2d7;
-            border-radius: 12px;
-            outline: none;
-            transition: border-color 220ms ease, box-shadow 220ms ease;
-        }
-
-        .waitlist-form input:focus {
-            border-color: #0071e3;
-            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
-        }
-
-        .waitlist-form input::placeholder {
-            color: #86868b;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--ink);
         }
 
         .waitlist-form button {
-            padding: 16px 32px;
-            font-size: 17px;
-            font-weight: 500;
-            font-family: inherit;
-            color: #fff;
-            background: #0071e3;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background 220ms ease, transform 120ms ease;
+            background: var(--accent-2);
         }
 
-        .waitlist-form button:hover {
-            background: #0077ed;
-        }
-
-        .waitlist-form button:active {
-            transform: scale(0.98);
-        }
-
-        .waitlist-note {
-            font-size: 13px;
-            color: #86868b;
-            margin-top: 16px;
-        }
-
-        /* Success message */
-        .waitlist-success {
-            display: none;
-            padding: 20px;
-            background: rgba(0, 113, 227, 0.08);
-            border-radius: 12px;
-            max-width: 480px;
-            margin: 0 auto;
-        }
-
-        .waitlist-success p {
-            color: #1d1d1f;
-            font-size: 17px;
-        }
-
-        /* ========================
-           FOOTER
-           ======================== */
         footer {
-            padding: 40px 0;
-            border-top: 1px solid #d2d2d7;
+            padding: 40px 0 60px;
+            border-top: 1px solid var(--line);
+            color: var(--subtle);
         }
 
         .footer-content {
@@ -442,31 +484,22 @@
 
         .footer-links {
             display: flex;
-            gap: 32px;
+            gap: 24px;
         }
 
         .footer-links a {
+            color: var(--subtle);
             font-size: 13px;
-            color: #86868b;
-            text-decoration: none;
-            transition: color 220ms ease;
+            transition: color 200ms ease;
         }
 
         .footer-links a:hover {
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
-        .footer-copy {
-            font-size: 13px;
-            color: #86868b;
-        }
-
-        /* ========================
-           ANIMATIONS
-           ======================== */
         .fade-in {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(18px);
             transition: opacity 360ms ease-out, transform 360ms ease-out;
             will-change: transform, opacity;
         }
@@ -476,7 +509,6 @@
             transform: translateY(0);
         }
 
-        /* Stagger animation for grid items */
         .stagger>* {
             opacity: 0;
             transform: translateY(16px);
@@ -489,19 +521,19 @@
         }
 
         .stagger.visible>*:nth-child(2) {
-            transition-delay: 60ms;
+            transition-delay: 80ms;
         }
 
         .stagger.visible>*:nth-child(3) {
-            transition-delay: 120ms;
+            transition-delay: 160ms;
         }
 
         .stagger.visible>*:nth-child(4) {
-            transition-delay: 180ms;
+            transition-delay: 240ms;
         }
 
         .stagger.visible>*:nth-child(5) {
-            transition-delay: 240ms;
+            transition-delay: 320ms;
         }
 
         .stagger.visible>* {
@@ -509,17 +541,10 @@
             transform: translateY(0);
         }
 
-        /* ========================
-           RESPONSIVE
-           ======================== */
-        @media (max-width: 768px) {
-            section {
-                padding: 80px 0;
-            }
-
-            .problem-grid {
+        @media (max-width: 960px) {
+            .hero-grid,
+            .pilot-content {
                 grid-template-columns: 1fr;
-                gap: 32px;
             }
 
             .solution-grid {
@@ -530,29 +555,39 @@
                 grid-column: span 1;
             }
 
-            .pilot-content {
+            .problem-grid {
                 grid-template-columns: 1fr;
-                gap: 48px;
             }
 
-            .waitlist-form {
+            section {
+                padding: 90px 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            header {
+                background: rgba(11, 14, 20, 0.9);
+            }
+
+            .hero-actions {
                 flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .nav-actions {
+                gap: 8px;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
             }
 
             .footer-content {
                 flex-direction: column;
-                gap: 24px;
-                text-align: center;
-            }
-
-            .footer-links {
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 16px 32px;
+                gap: 20px;
             }
         }
 
-        /* Reduced motion preference */
         @media (prefers-reduced-motion: reduce) {
 
             .fade-in,
@@ -562,11 +597,10 @@
                 transform: none;
             }
 
-            .hero-cta::after,
+            .hero-actions .cta,
             .solution-card,
             .nav-link,
-            .waitlist-form input,
-            .waitlist-form button {
+            .pilot-form button {
                 transition: none;
             }
         }
@@ -574,33 +608,69 @@
 </head>
 
 <body>
-
-    <!-- Navigation -->
     <header>
         <nav>
-            <a href="/" class="logo">PitchInsights</a>
-            <div>
-                <a href="/login?code=pitch2026"
-                    style="padding: 10px 20px; background: #1d1d1f; color: white; border-radius: 20px; text-decoration: none; font-size: 14px; font-weight: 500; transition: opacity 0.2s;">Anmelden</a>
+            <a href="/landing" class="logo">PitchInsights</a>
+            <div class="nav-actions">
+                <a href="#waitlist" class="nav-link">Warteliste</a>
+                <a href="/login?code=pitch2026" class="nav-link primary">Anmelden</a>
             </div>
         </nav>
     </header>
 
-    <!-- Hero Section -->
     <section class="hero">
-        <div class="container">
-            <div class="hero-content stagger">
-                <p style="font-size: 15px; color: #86868b; margin-bottom: 16px; letter-spacing: 0.02em;">Das erste
-                    Betriebssystem für Fußball.</p>
+        <div class="container hero-grid">
+            <div class="hero-copy fade-in">
+                <p class="hero-tag">Betriebssystem für Fußball</p>
                 <h1>Alles für dein Team.<br>An einem Ort.</h1>
                 <p>Die zentrale Plattform für Kader, Kalender, Kommunikation und Taktik. Entwickelt für ambitionierte
                     Fußballvereine.</p>
-                <a href="#waitlist" class="hero-cta">Zur Warteliste</a>
+                <div class="hero-actions">
+                    <a href="#waitlist" class="cta">Zur Warteliste</a>
+                    <a href="#pilot" class="ghost">Pilotphase entdecken →</a>
+                </div>
+            </div>
+
+            <div class="hero-preview fade-in">
+                <div class="preview-top">
+                    <div class="preview-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div class="preview-label">PitchInsights OS</div>
+                </div>
+                <div class="preview-grid">
+                    <div class="preview-card">
+                        <span>Kader</span>
+                        <h4>Spielerprofile</h4>
+                        <p>Positionen und Status auf einen Blick.</p>
+                    </div>
+                    <div class="preview-card">
+                        <span>Kalender</span>
+                        <h4>Training & Spiele</h4>
+                        <p>Alle Termine synchronisiert.</p>
+                    </div>
+                    <div class="preview-card">
+                        <span>Kommunikation</span>
+                        <h4>Direkte Chats</h4>
+                        <p>Trainerteam und Spieler verbunden.</p>
+                    </div>
+                    <div class="preview-card">
+                        <span>Taktik</span>
+                        <h4>Spielpläne</h4>
+                        <p>Visualisiere dein System in Sekunden.</p>
+                    </div>
+                    <div class="preview-card full">
+                        <div>
+                            <span>Videoanalyse</span>
+                            <h4>Szenen markieren</h4>
+                        </div>
+                        <div class="preview-pill">Live Feedback</div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Problem Section -->
     <section class="problem">
         <div class="container">
             <h2 class="fade-in">Das Problem kennt jeder Trainer.</h2>
@@ -624,7 +694,6 @@
         </div>
     </section>
 
-    <!-- Solution Section -->
     <section class="solution">
         <div class="container">
             <div class="solution-intro fade-in">
@@ -662,7 +731,6 @@
         </div>
     </section>
 
-    <!-- Pilot Section -->
     <section class="pilot" id="pilot">
         <div class="container">
             <div class="pilot-content">
@@ -681,7 +749,6 @@
                 </ul>
             </div>
 
-            <!-- Pilot Anmeldung -->
             <div class="pilot-signup fade-in" style="margin-top: 64px; text-align: center;">
                 <h3 style="color: #fff; font-size: 24px; margin-bottom: 16px;">Teil der Pilotphase werden</h3>
                 <p style="color: #a1a1a6; margin-bottom: 32px;">Melde deinen Verein an und ich kontaktiere dich
@@ -690,26 +757,25 @@
                 <form class="pilot-form" id="pilotForm"
                     style="display: flex; flex-direction: column; gap: 16px; max-width: 480px; margin: 0 auto;">
                     <input type="text" name="vereinsname" placeholder="Vereinsname" required
-                        style="padding: 16px 20px; font-size: 17px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; background: rgba(255,255,255,0.1); color: #fff; outline: none;">
+                        style="padding: 16px 20px; font-size: 17px; border-radius: 12px; outline: none;">
                     <input type="text" name="ansprechpartner" placeholder="Dein Name" required
-                        style="padding: 16px 20px; font-size: 17px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; background: rgba(255,255,255,0.1); color: #fff; outline: none;">
+                        style="padding: 16px 20px; font-size: 17px; border-radius: 12px; outline: none;">
                     <input type="email" name="email" placeholder="E-Mail-Adresse" required
-                        style="padding: 16px 20px; font-size: 17px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; background: rgba(255,255,255,0.1); color: #fff; outline: none;">
+                        style="padding: 16px 20px; font-size: 17px; border-radius: 12px; outline: none;">
                     <button type="submit"
-                        style="padding: 16px 32px; font-size: 17px; font-weight: 500; color: #1d1d1f; background: #fff; border: none; border-radius: 12px; cursor: pointer; transition: opacity 220ms ease;">
+                        style="padding: 16px 32px; font-size: 17px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer;">
                         Für Pilotphase anmelden
                     </button>
                 </form>
 
                 <div id="pilotSuccess"
-                    style="display: none; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 12px; max-width: 480px; margin: 0 auto;">
+                    style="display: none; padding: 20px; background: rgba(255,255,255,0.08); border-radius: 12px; max-width: 480px; margin: 0 auto;">
                     <p style="color: #fff;">Vielen Dank für dein Interesse. Ich melde mich in Kürze bei dir.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Waitlist Section -->
     <section class="waitlist" id="waitlist">
         <div class="container">
             <h2 class="fade-in">Interesse geweckt?</h2>
@@ -727,7 +793,6 @@
         </div>
     </section>
 
-    <!-- Footer -->
     <footer>
         <div class="container">
             <div class="footer-content fade-in">
@@ -742,10 +807,6 @@
     </footer>
 
     <script>
-        // ========================
-        // INTERSECTION OBSERVER FOR ANIMATIONS
-        // Aktiviert Fade-In Animationen beim Scrollen
-        // ========================
         const observerOptions = {
             root: null,
             rootMargin: '0px',
@@ -761,14 +822,10 @@
             });
         }, observerOptions);
 
-        // Observe all animated elements
         document.querySelectorAll('.fade-in, .stagger').forEach(el => {
             observer.observe(el);
         });
 
-        // ========================
-        // WAITLIST FORM
-        // ========================
         const waitlistForm = document.getElementById('waitlistForm');
         const waitlistSuccess = document.getElementById('waitlistSuccess');
 
@@ -790,7 +847,6 @@
                     waitlistForm.style.display = 'none';
                     waitlistSuccess.style.display = 'block';
                 } else {
-                    // Silently handle - could add error UI later
                     console.log('Waitlist submission failed');
                 }
             } catch (error) {
@@ -798,9 +854,6 @@
             }
         });
 
-        // ========================
-        // PILOT FORM
-        // ========================
         const pilotForm = document.getElementById('pilotForm');
         const pilotSuccess = document.getElementById('pilotSuccess');
 
@@ -831,15 +884,10 @@
             }
         });
 
-        // ========================
-        // SCROLL TO TOP ON LOAD
-        // Verhindert, dass die Seite unten startet
-        // ========================
         if (window.location.hash === '') {
             window.scrollTo(0, 0);
         }
     </script>
-
 </body>
 
 </html>
