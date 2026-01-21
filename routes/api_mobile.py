@@ -299,7 +299,7 @@ async def login(request: Request, data: LoginRequest):
         raise HTTPException(status_code=403, detail="Account is deactivated")
 
     # Clear failed attempts and record success
-    clear_login_attempts(data.email, client_ip)
+    clear_login_attempts(data.email)
     record_login_attempt(data.email, client_ip, success=True)
     update_last_login(user["id"])
 
