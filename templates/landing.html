@@ -266,6 +266,8 @@
 
         const setCanvasSize = () => {
             const { innerWidth, innerHeight, devicePixelRatio } = window;
+            canvas.style.width = `${innerWidth}px`;
+            canvas.style.height = `${innerHeight}px`;
             canvas.width = innerWidth * devicePixelRatio;
             canvas.height = innerHeight * devicePixelRatio;
         };
@@ -280,6 +282,8 @@
             const canvasWidth = canvas.width / dpr;
             const canvasHeight = canvas.height / dpr;
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
             const scale = Math.max(canvasWidth / img.naturalWidth, canvasHeight / img.naturalHeight) * zoomFactor;
@@ -347,11 +351,14 @@
             updateFrameFromScroll();
         };
 
-        window.addEventListener('resize', () => {
+        const handleResize = () => {
             setCanvasSize();
             drawFrame(currentFrame);
             updateFrameFromScroll();
-        });
+        };
+
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
 
         window.addEventListener('scroll', updateFrameFromScroll, { passive: true });
 
