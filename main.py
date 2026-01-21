@@ -19,6 +19,7 @@ import uvicorn
 from config import SecurityConfig
 from database import init_db, init_team_tables
 from routes.auth import router as auth_router
+from routes.api_mobile import router as api_mobile_router
 from security import (
     get_secure_headers, check_rate_limit, api_rate_limiter,
     get_client_ip, validate_json_request_origin,
@@ -503,6 +504,7 @@ app.mount("/frames", StaticFiles(directory="landingpage scrol animation.jpg"), n
 # ============================================
 
 app.include_router(auth_router)
+app.include_router(api_mobile_router)
 
 
 @app.get("/os", response_class=HTMLResponse)
