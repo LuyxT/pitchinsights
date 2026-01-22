@@ -5288,14 +5288,16 @@ async def send_message(request: Request):
     content = ""
     recipient_id = None
     attachment = None
-    content_type = request.headers.get("content-type", "")
+    content_type = (request.headers.get("content-type") or "").lower()
+    form = None
 
-    if content_type.startswith("multipart/form-data"):
+    if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
         try:
             form = await request.form()
         except Exception:
-            return JSONResponse({"error": "Ungültige Daten"}, status_code=400)
+            form = None
 
+    if form is not None:
         content = str(form.get("content", "")).strip()[:5000]
         recipient_id = form.get("recipient_id")
         attachment = form.get("attachment")

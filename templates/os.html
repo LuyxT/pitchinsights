@@ -9198,7 +9198,11 @@
         async function loadMessagesFromAPI() {
             try {
                 const response = await fetch('/api/messages?scope=team');
-                if (!response.ok) return [];
+                if (!response.ok) {
+                    const errText = await response.text();
+                    console.error('Fehler beim Laden der Nachrichten:', errText);
+                    return [];
+                }
 
                 const data = await response.json();
                 return data.messages || [];
@@ -9220,16 +9224,32 @@
                     formData.append('attachment', currentAttachment.file);
                     response = await fetch('/api/messages', {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        credentials: 'same-origin'
                     });
                 } else {
                     response = await fetch('/api/messages', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content, recipient_id: recipientId })
+                        body: JSON.stringify({ content, recipient_id: recipientId }),
+                        credentials: 'same-origin'
                     });
                 }
-                return response.ok;
+                if (response.ok) return true;
+                let errorMessage = 'Nachricht konnte nicht gesendet werden';
+                try {
+                    const data = await response.json();
+                    errorMessage = data.error || data.detail || errorMessage;
+                } catch (e) {
+                    try {
+                        const text = await response.text();
+                        if (text) errorMessage = text.slice(0, 200);
+                    } catch (err) {
+                        // ignore
+                    }
+                }
+                alert(errorMessage);
+                return false;
             } catch (e) {
                 console.error('Fehler beim Senden der Nachricht:', e);
                 return false;
