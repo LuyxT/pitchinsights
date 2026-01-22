@@ -308,6 +308,29 @@ def init_db():
             ON user_sessions(user_id)
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS mobile_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                access_token_hash TEXT UNIQUE NOT NULL CHECK(length(access_token_hash) = 64),
+                refresh_token_hash TEXT UNIQUE NOT NULL CHECK(length(refresh_token_hash) = 64),
+                access_expires_at TIMESTAMP NOT NULL,
+                refresh_expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_mobile_tokens_access_hash
+            ON mobile_tokens(access_token_hash)
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_mobile_tokens_refresh_hash
+            ON mobile_tokens(refresh_token_hash)
+        """)
+
         # Audit Log Tabelle (erweitert für Security Events)
         # SECURITY AUDIT: Alle sicherheitsrelevanten Aktionen
         cursor.execute("""

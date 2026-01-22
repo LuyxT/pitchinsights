@@ -100,6 +100,23 @@ class AttendanceUpdateRequest(BaseModel):
 # Auth Helper Functions
 # ============================================
 
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _parse_db_datetime(value: Any) -> Optional[datetime]:
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            return None
+    return None
+
+
 def _to_iso8601(value: datetime) -> str:
     return value.replace(microsecond=0).isoformat() + "Z"
 
@@ -300,6 +317,22 @@ def generate_tokens(user_id: int) -> Dict[str, Any]:
     expires_at = datetime.utcnow() + timedelta(hours=24)
     refresh_expires_at = datetime.utcnow() + timedelta(days=30)
 
+    access_hash = _hash_token(access_token)
+    refresh_hash = _hash_token(refresh_token)
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO mobile_tokens (
+                user_id,
+                access_token_hash,
+                refresh_token_hash,
+                access_expires_at,
+                refresh_expires_at
+            )
+            VALUES (?, ?, ?, ?, ?)
+        """, (user_id, access_hash, refresh_hash, expires_at, refresh_expires_at))
+
     active_tokens[access_token] = {
         "user_id": user_id,
         "expires_at": expires_at,
@@ -322,6 +355,26 @@ def verify_token(authorization: Optional[str]) -> int:
             status_code=401, detail="Missing or invalid authorization header")
 
     token = authorization[7:]  # Remove "Bearer " prefix
+    token_hash = _hash_token(token)
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT user_id, access_expires_at
+            FROM mobile_tokens
+            WHERE access_token_hash = ?
+        """, (token_hash,))
+        row = cursor.fetchone()
+
+    if row:
+        expires_at = _parse_db_datetime(row["access_expires_at"])
+        if not expires_at or datetime.utcnow() > expires_at:
+            with get_db_connection() as conn:
+                conn.execute("""
+                    DELETE FROM mobile_tokens WHERE access_token_hash = ?
+                """, (token_hash,))
+            raise HTTPException(status_code=401, detail="Token expired")
+        return int(row["user_id"])
 
     token_data = active_tokens.get(token)
     if not token_data:
@@ -557,7 +610,41 @@ async def login(request: Request, data: LoginRequest):
 @router.post("/auth/refresh")
 async def refresh_token(data: RefreshTokenRequest):
     """Refresh access token using refresh token."""
-    # Find token by refresh token
+    refresh_hash = _hash_token(data.refresh_token)
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT user_id, refresh_expires_at
+            FROM mobile_tokens
+            WHERE refresh_token_hash = ?
+        """, (refresh_hash,))
+        row = cursor.fetchone()
+
+    if row:
+        refresh_expires_at = _parse_db_datetime(row["refresh_expires_at"])
+        if not refresh_expires_at or datetime.utcnow() > refresh_expires_at:
+            with get_db_connection() as conn:
+                conn.execute("""
+                    DELETE FROM mobile_tokens WHERE refresh_token_hash = ?
+                """, (refresh_hash,))
+            raise HTTPException(status_code=401, detail="Refresh token expired")
+
+        with get_db_connection() as conn:
+            conn.execute("""
+                DELETE FROM mobile_tokens WHERE refresh_token_hash = ?
+            """, (refresh_hash,))
+
+        user_id = int(row["user_id"])
+        new_tokens = generate_tokens(user_id)
+        user = get_user_by_id(user_id)
+
+        return JSONResponse({
+            "user": user_to_json(dict(user), include_private=True),
+            "tokens": new_tokens
+        })
+
+    # Find token by refresh token (legacy in-memory)
     for access_token, token_data in list(active_tokens.items()):
         if token_data.get("refresh_token") == data.refresh_token:
             if datetime.utcnow() > token_data.get("refresh_expires_at", datetime.min):
@@ -565,7 +652,6 @@ async def refresh_token(data: RefreshTokenRequest):
                 raise HTTPException(
                     status_code=401, detail="Refresh token expired")
 
-            # Generate new tokens
             user_id = token_data["user_id"]
             del active_tokens[access_token]
 
@@ -585,6 +671,11 @@ async def logout(authorization: str = Header(None)):
     """Logout and invalidate tokens."""
     if authorization and authorization.startswith("Bearer "):
         token = authorization[7:]
+        token_hash = _hash_token(token)
+        with get_db_connection() as conn:
+            conn.execute("""
+                DELETE FROM mobile_tokens WHERE access_token_hash = ?
+            """, (token_hash,))
         if token in active_tokens:
             del active_tokens[token]
 

@@ -161,9 +161,17 @@ def user_has_role_in_any_team(user_id: int, role_name: str) -> bool:
 
 def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
     """
-    Authentifiziert User anhand des Session-Cookies.
+    Authentifiziert User anhand des Session-Cookies oder mobilen Bearer-Tokens.
     SECURITY: Token-Ablauf, IP-Binding und Fingerprint werden geprüft.
     """
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+    if auth_header:
+        try:
+            from routes.api_mobile import get_current_user as mobile_get_current_user
+            return mobile_get_current_user(auth_header)
+        except Exception:
+            pass
+
     token = request.cookies.get("session")
     logging.info(
         f"[AUTH] get_current_user called, session_cookie_present={bool(token)}")
