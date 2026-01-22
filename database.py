@@ -523,6 +523,10 @@ def init_db():
                 sender_id INTEGER NOT NULL,
                 recipient_id INTEGER,  -- NULL = Team-Chat
                 content TEXT NOT NULL CHECK(length(content) >= 1 AND length(content) <= 5000),
+                attachment_name TEXT NULL,
+                attachment_type TEXT NULL,
+                attachment_path TEXT NULL,
+                attachment_size INTEGER NULL,
                 is_read INTEGER DEFAULT 0 CHECK(is_read IN (0, 1)),
                 
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -742,6 +746,10 @@ def _run_migrations(conn):
         ("players", "user_id", "INTEGER NULL"),
         ("players", "groesse", "INTEGER NULL"),
         ("players", "gewicht", "INTEGER NULL"),
+        ("messages", "attachment_name", "TEXT NULL"),
+        ("messages", "attachment_type", "TEXT NULL"),
+        ("messages", "attachment_path", "TEXT NULL"),
+        ("messages", "attachment_size", "INTEGER NULL"),
         # Audit Log Erweiterungen
         ("audit_log", "event_type", "TEXT DEFAULT ''"),
         ("audit_log", "severity", "TEXT DEFAULT 'INFO'"),

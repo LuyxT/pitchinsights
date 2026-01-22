@@ -5128,6 +5128,30 @@ async def create_player_private_event(request: Request):
 # API Endpoints - Messages
 # ============================================
 
+MAX_MESSAGE_ATTACHMENT_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+def _get_message_attachment_dir(team_id: int) -> str:
+    base_dir = os.path.join(SecurityConfig.DATA_DIR, "message_attachments", str(team_id))
+    os.makedirs(base_dir, exist_ok=True)
+    return base_dir
+
+
+def _sanitize_attachment_name(filename: str) -> str:
+    name = os.path.basename(filename or "")
+    if not name:
+        return "attachment"
+    safe = []
+    for ch in name:
+        is_ascii_alnum = ("0" <= ch <= "9") or ("A" <= ch <= "Z") or ("a" <= ch <= "z")
+        if is_ascii_alnum or ch in "._-":
+            safe.append(ch)
+        else:
+            safe.append("_")
+    sanitized = "".join(safe).strip("._")
+    return sanitized or "attachment"
+
+
 @router.get("/api/messages")
 async def get_messages(request: Request, limit: int = 50, before_id: int = None, scope: str = None, peer_id: int = None):
     """
@@ -5169,6 +5193,7 @@ async def get_messages(request: Request, limit: int = 50, before_id: int = None,
             # PERFORMANCE: Cursor-Pagination (schneller als OFFSET)
             cursor.execute(f"""
                 SELECT m.id, m.content, m.created_at, m.sender_id,
+                       m.attachment_name, m.attachment_type, m.attachment_size, m.attachment_path,
                        u.vorname || ' ' || u.nachname as sender_name
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
@@ -5181,6 +5206,7 @@ async def get_messages(request: Request, limit: int = 50, before_id: int = None,
         else:
             cursor.execute(f"""
                 SELECT m.id, m.content, m.created_at, m.sender_id,
+                       m.attachment_name, m.attachment_type, m.attachment_size, m.attachment_path,
                        u.vorname || ' ' || u.nachname as sender_name
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
@@ -5193,11 +5219,58 @@ async def get_messages(request: Request, limit: int = 50, before_id: int = None,
         rows = cursor.fetchall()
         has_more = len(rows) > limit
         messages = [dict(row) for row in rows[:limit]]
+        for message in messages:
+            if message.get("attachment_path"):
+                message["attachment_url"] = f"/api/messages/{message['id']}/attachment"
 
     return JSONResponse({
         "messages": messages[::-1],  # Älteste zuerst
         "has_more": has_more
     })
+
+
+@router.get("/api/messages/{message_id}/attachment")
+async def download_message_attachment(request: Request, message_id: int):
+    """Anhang einer Nachricht herunterladen."""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT id, team_id, sender_id, recipient_id,
+                   attachment_path, attachment_name, attachment_type
+            FROM messages
+            WHERE id = ? AND deleted_at IS NULL
+        """, (message_id,))
+        row = cursor.fetchone()
+
+    if not row:
+        return JSONResponse({"error": "Nachricht nicht gefunden"}, status_code=404)
+
+    message = dict(row)
+    if message["team_id"] != db_user["team_id"]:
+        return JSONResponse({"error": "Kein Zugriff"}, status_code=403)
+
+    if message.get("recipient_id"):
+        if user["id"] not in (message["sender_id"], message["recipient_id"]):
+            return JSONResponse({"error": "Kein Zugriff"}, status_code=403)
+
+    attachment_path = message.get("attachment_path") or ""
+    if not attachment_path or not os.path.exists(attachment_path):
+        return JSONResponse({"error": "Anhang nicht gefunden"}, status_code=404)
+
+    return FileResponse(
+        attachment_path,
+        media_type=message.get("attachment_type") or None,
+        filename=message.get("attachment_name") or "attachment"
+    )
 
 
 @router.post("/api/messages")
@@ -5212,16 +5285,36 @@ async def send_message(request: Request):
     if not db_user or not db_user.get("team_id"):
         return JSONResponse({"error": "Kein Team"}, status_code=400)
 
-    try:
-        data = await request.json()
-    except Exception:
-        return JSONResponse({"error": "Ungültige Daten"}, status_code=400)
+    content = ""
+    recipient_id = None
+    attachment = None
+    content_type = request.headers.get("content-type", "")
 
-    content = str(data.get("content", "")).strip()[:5000]
-    if not content:
+    if content_type.startswith("multipart/form-data"):
+        try:
+            form = await request.form()
+        except Exception:
+            return JSONResponse({"error": "Ungültige Daten"}, status_code=400)
+
+        content = str(form.get("content", "")).strip()[:5000]
+        recipient_id = form.get("recipient_id")
+        attachment = form.get("attachment")
+    else:
+        try:
+            data = await request.json()
+        except Exception:
+            return JSONResponse({"error": "Ungültige Daten"}, status_code=400)
+
+        content = str(data.get("content", "")).strip()[:5000]
+        recipient_id = data.get("recipient_id")
+
+    if recipient_id in ("", None):
+        recipient_id = None
+
+    if not content and not attachment:
         return JSONResponse({"error": "Nachricht leer"}, status_code=400)
-
-    recipient_id = data.get("recipient_id")  # None = Team-Chat
+    if not content and attachment:
+        content = "__attachment__"
 
     if recipient_id:
         try:
@@ -5240,14 +5333,64 @@ async def send_message(request: Request):
             if not cursor.fetchone():
                 return JSONResponse({"error": "Empfänger nicht gefunden"}, status_code=404)
 
+    attachment_name = None
+    attachment_type = None
+    attachment_path = None
+    attachment_size = None
+
+    if attachment and isinstance(attachment, UploadFile):
+        if not attachment.filename:
+            attachment = None
+
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
             INSERT INTO messages (team_id, sender_id, recipient_id, content)
             VALUES (?, ?, ?, ?)
         """, (db_user["team_id"], user["id"], recipient_id, content))
-        db.commit()
         message_id = cursor.lastrowid
+
+        if attachment:
+            safe_name = _sanitize_attachment_name(attachment.filename)
+            attachment_dir = _get_message_attachment_dir(db_user["team_id"])
+            attachment_path = os.path.join(attachment_dir, f"{message_id}_{safe_name}")
+            attachment_type = attachment.content_type or "application/octet-stream"
+
+            size = 0
+            try:
+                with open(attachment_path, "wb") as f_out:
+                    while True:
+                        chunk = await attachment.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        size += len(chunk)
+                        if size > MAX_MESSAGE_ATTACHMENT_SIZE:
+                            raise ValueError("attachment_too_large")
+                        f_out.write(chunk)
+            except ValueError:
+                if os.path.exists(attachment_path):
+                    os.remove(attachment_path)
+                return JSONResponse({"error": "Anhang zu groß (max 10MB)"}, status_code=400)
+            except Exception:
+                if os.path.exists(attachment_path):
+                    os.remove(attachment_path)
+                logger.error("Message attachment upload failed", exc_info=True)
+                return JSONResponse({"error": "Anhang konnte nicht gespeichert werden"}, status_code=500)
+            finally:
+                try:
+                    await attachment.close()
+                except Exception:
+                    pass
+
+            attachment_name = safe_name
+            attachment_size = size
+            cursor.execute("""
+                UPDATE messages
+                SET attachment_name = ?, attachment_type = ?, attachment_path = ?, attachment_size = ?
+                WHERE id = ?
+            """, (attachment_name, attachment_type, attachment_path, attachment_size, message_id))
+
+        db.commit()
 
     return JSONResponse({"success": True, "id": message_id})
 

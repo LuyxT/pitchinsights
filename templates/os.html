@@ -9210,11 +9210,25 @@
 
         async function sendMessageToAPI(content, recipientId = null) {
             try {
-                const response = await fetch('/api/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content, recipient_id: recipientId })
-                });
+                let response;
+                if (currentAttachment && currentAttachment.file) {
+                    const formData = new FormData();
+                    formData.append('content', content || '');
+                    if (recipientId) {
+                        formData.append('recipient_id', recipientId);
+                    }
+                    formData.append('attachment', currentAttachment.file);
+                    response = await fetch('/api/messages', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    response = await fetch('/api/messages', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content, recipient_id: recipientId })
+                    });
+                }
                 return response.ok;
             } catch (e) {
                 console.error('Fehler beim Senden der Nachricht:', e);
@@ -11762,9 +11776,20 @@
                 const bgColor = isOwn ? 'var(--primary-green)' : '#e0e0e0';
                 const textColor = isOwn ? 'white' : 'black';
 
-                const content = escapeHtml(msg.content || '');
+                const hasAttachment = !!msg.attachment_url;
+                const contentRaw = msg.content || '';
+                const contentVisible = !(hasAttachment && contentRaw === '__attachment__');
+                const content = contentVisible ? escapeHtml(contentRaw) : '';
+                const attachmentName = escapeHtml(msg.attachment_name || 'Anhang');
+                const attachmentHtml = hasAttachment
+                    ? `<div style="margin-top: 6px;">
+                        <a href="${msg.attachment_url}" target="_blank" rel="noopener" style="color: ${textColor}; text-decoration: underline;">
+                            <span class="iconoir-attachment"></span> ${attachmentName}
+                        </a>
+                    </div>`
+                    : '';
                 const timestamp = msg.created_at ? new Date(msg.created_at) : new Date();
-                msgDiv.innerHTML = `<div style="align-self: ${alignment}; background: ${bgColor}; color: ${textColor}; padding: 12px 16px; border-radius: 12px; max-width: 60%; word-wrap: break-word;">${content}<div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">${timestamp.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</div></div>`;
+                msgDiv.innerHTML = `<div style="align-self: ${alignment}; background: ${bgColor}; color: ${textColor}; padding: 12px 16px; border-radius: 12px; max-width: 60%; word-wrap: break-word;">${content}${attachmentHtml}<div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">${timestamp.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</div></div>`;
                 chatArea.appendChild(msgDiv);
             });
             chatArea.scrollTop = chatArea.scrollHeight;
@@ -11792,17 +11817,14 @@
             const file = fileInput.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                currentAttachment = {
-                    name: file.name,
-                    data: e.target.result,
-                    type: file.type
-                };
-                document.getElementById('attachmentName').innerHTML = '<span class="iconoir-attachment"></span> ' + escapeHtml(file.name);
-                document.getElementById('attachmentPreview').style.display = 'block';
+            currentAttachment = {
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                file: file
             };
-            reader.readAsDataURL(file);
+            document.getElementById('attachmentName').innerHTML = '<span class="iconoir-attachment"></span> ' + escapeHtml(file.name);
+            document.getElementById('attachmentPreview').style.display = 'block';
         }
 
         function clearAttachment() {
