@@ -66,6 +66,15 @@
         .logo {
             font-weight: 600;
             font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo img {
+            height: 32px;
+            width: auto;
+            display: block;
         }
 
         .nav-links {
@@ -338,7 +347,10 @@
 <body>
     <header>
         <div class="nav">
-            <a class="logo" href="/landing">PitchInsights</a>
+            <a class="logo" href="/landing">
+                <img src="/static/images/pitchinsights-logo.png" alt="PitchInsights Logo">
+                <span>PitchInsights</span>
+            </a>
             <div class="nav-links">
                 <a class="nav-link" href="#features">Vorteile</a>
                 <a class="nav-link" href="#modules">Module</a>
