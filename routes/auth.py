@@ -4161,8 +4161,11 @@ async def get_players(request: Request):
             players = []
             for row in cursor.fetchall():
                 player = dict(row)
-                if player.get("status") == "Belastet":
-                    player["status"] = "Training"
+                normalized = (player.get("status") or "").strip()
+                if normalized in ("Verletzt", "Angeschlagen"):
+                    player["status"] = "Ausfall"
+                elif normalized not in ("Fit", "Reha", "Ausfall"):
+                    player["status"] = "Fit"
                 players.append(player)
         else:
             # Spieler/Eltern sehen nur sich selbst (verknüpft über user_id)
@@ -4174,8 +4177,11 @@ async def get_players(request: Request):
             players = []
             for row in cursor.fetchall():
                 player = dict(row)
-                if player.get("status") == "Belastet":
-                    player["status"] = "Training"
+                normalized = (player.get("status") or "").strip()
+                if normalized in ("Verletzt", "Angeschlagen"):
+                    player["status"] = "Ausfall"
+                elif normalized not in ("Fit", "Reha", "Ausfall"):
+                    player["status"] = "Fit"
                 players.append(player)
 
     return JSONResponse({"players": players})
@@ -4239,9 +4245,7 @@ async def create_player(request: Request):
             trikotnummer = None
 
     status = str(data.get("status", "Fit")).strip()
-    if status == "Training":
-        status = "Belastet"
-    if status not in ("Fit", "Belastet", "Angeschlagen", "Verletzt", "Reha", "Ausfall"):
+    if status not in ("Fit", "Reha", "Ausfall"):
         status = "Fit"
 
     email = str(data.get("email", "")).strip()[:254]
@@ -4341,9 +4345,7 @@ async def update_player(request: Request, player_id: int):
                 params.append(None)
         if "status" in data:
             status = str(data["status"]).strip()
-            if status == "Training":
-                status = "Belastet"
-            if status in ("Fit", "Belastet", "Angeschlagen", "Verletzt", "Reha", "Ausfall"):
+            if status in ("Fit", "Reha", "Ausfall"):
                 updates.append("status = ?")
                 params.append(status)
         if "email" in data:
@@ -4578,10 +4580,9 @@ async def get_player_stats(request: Request):
         cursor.execute("""
             SELECT 
                 COUNT(*) as total,
-                SUM(CASE WHEN status = 'Fit' THEN 1 ELSE 0 END) as fit,
-                SUM(CASE WHEN status = 'Training' THEN 1 ELSE 0 END) as training,
+                SUM(CASE WHEN status IN ('Fit', 'Belastet', 'Training') THEN 1 ELSE 0 END) as fit,
                 SUM(CASE WHEN status = 'Reha' THEN 1 ELSE 0 END) as reha,
-                SUM(CASE WHEN status = 'Ausfall' THEN 1 ELSE 0 END) as ausfall
+                SUM(CASE WHEN status IN ('Ausfall', 'Verletzt', 'Angeschlagen') THEN 1 ELSE 0 END) as ausfall
             FROM players
             WHERE team_id = ? AND deleted_at IS NULL
         """, (db_user["team_id"],))
@@ -4590,7 +4591,6 @@ async def get_player_stats(request: Request):
     return JSONResponse({
         "total": row["total"] or 0,
         "fit": row["fit"] or 0,
-        "training": row["training"] or 0,
         "reha": row["reha"] or 0,
         "ausfall": row["ausfall"] or 0
     })

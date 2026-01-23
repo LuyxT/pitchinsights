@@ -69,7 +69,7 @@ class JoinTeamRequest(BaseModel):
 
 
 class UpdateStatusRequest(BaseModel):
-    status: str = Field(pattern="(?i)^(fit|belastet|angeschlagen|verletzt|reha|ausfall|slightly_injured|injured|unavailable)$")
+    status: str = Field(pattern="(?i)^(fit|reha|ausfall|rehab|unavailable)$")
     note: Optional[str] = Field(default=None, max_length=500)
     valid_until: Optional[str] = Field(default=None, alias="validUntil")
     available_from: Optional[str] = Field(default=None, alias="availableFrom")
@@ -152,8 +152,13 @@ def _parse_iso_date(value: Optional[str]) -> Optional[str]:
 
 def _map_player_status_to_api(db_value: Optional[str]) -> str:
     value = (db_value or "").strip()
-    allowed = {"Fit", "Belastet", "Angeschlagen", "Verletzt", "Reha", "Ausfall"}
-    return value if value in allowed else "Fit"
+    if value in ("Reha",):
+        return "Reha"
+    if value in ("Ausfall", "Verletzt", "Angeschlagen"):
+        return "Ausfall"
+    if value in ("Fit", "Belastet", "Training"):
+        return "Fit"
+    return "Fit"
 
 
 def _map_player_status_from_api(api_value: Optional[str]) -> str:
@@ -161,13 +166,9 @@ def _map_player_status_from_api(api_value: Optional[str]) -> str:
     upper = value.upper()
     mapping = {
         "FIT": "Fit",
-        "BELASTET": "Belastet",
-        "ANGESCHLAGEN": "Angeschlagen",
-        "VERLETZT": "Verletzt",
         "REHA": "Reha",
+        "REHAB": "Reha",
         "AUSFALL": "Ausfall",
-        "SLIGHTLY_INJURED": "Angeschlagen",
-        "INJURED": "Verletzt",
         "UNAVAILABLE": "Ausfall",
     }
     return mapping.get(upper, "Fit")

@@ -8369,7 +8369,7 @@
                 const data = await response.json();
 
                 // Kader Widget
-                const fitCount = (data.fit || 0) + (data.training || 0);
+                const fitCount = (data.fit || 0);
                 document.querySelectorAll('.widget-kader-fit').forEach(el => el.textContent = fitCount);
                 document.querySelectorAll('.widget-kader-reha').forEach(el => el.textContent = data.reha || 0);
                 document.querySelectorAll('.widget-kader-ausfall').forEach(el => el.textContent = data.ausfall || 0);
@@ -8610,7 +8610,7 @@
                 console.log('Kader Stats Daten:', data);
 
                 // Widgets aktualisieren - neue Status
-                const fitCount = (data.fit || 0) + (data.training || 0);
+                const fitCount = (data.fit || 0);
                 document.querySelectorAll('.widget-kader-fit').forEach(el => el.textContent = fitCount);
                 document.querySelectorAll('.widget-kader-reha').forEach(el => el.textContent = data.reha || '0');
                 document.querySelectorAll('.widget-kader-ausfall').forEach(el => el.textContent = data.ausfall || '0');
@@ -8841,7 +8841,7 @@
                                     </div>
                                     <div>
                                         <span style="opacity: 0.7;">Status:</span>
-                                        <div style="font-weight: 600; color: ${getStatusColor(p.status)};">${escapeHtml((p.status || 'Fit').toLowerCase() === 'training' ? 'Fit' : (p.status || 'Fit'))}</div>
+                                        <div style="font-weight: 600; color: ${getStatusColor(p.status)};">${escapeHtml(p.status || 'Fit')}</div>
                                     </div>
                                 </div>
                             `;
@@ -8857,16 +8857,10 @@
         function getStatusColor(status) {
             const colors = {
                 fit: '#22c55e',
-                belastet: '#f59e0b',
-                angeschlagen: '#f97316',
-                verletzt: '#ef4444',
                 reha: '#06b6d4',
                 ausfall: '#dc2626'
             };
             const normalized = (status || '').toLowerCase();
-            if (normalized === 'training') {
-                return colors.fit;
-            }
             return colors[normalized] || '#6b7280';
         }
 
@@ -10807,7 +10801,9 @@
                         kaderPlayers = data.players.map(p => {
                             const positions = p.position ? p.position.split(',').map(s => s.trim()).filter(Boolean) : [];
                             const rawStatus = (p.status || 'Fit').toLowerCase();
-                            const normalizedStatus = rawStatus === 'training' ? 'fit' : rawStatus;
+                            const normalizedStatus = (rawStatus === 'reha' || rawStatus === 'ausfall')
+                                ? rawStatus
+                                : (rawStatus === 'verletzt' || rawStatus === 'angeschlagen' ? 'ausfall' : 'fit');
                             return {
                                 id: p.id,
                                 firstname: p.name.split(' ')[0] || p.name,
@@ -10985,9 +10981,8 @@
             const filteredPlayers = getFilteredPlayers();
 
             // Status Counts
-            const trainingCount = filteredPlayers.filter(p => p.status === 'training').length;
             const stat = {
-                fit: filteredPlayers.filter(p => p.status === 'fit').length + trainingCount,
+                fit: filteredPlayers.filter(p => p.status === 'fit').length,
                 reha: filteredPlayers.filter(p => p.status === 'reha').length,
                 ausfall: filteredPlayers.filter(p => p.status === 'ausfall').length
             };
