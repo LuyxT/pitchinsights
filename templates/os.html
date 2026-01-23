@@ -4628,8 +4628,8 @@
 
                     <div class="toolbar-group" style="margin-left: auto;">
                         <button class="taktik-segment taktik-btn-action" id="taktikUndoBtn" type="button">Undo</button>
-                        <button class="taktik-segment taktik-btn-delete" id="taktikClearBtn" type="button"
-                            onclick="taktikClearAll()">Löschen</button>
+                        <button class="taktik-segment taktik-btn-delete" id="taktikClearDrawBtn" type="button">Zeichnungen löschen</button>
+                        <button class="taktik-segment taktik-btn-delete" id="taktikResetPositionsBtn" type="button">Aufstellung zurücksetzen</button>
                     </div>
                 </div>
 
@@ -12330,6 +12330,20 @@
             }
         }
 
+        function taktikClearDrawingsOnly() {
+            if (!confirm('Alle Zeichnungen löschen?')) return;
+            taktikState.drawHistory = [];
+            taktikState.actionHistory = taktikState.actionHistory.filter(function (a) { return a.type !== 'draw'; });
+            redrawTaktikAll();
+        }
+
+        function taktikResetPositions() {
+            if (!confirm('Aufstellung zurücksetzen?')) return;
+            taktikState.actionHistory = taktikState.actionHistory.filter(function (a) { return a.type === 'draw'; });
+            createTaktikPlayers();
+            redrawTaktikAll();
+        }
+
         function setupTaktikEventListeners() {
             const opponentToggle = document.getElementById('taktikOpponentToggle');
             if (opponentToggle) {
@@ -12392,9 +12406,11 @@
             }
 
             const undoBtn = document.getElementById('taktikUndoBtn');
-            const clearBtn = document.getElementById('taktikClearBtn');
+            const clearDrawBtn = document.getElementById('taktikClearDrawBtn');
+            const resetPositionsBtn = document.getElementById('taktikResetPositionsBtn');
             if (undoBtn) undoBtn.addEventListener('click', taktikUndo);
-            if (clearBtn) clearBtn.addEventListener('click', taktikClearAll);
+            if (clearDrawBtn) clearDrawBtn.addEventListener('click', taktikClearDrawingsOnly);
+            if (resetPositionsBtn) resetPositionsBtn.addEventListener('click', taktikResetPositions);
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
