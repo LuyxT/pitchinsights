@@ -4423,7 +4423,7 @@
                             <h3 style="margin-bottom: 8px;">Video auswählen</h3>
                             <p style="opacity: 0.6;">Ziehe eine Datei hierher oder klicke zum Auswählen</p>
                             <p style="font-size: 12px; opacity: 0.5; margin-top: 12px;">MP4, MOV, AVI, WebM bis
-                                500MB</p>
+                                500MB • Teamlimit 5GB</p>
                         </div>
                         <input type="file" id="videoInput" style="display: none;"
                             accept="video/mp4,video/quicktime,video/x-msvideo,video/webm,video/x-matroska">
@@ -4450,6 +4450,7 @@
                                 <div style="flex: 1;">
                                     <div id="selectedFileName" style="font-weight: 500;"></div>
                                     <div id="selectedFileSize" style="font-size: 12px; opacity: 0.6;"></div>
+                                    <div id="videoQuotaInfo" style="font-size: 12px; opacity: 0.6;"></div>
                                 </div>
                                 <button onclick="clearVideoSelection()"
                                     style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;"><span class="iconoir-xmark"></span></button>
@@ -7173,7 +7174,9 @@
         }
 
         // ============ NEUES VIDEO SYSTEM ============
+        const TEAM_VIDEO_QUOTA_BYTES = 5 * 1024 * 1024 * 1024;
         let teamVideos = [];
+        let teamVideosLoaded = false;
         let sharedClips = [];
         let currentVideoId = null;
         let clipStart = null;
@@ -7213,6 +7216,7 @@
 
             // Load data
             if (tab === 'meineVideos') loadTeamVideos();
+            if (tab === 'upload') loadTeamVideos();
             if (tab === 'shared') loadSharedClips();
         }
 
@@ -7225,11 +7229,29 @@
                 if (!response.ok) throw new Error('Fehler beim Laden');
                 const data = await response.json();
                 teamVideos = data.videos || [];
+                teamVideosLoaded = true;
                 renderVideoList();
+                updateVideoQuotaInfo();
             } catch (error) {
                 console.error('Fehler beim Laden der Videos:', error);
                 showToast('Fehler beim Laden der Videos', 'error');
             }
+        }
+
+        function getTeamVideoUsageBytes() {
+            return (teamVideos || []).reduce((sum, video) => sum + (video.file_size || 0), 0);
+        }
+
+        function updateVideoQuotaInfo() {
+            const quotaEl = document.getElementById('videoQuotaInfo');
+            if (!quotaEl) return;
+            const usedBytes = getTeamVideoUsageBytes();
+            quotaEl.textContent = `Speicher belegt: ${formatFileSize(usedBytes)} von ${formatFileSize(TEAM_VIDEO_QUOTA_BYTES)}`;
+        }
+
+        async function ensureTeamVideosLoaded() {
+            if (teamVideosLoaded) return;
+            await loadTeamVideos();
         }
 
         // Video-Liste rendern
@@ -8242,6 +8264,14 @@
                 return;
             }
 
+            await ensureTeamVideosLoaded();
+            const totalAfterUpload = getTeamVideoUsageBytes() + file.size;
+            if (totalAfterUpload > TEAM_VIDEO_QUOTA_BYTES) {
+                showToast('Team-Speicherlimit erreicht (max. 5 GB).', 'error');
+                document.getElementById('videoInput').value = '';
+                return;
+            }
+
             selectedFile = file;
             selectedFileDuration = 0;
 
@@ -8258,6 +8288,7 @@
             // Details anzeigen
             document.getElementById('selectedFileName').textContent = file.name;
             document.getElementById('selectedFileSize').textContent = formatFileSize(file.size);
+            updateVideoQuotaInfo();
             document.getElementById('videoTitle').value = file.name.replace(/\.[^/.]+$/, '');
             document.getElementById('uploadDetails').style.display = 'block';
         });
@@ -8283,6 +8314,12 @@
             const title = document.getElementById('videoTitle').value.trim();
             if (!title) {
                 showToast('Bitte gib einen Titel ein', 'error');
+                return;
+            }
+
+            await ensureTeamVideosLoaded();
+            if (getTeamVideoUsageBytes() + selectedFile.size > TEAM_VIDEO_QUOTA_BYTES) {
+                showToast('Team-Speicherlimit erreicht (max. 5 GB).', 'error');
                 return;
             }
 
@@ -8318,7 +8355,14 @@
                         document.getElementById('startUploadBtn').disabled = false;
                         switchVideoTab('meineVideos');
                     } else {
-                        throw new Error(xhr.responseText);
+                        let message = 'Fehler beim Upload';
+                        try {
+                            const resp = JSON.parse(xhr.responseText);
+                            if (resp && resp.error) message = resp.error;
+                        } catch (e) {
+                            if (xhr.responseText) message = xhr.responseText;
+                        }
+                        throw new Error(message);
                     }
                 };
 
@@ -8334,7 +8378,7 @@
 
             } catch (error) {
                 console.error('Upload error:', error);
-                showToast('Fehler beim Upload', 'error');
+                showToast(error?.message || 'Fehler beim Upload', 'error');
                 document.getElementById('uploadProgress').style.display = 'none';
                 document.getElementById('startUploadBtn').disabled = false;
             }
