@@ -5397,18 +5397,48 @@
     </div>
     <script>
         const appStorage = (() => {
+            const prefix = 'pitchinsights:';
+            let storage = null;
             try {
-                window.localStorage.clear();
-                window.sessionStorage.clear();
+                const testKey = `${prefix}__test__`;
+                window.localStorage.setItem(testKey, '1');
+                window.localStorage.removeItem(testKey);
+                storage = window.localStorage;
             } catch (e) {
-                // Ignore storage errors
+                storage = null;
             }
+
             const store = {};
             return {
-                getItem: (key) => (Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null),
-                setItem: (key, value) => { store[key] = String(value); },
-                removeItem: (key) => { delete store[key]; },
-                clear: () => { Object.keys(store).forEach(k => delete store[k]); }
+                getItem: (key) => {
+                    if (storage) {
+                        return storage.getItem(prefix + key);
+                    }
+                    return Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null;
+                },
+                setItem: (key, value) => {
+                    if (storage) {
+                        storage.setItem(prefix + key, String(value));
+                        return;
+                    }
+                    store[key] = String(value);
+                },
+                removeItem: (key) => {
+                    if (storage) {
+                        storage.removeItem(prefix + key);
+                        return;
+                    }
+                    delete store[key];
+                },
+                clear: () => {
+                    if (storage) {
+                        Object.keys(storage)
+                            .filter(k => k.startsWith(prefix))
+                            .forEach(k => storage.removeItem(k));
+                        return;
+                    }
+                    Object.keys(store).forEach(k => delete store[k]);
+                }
             };
         })();
         // ========================
@@ -5813,6 +5843,12 @@
                 Object.entries(positions).forEach(([id, data]) => {
                     console.log('Processing:', id, data);
                     if (data.type === 'widget' && data.widgetType && widgetTemplates[data.widgetType]) {
+                        if (id.startsWith('widget-')) {
+                            const parsed = parseInt(id.replace('widget-', ''), 10);
+                            if (!Number.isNaN(parsed)) {
+                                widgetCounter = Math.max(widgetCounter, parsed);
+                            }
+                        }
                         console.log('Creating widget:', id, data.widgetType);
                         // Widget bereits vorhanden? Überspringen
                         if (document.getElementById(id)) return;
