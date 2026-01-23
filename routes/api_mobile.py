@@ -81,9 +81,15 @@ class UpdateProfileRequest(BaseModel):
     first_name: Optional[str] = Field(default=None, max_length=100, alias="firstName")
     last_name: Optional[str] = Field(default=None, max_length=100, alias="lastName")
     position: Optional[str] = None
+    positions: Optional[List[str]] = None
     jersey_number: Optional[int] = Field(default=None, ge=1, le=99, alias="jerseyNumber")
     preferred_foot: Optional[str] = Field(default=None, alias="preferredFoot")
     phone: Optional[str] = Field(default=None, alias="phone")
+    birth_date: Optional[str] = Field(default=None, alias="birthDate")
+    height_cm: Optional[int] = Field(default=None, ge=100, le=250, alias="heightCm")
+    weight_kg: Optional[int] = Field(default=None, ge=30, le=200, alias="weightKg")
+    career: Optional[str] = None
+    injury_history: Optional[str] = Field(default=None, alias="injuryHistory")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -273,7 +279,8 @@ def _get_player_row(user_id: int, team_id: Optional[int]) -> Optional[Dict[str, 
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT id, position, trikotnummer, status, telefon, geburtsdatum, updated_at
+            SELECT id, position, trikotnummer, status, telefon, geburtsdatum, updated_at,
+                   groesse, gewicht, starker_fuss, werdegang, verletzungshistorie
             FROM players
             WHERE user_id = ? AND team_id = ? AND deleted_at IS NULL
             LIMIT 1
@@ -408,13 +415,39 @@ def user_to_json(
     preferred_foot = _map_preferred_foot_to_api(user.get("starker_fuss"))
     position = None
     jersey_number = None
+    positions_raw = None
+    height_cm = None
+    weight_kg = None
+    career = None
+    injury_history = None
 
     if player_row:
         position = _map_position_to_api(player_row.get("position"))
         jersey_number = player_row.get("trikotnummer")
+        positions_raw = player_row.get("position")
+        height_cm = player_row.get("groesse")
+        weight_kg = player_row.get("gewicht")
+        preferred_foot = _map_preferred_foot_to_api(player_row.get("starker_fuss")) or preferred_foot
+        career = player_row.get("werdegang")
+        injury_history = player_row.get("verletzungshistorie")
 
     if not position:
         position = _map_position_to_api(user.get("position"))
+    if positions_raw is None:
+        positions_raw = user.get("position")
+    if height_cm is None:
+        height_cm = user.get("groesse")
+    if weight_kg is None:
+        weight_kg = user.get("gewicht")
+    if career is None:
+        career = user.get("werdegang")
+
+    positions = []
+    if positions_raw:
+        for part in str(positions_raw).replace(";", ",").split(","):
+            item = part.strip()
+            if item:
+                positions.append(item)
 
     data = {
         "id": str(user["id"]),
@@ -430,6 +463,11 @@ def user_to_json(
         "position": position,
         "jerseyNumber": jersey_number,
         "preferredFoot": preferred_foot,
+        "positions": positions,
+        "heightCm": height_cm,
+        "weightKg": weight_kg,
+        "career": career or "",
+        "injuryHistory": injury_history or ""
     }
 
     if include_private:
@@ -980,11 +1018,31 @@ def _apply_profile_update(user_id: int, data: UpdateProfileRequest) -> Dict[str,
         user_updates.append("telefon = ?")
         user_params.append(data.phone.strip()[:30])
 
+    if data.birth_date is not None:
+        user_updates.append("geburtsdatum = ?")
+        user_params.append(data.birth_date.strip()[:10])
+        player_updates.append("geburtsdatum = ?")
+        player_params.append(data.birth_date.strip()[:10])
+
+    if data.height_cm is not None:
+        user_updates.append("groesse = ?")
+        user_params.append(data.height_cm)
+        player_updates.append("groesse = ?")
+        player_params.append(data.height_cm)
+
+    if data.weight_kg is not None:
+        user_updates.append("gewicht = ?")
+        user_params.append(data.weight_kg)
+        player_updates.append("gewicht = ?")
+        player_params.append(data.weight_kg)
+
     if data.preferred_foot:
         mapped = _map_preferred_foot_from_api(data.preferred_foot)
         if mapped:
             user_updates.append("starker_fuss = ?")
             user_params.append(mapped)
+            player_updates.append("starker_fuss = ?")
+            player_params.append(mapped)
 
     if data.position:
         mapped = _map_position_from_api(data.position)
@@ -994,9 +1052,29 @@ def _apply_profile_update(user_id: int, data: UpdateProfileRequest) -> Dict[str,
             player_updates.append("position = ?")
             player_params.append(mapped)
 
+    if data.positions is not None:
+        joined = ", ".join([p.strip() for p in data.positions if p and p.strip()][:20])
+        if joined:
+            user_updates.append("position = ?")
+            user_params.append(joined)
+            player_updates.append("position = ?")
+            player_params.append(joined)
+
     if data.jersey_number is not None:
         player_updates.append("trikotnummer = ?")
         player_params.append(data.jersey_number)
+
+    if data.career is not None:
+        career = data.career.strip()[:2000]
+        user_updates.append("werdegang = ?")
+        user_params.append(career)
+        player_updates.append("werdegang = ?")
+        player_params.append(career)
+
+    if data.injury_history is not None:
+        history = data.injury_history.strip()[:1000]
+        player_updates.append("verletzungshistorie = ?")
+        player_params.append(history)
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
