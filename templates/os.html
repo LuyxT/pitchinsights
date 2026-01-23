@@ -7198,9 +7198,11 @@
             const modalVideo = document.getElementById('modalVideo');
             modalVideo.src = `/api/videos/${videoId}/stream`;
 
-            // Canvas Setup nach Video-Load
+            // Canvas + Controls Setup nach Video-Load
             modalVideo.onloadedmetadata = function () {
                 setupVideoDrawCanvas();
+                setupVideoControls();
+                renderVideoSeekMarkers();
             };
 
             document.getElementById('videoPlayerModal').style.display = 'flex';
@@ -7223,6 +7225,7 @@
             currentVideoId = null;
             videoDrawMode = false;
             clearVideoDrawing();
+            resetVideoControls();
         }
 
         // =====================
@@ -7290,6 +7293,103 @@
                 setTimeout(() => setupVideoDrawCanvas(), 150);
             }
         });
+
+        // =====================
+        // VIDEO CONTROLS
+        // =====================
+        let videoControlsInitialized = false;
+        let videoSeekDragging = false;
+        let videoMarkersCache = [];
+
+        function setupVideoControls() {
+            const video = document.getElementById('modalVideo');
+            const seek = document.getElementById('videoSeek');
+            const playBtn = document.getElementById('videoPlayBtn');
+            const currentEl = document.getElementById('videoCurrentTime');
+            const durationEl = document.getElementById('videoDuration');
+            if (!video || !seek || !playBtn || !currentEl || !durationEl) return;
+
+            const updatePlayIcon = () => {
+                playBtn.innerHTML = video.paused ? '<span class="iconoir-play"></span>' : '<span class="iconoir-pause"></span>';
+            };
+
+            const updateDuration = () => {
+                if (isFinite(video.duration)) {
+                    seek.max = Math.floor(video.duration);
+                    durationEl.textContent = formatTime(video.duration);
+                    renderVideoSeekMarkers();
+                }
+            };
+
+            const updateTime = () => {
+                if (!videoSeekDragging) {
+                    seek.value = Math.floor(video.currentTime);
+                }
+                currentEl.textContent = formatTime(video.currentTime);
+                updatePlayIcon();
+            };
+
+            if (!videoControlsInitialized) {
+                videoControlsInitialized = true;
+                playBtn.addEventListener('click', () => {
+                    if (video.paused) {
+                        video.play();
+                    } else {
+                        video.pause();
+                    }
+                    updatePlayIcon();
+                });
+
+                seek.addEventListener('input', () => {
+                    videoSeekDragging = true;
+                    currentEl.textContent = formatTime(parseFloat(seek.value || '0'));
+                });
+
+                seek.addEventListener('change', () => {
+                    video.currentTime = parseFloat(seek.value || '0');
+                    videoSeekDragging = false;
+                });
+
+                video.addEventListener('timeupdate', updateTime);
+                video.addEventListener('play', updatePlayIcon);
+                video.addEventListener('pause', updatePlayIcon);
+                video.addEventListener('loadedmetadata', updateDuration);
+            }
+
+            updateDuration();
+            updateTime();
+        }
+
+        function resetVideoControls() {
+            const seek = document.getElementById('videoSeek');
+            const currentEl = document.getElementById('videoCurrentTime');
+            const durationEl = document.getElementById('videoDuration');
+            if (seek) {
+                seek.value = 0;
+                seek.max = 0;
+            }
+            if (currentEl) currentEl.textContent = '0:00';
+            if (durationEl) durationEl.textContent = '--:--';
+        }
+
+        function renderVideoSeekMarkers() {
+            const container = document.getElementById('videoSeekMarkers');
+            const video = document.getElementById('modalVideo');
+            if (!container || !video || !isFinite(video.duration) || video.duration <= 0) return;
+            container.innerHTML = '';
+
+            videoMarkersCache.forEach(marker => {
+                const markerEl = document.createElement('span');
+                const left = Math.min(100, Math.max(0, (marker.time_seconds / video.duration) * 100));
+                markerEl.style.position = 'absolute';
+                markerEl.style.left = `calc(${left}% - 1px)`;
+                markerEl.style.width = '2px';
+                markerEl.style.height = '6px';
+                markerEl.style.background = '#f59e0b';
+                markerEl.style.opacity = '0.9';
+                container.appendChild(markerEl);
+            });
+        }
 
         // =====================
         // VIDEO DRAWING
@@ -7659,8 +7759,10 @@
                 if (!response.ok) throw new Error('Fehler');
                 const data = await response.json();
                 const markers = data.markers || [];
+                videoMarkersCache = markers;
                 renderVideoMarkers(markers);
                 document.getElementById('markerCount').textContent = markers.length;
+                renderVideoSeekMarkers();
             } catch (error) {
                 console.error('Fehler beim Laden der Marker:', error);
             }
@@ -12489,9 +12591,26 @@
             <!-- Video Wrapper -->
             <div id="videoWrapper"
                 style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: var(--bg-light); overflow: hidden;">
-                <video id="modalVideo" style="max-width: 100%; max-height: 100%;" controls playsinline></video>
+                <video id="modalVideo" style="max-width: 100%; max-height: 100%;" playsinline></video>
                 <canvas id="modalDrawCanvas"
                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+
+                <!-- Custom Video Controls -->
+                <div id="videoControls"
+                    style="position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: rgba(0,0,0,0.55); border-radius: 12px; z-index: 90; backdrop-filter: blur(10px);">
+                    <button id="videoPlayBtn" type="button" title="Play/Pause"
+                        style="width: 36px; height: 36px; border-radius: 10px; border: none; background: rgba(16,185,129,0.9); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <span class="iconoir-play"></span>
+                    </button>
+                    <span id="videoCurrentTime" style="font-family: monospace; color: #e5e7eb; font-size: 12px; min-width: 48px;">0:00</span>
+                    <div style="position: relative; flex: 1; display: flex; align-items: center;">
+                        <input id="videoSeek" type="range" min="0" max="0" value="0" step="1"
+                            style="width: 100%; cursor: pointer;">
+                        <div id="videoSeekMarkers"
+                            style="position: absolute; left: 0; right: 0; height: 6px; pointer-events: none;"></div>
+                    </div>
+                    <span id="videoDuration" style="font-family: monospace; color: #9ca3af; font-size: 12px; min-width: 48px; text-align: right;">--:--</span>
+                </div>
 
                 <!-- Floating Toolbar (top right) -->
                 <div id="videoToolbar"
