@@ -1002,10 +1002,6 @@
             background: #22c55e;
         }
 
-        .widget-content .status-dot.training {
-            background: #3b82f6;
-        }
-
         .widget-content .status-dot.reha {
             background: #f59e0b;
         }
@@ -1260,11 +1256,6 @@
         .event-type.match {
             background: rgba(239, 68, 68, 0.1);
             color: #ef4444;
-        }
-
-        .event-type.training {
-            background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
         }
 
         /* VIEW BUTTONS */
@@ -1526,15 +1517,6 @@
 
         .timeline-event.match:hover {
             background: rgba(59, 130, 246, 0.2);
-        }
-
-        .timeline-event.training {
-            border-left-color: #f59e0b;
-            background: rgba(245, 158, 11, 0.1);
-        }
-
-        .timeline-event.training:hover {
-            background: rgba(245, 158, 11, 0.2);
         }
 
         .event-resize-handle {
@@ -2189,10 +2171,6 @@
             height: 6px;
             border-radius: 50%;
             background: #007aff;
-        }
-
-        .event-dot.training {
-            background: #34c759;
         }
 
         .event-dot.match {
@@ -3462,12 +3440,6 @@
                             </div>
 
                             <div class="profil-field">
-                                <label>Trainingsschwerpunkte</label>
-                                <input type="text" id="profilTrainingsschwerpunkte"
-                                    placeholder="z.B. Pressing, Spielaufbau, Standards">
-                            </div>
-
-                            <div class="profil-field">
                                 <label>Bisherige Stationen</label>
                                 <textarea id="profilBisherigeStationen"
                                     placeholder="Deine bisherigen Vereine als Trainer..."
@@ -3555,10 +3527,6 @@
                         <div class="widget-option" onclick="addWidget('analyse')">
                             <div class="widget-option-title"><span class="iconoir-graph-up"></span> Analyse</div>
                             <div class="widget-option-desc">Video-Analyse Ergebnisse</div>
-                        </div>
-                        <div class="widget-option" onclick="addWidget('training')">
-                            <div class="widget-option-title"><span class="iconoir-gym"></span> Training</div>
-                            <div class="widget-option-desc">Nächste Trainingseinheiten</div>
                         </div>
                         <div class="widget-option" onclick="addWidget('medizin')">
                             <div class="widget-option-title"><span class="iconoir-healthcare"></span> Medizin</div>
@@ -3708,11 +3676,6 @@
                                 <span>Fit: <strong id="stat-fit">0</strong></span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px;">
-                                </div>
-                                <span>Training: <strong id="stat-training">0</strong></span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="width: 12px; height: 12px; background: #06b6d4; border-radius: 3px;">
                                 </div>
                                 <span>Reha: <strong id="stat-reha">0</strong></span>
@@ -3831,7 +3794,6 @@
                         <select id="playerStatus"
                             style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box;">
                             <option value="Fit">Fit</option>
-                            <option value="Training">Training</option>
                             <option value="Reha">Reha</option>
                             <option value="Ausfall">Ausfall</option>
                         </select>
@@ -3987,7 +3949,6 @@
                         <select id="editPlayerStatus"
                             style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box;">
                             <option value="Fit">Fit</option>
-                            <option value="Training">Training</option>
                             <option value="Reha">Reha</option>
                             <option value="Ausfall">Ausfall</option>
                         </select>
@@ -4147,7 +4108,7 @@
                             <label
                                 style="font-size: 13px; font-weight: 600; color: #666; display: block; margin-bottom: 6px;">Titel
                                 *</label>
-                            <input type="text" id="eventTitle" placeholder="z.B. Training, Spiel vs. FC..."
+                            <input type="text" id="eventTitle" placeholder="z.B. Spiel vs. FC..."
                                 style="width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; box-sizing: border-box;">
                         </div>
 
@@ -4172,7 +4133,6 @@
                                 style="font-size: 13px; font-weight: 600; color: #666; display: block; margin-bottom: 6px;">Typ</label>
                             <select id="eventType"
                                 style="width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; box-sizing: border-box;">
-                                <option value="training">Training</option>
                                 <option value="match">Spiel</option>
                                 <option value="meeting">Besprechung</option>
                                 <option value="other">Sonstiges</option>
@@ -4504,41 +4464,6 @@
             <!-- OLD VIDEO CODE REMOVED - Video functionality now in new modal-based system above -->
 
         </div>
-        <!-- TRAINING (PREMIUM) -->
-        <div id="training" class="app-view">
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">TRAININGS-EINHEITEN</div>
-                    <div class="stat-value">18</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">SPIELER AKTIV</div>
-                    <div class="stat-value">26</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">DIESE WOCHE</div>
-                    <div class="stat-value">5</div>
-                </div>
-            </div>
-
-            <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;">Nächste Sessions</h2>
-            <div class="list-container">
-                <div class="list-item">
-                    <span>Ballkontrolle Training</span>
-                    <span style="opacity: 0.7;">heute 14:00</span>
-                </div>
-                <div class="list-item">
-                    <span>Defensive Drills</span>
-                    <span style="opacity: 0.7;">morgen 10:00</span>
-                </div>
-                <div class="list-item">
-                    <span>Kraft & Ausdauer</span>
-                    <span style="opacity: 0.7;">Do 15:30</span>
-                </div>
-            </div>
-        </div>
-
         <!-- FINANZEN (PREMIUM) -->
         <div id="finanzen" class="app-view">
             <h1><span class="iconoir-lock"></span> Finanzen</h1>
@@ -4562,7 +4487,7 @@
             <h2 style="margin-top: 30px; margin-bottom: 20px; font-size: 20px;">Transaktionen</h2>
             <div class="list-container">
                 <div class="list-item">
-                    <span>Trainingsplatz Miete</span>
+                    <span>Platzmiete</span>
                     <span style="opacity: 0.7;">-€5,000</span>
                 </div>
                 <div class="list-item">
@@ -4669,7 +4594,7 @@
                     <span style="opacity: 0.7;">96% Genauigkeit</span>
                 </div>
                 <div class="list-item">
-                    <span>Training Session 12</span>
+                    <span>Analyse Session 12</span>
                     <span style="opacity: 0.7;">94% Genauigkeit</span>
                 </div>
                 <div class="list-item">
@@ -4802,25 +4727,12 @@
         <!-- ANALYSE -->
         <div id="analyse" class="app-view">
             <h1>Analyse</h1>
-            <p class="subtitle">Spiel- und Trainingsanalysen</p>
+            <p class="subtitle">Spielanalysen</p>
 
             <div class="list-container">
                 <div class="list-item">
                     <span>Keine Analysen vorhanden</span>
                     <span style="opacity: 0.7;">Erstelle deine erste Analyse</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- TRAINING -->
-        <div id="training" class="app-view">
-            <h1>Training</h1>
-            <p class="subtitle">Trainingsplanung und Übungen</p>
-
-            <div class="list-container">
-                <div class="list-item">
-                    <span>Keine Trainingseinheiten geplant</span>
-                    <span style="opacity: 0.7;">Plane dein erstes Training</span>
                 </div>
             </div>
         </div>
@@ -4923,7 +4835,7 @@
                     </div>
                     <div style="padding: 16px;">
                         <h3 style="margin: 0 0 8px 0; font-size: 16px;">Kalender nutzen</h3>
-                        <p style="margin: 0; font-size: 13px; opacity: 0.7;">Trainings und Spiele planen</p>
+                        <p style="margin: 0; font-size: 13px; opacity: 0.7;">Spiele planen</p>
                         <span style="display: inline-block; margin-top: 12px; font-size: 12px; color: #f59e0b;">Video
                             kommt bald</span>
                     </div>
@@ -5030,28 +4942,8 @@
                     </div>
                     <div style="padding: 16px;">
                         <h3 style="margin: 0 0 8px 0; font-size: 16px;">Analyse</h3>
-                        <p style="margin: 0; font-size: 13px; opacity: 0.7;">Spiel- und Trainingsanalysen
+                        <p style="margin: 0; font-size: 13px; opacity: 0.7;">Spielanalysen
                             erstellen</p>
-                        <span style="display: inline-block; margin-top: 12px; font-size: 12px; color: #f59e0b;">Video
-                            kommt bald</span>
-                    </div>
-                </div>
-
-                <!-- Tutorial 11: Training (Premium) -->
-                <div
-                    style="background: var(--card-light); border-radius: 16px; overflow: hidden; border: 1px solid var(--border-light);">
-                    <div
-                        style="position: relative; padding-top: 56.25%; background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);">
-                        <div
-                            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">
-                            <span class="iconoir-gym"></span></div>
-                        <span
-                            style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px;">PREMIUM</span>
-                    </div>
-                    <div style="padding: 16px;">
-                        <h3 style="margin: 0 0 8px 0; font-size: 16px;">Training</h3>
-                        <p style="margin: 0; font-size: 13px; opacity: 0.7;">Trainingseinheiten planen und
-                            durchführen</p>
                         <span style="display: inline-block; margin-top: 12px; font-size: 12px; color: #f59e0b;">Video
                             kommt bald</span>
                     </div>
@@ -5602,7 +5494,6 @@
             { id: 'kasse', name: 'Mannschaftskasse', icon: '<span class="iconoir-wallet"></span>', sidebarIcon: 'iconoir-wallet', category: 'free', canDisable: true },
             // Premium Apps
             { id: 'analyse', name: 'Analyse', icon: '<span class="iconoir-graph-up"></span>', sidebarIcon: 'iconoir-graph-up', category: 'premium', canDisable: true },
-            { id: 'training', name: 'Training', icon: '<span class="iconoir-gym"></span>', sidebarIcon: 'iconoir-gym', category: 'premium', canDisable: true },
             { id: 'medizin', name: 'Medizin', icon: '<span class="iconoir-healthcare"></span>', sidebarIcon: 'iconoir-healthcare', category: 'premium', canDisable: true },
             { id: 'finanzen', name: 'Finanzen', icon: '<span class="iconoir-money-square"></span>', sidebarIcon: 'iconoir-bank', category: 'premium', canDisable: true },
             // Coming Soon
@@ -5623,7 +5514,6 @@
             verwaltung: { sidebar: true, home: true },
             kasse: { sidebar: true, home: true },
             analyse: { sidebar: false, home: false },
-            training: { sidebar: false, home: false },
             medizin: { sidebar: false, home: false },
             finanzen: { sidebar: false, home: false },
             scouting: { sidebar: false, home: false },
@@ -5904,7 +5794,7 @@
                         widget.dataset.widgetType = data.widgetType;
 
                         // App-ID für Navigation
-                        const appWidgets = ['kader', 'kalender', 'messenger', 'analyse', 'training', 'medizin', 'finanzen', 'kasse', 'taktik', 'upload', 'scouting'];
+                        const appWidgets = ['kader', 'kalender', 'messenger', 'analyse', 'medizin', 'finanzen', 'kasse', 'taktik', 'upload', 'scouting'];
                         if (appWidgets.includes(data.widgetType)) {
                             widget.dataset.appId = data.widgetType;
                         }
@@ -6326,7 +6216,6 @@
                         if (trainerCard) trainerCard.style.display = 'block';
                         setVal('profilSpielsystem', data.spielsystem);
                         setVal('profilTaktischeGrundidee', data.taktische_grundidee);
-                        setVal('profilTrainingsschwerpunkte', data.trainingsschwerpunkte);
                         setVal('profilBisherigeStationen', data.bisherige_stationen);
                         setVal('profilLizenzen', data.lizenzen);
                     }
@@ -6541,7 +6430,6 @@
                 // Trainer-Felder laden
                 setVal('profilSpielsystem', profilData.spielsystem);
                 setVal('profilTaktischeGrundidee', profilData.taktische_grundidee);
-                setVal('profilTrainingsschwerpunkte', profilData.trainingsschwerpunkte);
                 setVal('profilBisherigeStationen', profilData.bisherige_stationen);
                 setVal('profilLizenzen', profilData.lizenzen);
             }
@@ -6960,7 +6848,6 @@
             { id: 'upload', name: 'Video Upload', icon: '<span class="iconoir-video-camera"></span>' },
             { id: 'tipps', name: 'Tipps & Tutorials', icon: '<span class="iconoir-light-bulb"></span>' },
             { id: 'analyse', name: 'Analyse', icon: '<span class="iconoir-graph-up"></span>' },
-            { id: 'training', name: 'Training', icon: '<span class="iconoir-gym"></span>' },
             { id: 'medizin', name: 'Medizin', icon: '<span class="iconoir-healthcare"></span>' },
             { id: 'finanzen', name: 'Finanzen', icon: '<span class="iconoir-money-square"></span>' },
             { id: 'verwaltung', name: 'Verwaltung', icon: '<span class="iconoir-building"></span>' }
@@ -8252,10 +8139,6 @@
                         <span class="widget-stat-value widget-kader-fit">-</span>
                     </div>
                     <div class="widget-stat">
-                        <span class="widget-stat-label"><span class="status-dot training"></span>Training</span>
-                        <span class="widget-stat-value widget-kader-training">-</span>
-                    </div>
-                    <div class="widget-stat">
                         <span class="widget-stat-label"><span class="status-dot reha"></span>Reha</span>
                         <span class="widget-stat-value widget-kader-reha">-</span>
                     </div>
@@ -8292,13 +8175,6 @@
                 <div class="widget-header"><span class="iconoir-graph-up"></span> Analyse <span style="background: #8b5cf6; color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; margin-left: 6px;"><span class="iconoir-crown"></span></span></div>
                 <div class="widget-content">
                     <span style="opacity: 0.6; font-size: 12px;">Noch keine Analyse vorhanden</span>
-                </div>
-            `,
-            // TRAINING WIDGET
-            training: () => `
-                <div class="widget-header"><span class="iconoir-gym"></span> Training</div>
-                <div class="widget-content" id="widget-training-content">
-                    <span style="opacity: 0.6; font-size: 12px;">Kein Training geplant</span>
                 </div>
             `,
             // MEDIZIN WIDGET
@@ -8406,7 +8282,7 @@
             widget.dataset.widgetType = widgetType;
 
             // App-ID für Navigation zuweisen (falls Widget einer App entspricht)
-            const appWidgets = ['kader', 'kalender', 'messenger', 'analyse', 'training', 'medizin', 'finanzen', 'kasse', 'taktik', 'upload', 'scouting'];
+            const appWidgets = ['kader', 'kalender', 'messenger', 'analyse', 'medizin', 'finanzen', 'kasse', 'taktik', 'upload', 'scouting'];
             if (appWidgets.includes(widgetType)) {
                 widget.dataset.appId = widgetType;
             }
@@ -8493,8 +8369,8 @@
                 const data = await response.json();
 
                 // Kader Widget
-                document.querySelectorAll('.widget-kader-fit').forEach(el => el.textContent = data.fit || 0);
-                document.querySelectorAll('.widget-kader-training').forEach(el => el.textContent = data.training || 0);
+                const fitCount = (data.fit || 0) + (data.training || 0);
+                document.querySelectorAll('.widget-kader-fit').forEach(el => el.textContent = fitCount);
                 document.querySelectorAll('.widget-kader-reha').forEach(el => el.textContent = data.reha || 0);
                 document.querySelectorAll('.widget-kader-ausfall').forEach(el => el.textContent = data.ausfall || 0);
 
@@ -8503,7 +8379,7 @@
                 document.querySelectorAll('.widget-medizin-injured').forEach(el => el.textContent = medicalCount);
 
                 // Stats Widget
-                const totalPlayers = (data.fit || 0) + (data.training || 0) + (data.reha || 0) + (data.ausfall || 0);
+                const totalPlayers = fitCount + (data.reha || 0) + (data.ausfall || 0);
                 document.querySelectorAll('.widget-stats-players').forEach(el => el.textContent = totalPlayers);
             } catch (e) {
                 console.error('Fehler beim Laden der Kader-Widget-Daten:', e);
@@ -8560,7 +8436,7 @@
                             const eventDate = new Date(e.date);
                             const dateStr = eventDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
                             const type = e.type || 'event';
-                            const typeIcon = type === 'match' || type === 'spiel' ? '<span class="iconoir-football-ball"></span>' : type === 'training' ? '<span class="iconoir-gym"></span>' : '<span class="iconoir-calendar"></span>';
+                            const typeIcon = type === 'match' || type === 'spiel' ? '<span class="iconoir-football-ball"></span>' : '<span class="iconoir-calendar"></span>';
                             return `<div style="margin-bottom: 8px; font-size: 12px;">
                                     <span>${typeIcon}</span> <strong>${e.title || 'Event'}</strong>
                                     <div style="opacity: 0.6; font-size: 11px;">${dateStr}</div>
@@ -8734,13 +8610,13 @@
                 console.log('Kader Stats Daten:', data);
 
                 // Widgets aktualisieren - neue Status
-                document.querySelectorAll('.widget-kader-fit').forEach(el => el.textContent = data.fit || '0');
-                document.querySelectorAll('.widget-kader-training').forEach(el => el.textContent = data.training || '0');
+                const fitCount = (data.fit || 0) + (data.training || 0);
+                document.querySelectorAll('.widget-kader-fit').forEach(el => el.textContent = fitCount);
                 document.querySelectorAll('.widget-kader-reha').forEach(el => el.textContent = data.reha || '0');
                 document.querySelectorAll('.widget-kader-ausfall').forEach(el => el.textContent = data.ausfall || '0');
 
                 // Total für andere Widgets
-                const total = (data.fit || 0) + (data.training || 0) + (data.reha || 0) + (data.ausfall || 0);
+                const total = fitCount + (data.reha || 0) + (data.ausfall || 0);
                 document.querySelectorAll('.widget-stats-players').forEach(el => el.textContent = total);
 
                 // Medizin stats (Reha + Ausfall)
@@ -8814,8 +8690,7 @@
                     dayEvents.slice(0, 2).forEach(event => {
                         const dot = document.createElement('div');
                         dot.className = 'event-dot';
-                        if (event.event_type === 'training') dot.classList.add('training');
-                        else if (event.event_type === 'match') dot.classList.add('match');
+                        if (event.event_type === 'match') dot.classList.add('match');
                         eventsContainer.appendChild(dot);
                     });
                 }
@@ -8966,7 +8841,7 @@
                                     </div>
                                     <div>
                                         <span style="opacity: 0.7;">Status:</span>
-                                        <div style="font-weight: 600; color: ${getStatusColor(p.status)};">${escapeHtml(p.status || 'Fit')}</div>
+                                        <div style="font-weight: 600; color: ${getStatusColor(p.status)};">${escapeHtml((p.status || 'Fit').toLowerCase() === 'training' ? 'Fit' : (p.status || 'Fit'))}</div>
                                     </div>
                                 </div>
                             `;
@@ -8981,14 +8856,18 @@
 
         function getStatusColor(status) {
             const colors = {
-                'Fit': '#22c55e',
-                'Belastet': '#f59e0b',
-                'Angeschlagen': '#f97316',
-                'Verletzt': '#ef4444',
-                'Reha': '#06b6d4',
-                'Ausfall': '#dc2626'
+                fit: '#22c55e',
+                belastet: '#f59e0b',
+                angeschlagen: '#f97316',
+                verletzt: '#ef4444',
+                reha: '#06b6d4',
+                ausfall: '#dc2626'
             };
-            return colors[status] || '#6b7280';
+            const normalized = (status || '').toLowerCase();
+            if (normalized === 'training') {
+                return colors.fit;
+            }
+            return colors[normalized] || '#6b7280';
         }
 
         async function saveProfile() {
@@ -9038,7 +8917,6 @@
             if (isTrainer) {
                 data.spielsystem = document.getElementById('profilSpielsystem')?.value || '';
                 data.taktische_grundidee = document.getElementById('profilTaktischeGrundidee')?.value?.trim() || '';
-                data.trainingsschwerpunkte = document.getElementById('profilTrainingsschwerpunkte')?.value?.trim() || '';
                 data.bisherige_stationen = document.getElementById('profilBisherigeStationen')?.value?.trim() || '';
                 data.lizenzen = document.getElementById('profilLizenzen')?.value?.trim() || '';
             }
@@ -9298,8 +9176,7 @@
                     dayEvents.slice(0, 2).forEach(event => {
                         const dot = document.createElement('div');
                         dot.className = 'event-dot';
-                        if (event.type === 'training') dot.classList.add('training');
-                        else if (event.type === 'match') dot.classList.add('match');
+                        if (event.type === 'match') dot.classList.add('match');
                         eventsContainer.appendChild(dot);
                     });
                 }
@@ -9347,27 +9224,6 @@
             container.innerHTML = `
                     <div class="dashboard-card-stat">${analyses.length}</div>
                     <div class="dashboard-card-label">Letzte: ${date}</div>
-                `;
-        }
-
-        function loadTrainingPreview() {
-            const container = document.getElementById('trainingPreview');
-            if (!container) return;
-
-            const trainings = JSON.parse(appStorage.getItem('trainingSessions') || '[]');
-            const now = new Date();
-            const upcoming = trainings.filter(t => new Date(t.date) >= now).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            if (upcoming.length === 0) {
-                container.innerHTML = '<span class="dashboard-placeholder">Kein Training geplant</span>';
-                return;
-            }
-
-            const next = upcoming[0];
-            const date = new Date(next.date).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
-            container.innerHTML = `
-                    <div class="dashboard-card-stat">${date}</div>
-                    <div class="dashboard-card-label">Nächstes Training</div>
                 `;
         }
 
@@ -9875,12 +9731,17 @@
             return `${year}-${month}-${day}`;
         }
 
+        function normalizeEventType(type) {
+            const normalized = (type || 'other').toLowerCase();
+            return normalized === 'training' ? 'other' : normalized;
+        }
+
         function mapApiEventsToCalendar(events) {
             return events.map(e => ({
                 id: e.id,
                 date: e.event_date || '',
                 title: e.title || '',
-                type: e.event_type || 'training',
+                type: normalizeEventType(e.event_type),
                 time: e.start_time || '',
                 location: e.location || '',
                 notes: e.description || '',
@@ -9910,7 +9771,10 @@
                 const stored = appStorage.getItem(storageKey);
                 if (stored) {
                     calendarEvents.length = 0;
-                    calendarEvents.push(...JSON.parse(stored));
+                    calendarEvents.push(...JSON.parse(stored).map(e => ({
+                        ...e,
+                        type: normalizeEventType(e.type || e.event_type)
+                    })));
                 }
             }
             console.log('Rufe renderCalendar auf...');
@@ -9952,7 +9816,7 @@
             document.getElementById('eventTitle').value = '';
             document.getElementById('eventDate').value = dateStr || '';
             document.getElementById('eventTime').value = time || '';
-            document.getElementById('eventType').value = 'training';
+            document.getElementById('eventType').value = 'other';
             document.getElementById('eventRepeat').value = 'none';
             document.getElementById('eventRepeatUntil').value = '';
             document.getElementById('eventLocation').value = '';
@@ -9981,7 +9845,7 @@
         }
 
         function updateMatchRosterVisibility() {
-            const type = document.getElementById('eventType')?.value || 'training';
+            const type = document.getElementById('eventType')?.value || 'other';
             const section = document.getElementById('matchRosterSection');
             if (section) {
                 section.style.display = type === 'match' ? 'block' : 'none';
@@ -10144,7 +10008,7 @@
             document.getElementById('eventTitle').value = event.title || '';
             document.getElementById('eventDate').value = event.date || '';
             document.getElementById('eventTime').value = event.time || '';
-            document.getElementById('eventType').value = event.type || 'training';
+            document.getElementById('eventType').value = event.type || 'other';
             document.getElementById('eventRepeat').value = 'none';
             document.getElementById('eventRepeatUntil').value = '';
             document.getElementById('eventLocation').value = event.location || '';
@@ -10938,6 +10802,8 @@
                     if (data.players && data.players.length > 0) {
                         kaderPlayers = data.players.map(p => {
                             const positions = p.position ? p.position.split(',').map(s => s.trim()).filter(Boolean) : [];
+                            const rawStatus = (p.status || 'Fit').toLowerCase();
+                            const normalizedStatus = rawStatus === 'training' ? 'fit' : rawStatus;
                             return {
                                 id: p.id,
                                 firstname: p.name.split(' ')[0] || p.name,
@@ -10946,7 +10812,7 @@
                                 position: p.position || '',
                                 position_category: getPositionCategory(positions),
                                 jersey: p.trikotnummer || 0,
-                                status: (p.status || 'Fit').toLowerCase(),
+                                status: normalizedStatus,
                                 email: p.email || '',
                                 phone: p.telefon || '',
                                 notes: p.notizen || '',
@@ -11115,9 +10981,9 @@
             const filteredPlayers = getFilteredPlayers();
 
             // Status Counts
+            const trainingCount = filteredPlayers.filter(p => p.status === 'training').length;
             const stat = {
-                fit: filteredPlayers.filter(p => p.status === 'fit').length,
-                training: filteredPlayers.filter(p => p.status === 'training').length,
+                fit: filteredPlayers.filter(p => p.status === 'fit').length + trainingCount,
                 reha: filteredPlayers.filter(p => p.status === 'reha').length,
                 ausfall: filteredPlayers.filter(p => p.status === 'ausfall').length
             };
@@ -11132,7 +10998,6 @@
 
             // Update HTML
             document.getElementById('stat-fit').textContent = stat.fit;
-            document.getElementById('stat-training').textContent = stat.training;
             document.getElementById('stat-reha').textContent = stat.reha;
             document.getElementById('stat-ausfall').textContent = stat.ausfall;
 
@@ -11148,10 +11013,10 @@
                 statusChart = new Chart(statusEl.getContext('2d'), {
                     type: 'doughnut',
                     data: {
-                        labels: ['Fit', 'Training', 'Reha', 'Ausfall'],
+                        labels: ['Fit', 'Reha', 'Ausfall'],
                         datasets: [{
-                            data: [stat.fit, stat.training, stat.reha, stat.ausfall],
-                            backgroundColor: ['#22c55e', '#f59e0b', '#06b6d4', '#ef4444'],
+                            data: [stat.fit, stat.reha, stat.ausfall],
+                            backgroundColor: ['#22c55e', '#06b6d4', '#ef4444'],
                             borderColor: isDark ? '#1c1c1e' : '#fff',
                             borderWidth: 2,
                             spacing: 0
@@ -11476,7 +11341,7 @@
             const firstname = document.getElementById('editPlayerFirstname').value.trim();
             const lastname = document.getElementById('editPlayerLastname').value.trim();
             const jersey = parseInt(document.getElementById('editPlayerJersey').value);
-            const status = document.getElementById('editPlayerStatus').value; // Fit, Training, Reha, Ausfall
+            const status = document.getElementById('editPlayerStatus').value; // Fit, Reha, Ausfall
             const birthdate = document.getElementById('editPlayerBirthdate').value;
             const country = document.getElementById('editPlayerCountry').value;
             const team = document.getElementById('editPlayerTeam').value;
