@@ -3333,6 +3333,42 @@ async def delete_marker(request: Request, marker_id: int):
     return {"success": True}
 
 
+@router.put("/api/markers/{marker_id}")
+async def update_marker(request: Request, marker_id: int):
+    """
+    Marker umbenennen.
+    SECURITY: Nur eigenes Team.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Daten"}, status_code=400)
+
+    label = str(data.get("label", "")).strip()[:100]
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            UPDATE video_markers
+            SET label = ?
+            WHERE id = ? AND team_id = ? AND deleted_at IS NULL
+        """, (label, marker_id, db_user["team_id"]))
+        if cursor.rowcount == 0:
+            return JSONResponse({"error": "Marker nicht gefunden"}, status_code=404)
+        db.commit()
+
+    return {"success": True, "label": label}
+
+
 @router.delete("/api/clips/{clip_id}")
 async def delete_clip(request: Request, clip_id: int):
     """
@@ -3357,6 +3393,45 @@ async def delete_clip(request: Request, clip_id: int):
         db.commit()
 
     return {"success": True}
+
+
+@router.put("/api/clips/{clip_id}")
+async def update_clip(request: Request, clip_id: int):
+    """
+    Clip umbenennen / Notiz aktualisieren.
+    SECURITY: Nur eigenes Team.
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"error": "Nicht authentifiziert"}, status_code=401)
+
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user or not db_user.get("team_id"):
+        return JSONResponse({"error": "Kein Team"}, status_code=400)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Daten"}, status_code=400)
+
+    title = str(data.get("title", "")).strip()[:200]
+    note = str(data.get("note", "")).strip()[:500]
+    if not title:
+        return JSONResponse({"error": "Titel erforderlich"}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            UPDATE video_clips
+            SET title = ?, note = ?
+            WHERE id = ? AND team_id = ? AND deleted_at IS NULL
+        """, (title, note, clip_id, db_user["team_id"]))
+        if cursor.rowcount == 0:
+            return JSONResponse({"error": "Clip nicht gefunden"}, status_code=404)
+        db.commit()
+
+    return {"success": True, "title": title, "note": note}
 
 
 @router.post("/api/clips/{clip_id}/share")

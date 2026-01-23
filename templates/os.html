@@ -7681,6 +7681,9 @@
                      onmouseout="this.style.background='rgba(245,158,11,0.15)'">
                     <span style="font-family: monospace; color: #f59e0b; font-size: 13px; font-weight: 600;">${formatTime(marker.time_seconds)}</span>
                     <span style="flex: 1; font-size: 12px; color: var(--text-light); opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(marker.label) || 'Marker'}</span>
+                    <button onclick="event.stopPropagation(); editMarker(${marker.id}, ${JSON.stringify(marker.label || '')})"
+                            style="background: none; border: none; color: var(--text-light); opacity: 0.55; cursor: pointer; font-size: 14px; padding: 2px 6px;"
+                            title="Umbenennen"><span class="iconoir-edit-pencil"></span></button>
                     <button onclick="event.stopPropagation(); deleteMarker(${marker.id})" 
                             style="background: none; border: none; color: var(--text-light); opacity: 0.4; cursor: pointer; font-size: 14px; padding: 2px 6px;"
                             title="Löschen"><span class="iconoir-xmark"></span></button>
@@ -7715,6 +7718,25 @@
             }
         }
 
+        async function editMarker(markerId, currentLabel) {
+            const label = prompt('Marker-Name ändern:', currentLabel || '');
+            if (label === null) return;
+            try {
+                const response = await fetch(`/api/markers/${markerId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ label: label.trim() })
+                });
+                if (!response.ok) throw new Error('Fehler');
+                showToast('Marker aktualisiert', 'success');
+                loadVideoMarkers(currentVideoId);
+            } catch (error) {
+                console.error('Fehler:', error);
+                showToast('Fehler beim Aktualisieren', 'error');
+            }
+        }
+
         // Clips rendern
         function renderVideoClips(clips) {
             const container = document.getElementById('videoClipsList');
@@ -7733,6 +7755,10 @@
                                 <span style="opacity: 0.5; color: var(--text-light); font-size: 10px;"> → </span>
                                 <span style="font-family: monospace; font-size: 12px; color: #ef4444;">${formatTime(clip.end_time)}</span>
                             </div>
+                            <button onclick="editClip(${clip.id}, ${JSON.stringify(clip.title || '')}, ${JSON.stringify(clip.note || '')})" title="Umbenennen"
+                                style="width: 28px; height: 28px; background: rgba(16,185,129,0.2); color: #10b981; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                <span class="iconoir-edit-pencil"></span>
+                            </button>
                             <button onclick="openShareModal(${clip.id})" title="Teilen" style="width: 28px; height: 28px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
                                 <span class="iconoir-send"></span>
                             </button>
@@ -7740,9 +7766,32 @@
                                 <span class="iconoir-trash"></span>
                             </button>
                         </div>
-                        <div style="font-size: 11px; color: var(--text-light); opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(clip.note || 'Kein Kommentar')}</div>
+                        <div style="font-size: 11px; color: var(--text-light); opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(clip.title || clip.note || 'Kein Kommentar')}</div>
                     </div>
                 `).join('');
+        }
+
+        async function editClip(clipId, currentTitle, currentNote) {
+            const title = prompt('Clip-Name ändern:', currentTitle || currentNote || '');
+            if (title === null) return;
+            const note = title.trim();
+            if (!note) return;
+            try {
+                const response = await fetch(`/api/clips/${clipId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ title: note, note: note })
+                });
+                if (!response.ok) throw new Error('Fehler');
+                showToast('Clip aktualisiert', 'success');
+                if (currentVideoId) {
+                    await loadVideoClips(currentVideoId);
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+                showToast('Fehler beim Aktualisieren', 'error');
+            }
         }
 
         // Clip löschen
