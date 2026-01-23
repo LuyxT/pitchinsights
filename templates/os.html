@@ -6643,7 +6643,14 @@
                 if (roles.length === 0) {
                     select.innerHTML = '<option value="">Keine Rollen verfügbar</option>';
                 } else {
-                    select.innerHTML = roles.map(r => `<option value="${parseInt(r.id)}">${escapeHtml(r.name)}</option>`).join('');
+                    const sortedRoles = roles.slice().sort((a, b) => {
+                        const aIsPlayer = (a.name || '').toLowerCase() === 'spieler';
+                        const bIsPlayer = (b.name || '').toLowerCase() === 'spieler';
+                        if (aIsPlayer && !bIsPlayer) return -1;
+                        if (!aIsPlayer && bIsPlayer) return 1;
+                        return a.name.localeCompare(b.name);
+                    });
+                    select.innerHTML = sortedRoles.map(r => `<option value="${parseInt(r.id)}">${escapeHtml(r.name)}</option>`).join('');
                 }
 
                 document.getElementById('invitation-max-uses').value = 1;
@@ -6671,7 +6678,14 @@
                 const roles = data.roles || [];
 
                 if (roles.length > 0) {
-                    select.innerHTML = roles.map(r => `<option value="${parseInt(r.id)}">${escapeHtml(r.name)}</option>`).join('');
+                    const sortedRoles = roles.slice().sort((a, b) => {
+                        const aIsPlayer = (a.name || '').toLowerCase() === 'spieler';
+                        const bIsPlayer = (b.name || '').toLowerCase() === 'spieler';
+                        if (aIsPlayer && !bIsPlayer) return -1;
+                        if (!aIsPlayer && bIsPlayer) return 1;
+                        return a.name.localeCompare(b.name);
+                    });
+                    select.innerHTML = sortedRoles.map(r => `<option value="${parseInt(r.id)}">${escapeHtml(r.name)}</option>`).join('');
                 } else {
                     select.innerHTML = '<option value="1">Spieler</option><option value="2">Trainer</option>';
                 }
