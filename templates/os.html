@@ -4038,6 +4038,37 @@
                             style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box;">
                     </div>
 
+                    <!-- Zusatzinfos -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <div>
+                            <label
+                                style="font-size: 12px; opacity: 0.7; display: block; margin-bottom: 4px;">Starker
+                                Fuß</label>
+                            <select id="editPlayerStrongFoot"
+                                style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box; width: 100%;">
+                                <option value="">Nicht gesetzt</option>
+                                <option value="rechts">Rechts</option>
+                                <option value="links">Links</option>
+                                <option value="beidfuessig">Beidfüßig</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 24px;">
+                        <div>
+                            <label
+                                style="font-size: 12px; opacity: 0.7; display: block; margin-bottom: 4px;">Werdegang</label>
+                            <textarea id="editPlayerCareer" rows="3" placeholder="Werdegang"
+                                style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box; width: 100%; resize: vertical;"></textarea>
+                        </div>
+                        <div>
+                            <label
+                                style="font-size: 12px; opacity: 0.7; display: block; margin-bottom: 4px;">Verletzungshistorie</label>
+                            <textarea id="editPlayerInjuryHistory" rows="3" placeholder="Verletzungshistorie"
+                                style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box; width: 100%; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                         <button onclick="saveEditPlayer()"
                             style="padding: 12px 20px; background: #22c55e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px;">Speichern</button>
@@ -10996,7 +11027,10 @@
                                 notes: p.notizen || '',
                                 user_id: p.user_id || null,
                                 height: p.groesse || null,
-                                weight: p.gewicht || null
+                                weight: p.gewicht || null,
+                                starker_fuss: p.starker_fuss || '',
+                                werdegang: p.werdegang || '',
+                                verletzungshistorie: p.verletzungshistorie || ''
                             };
                         });
                         return;
@@ -11474,6 +11508,18 @@
             document.getElementById('editPlayerStatus').value = player.status ? player.status.charAt(0).toUpperCase() + player.status.slice(1) : 'Fit';
             document.getElementById('editPlayerHeight').value = player.height || '';
             document.getElementById('editPlayerWeight').value = player.weight || '';
+            const strongFootRaw = String(player.starker_fuss || '').trim().toLowerCase();
+            let strongFootValue = '';
+            if (strongFootRaw.startsWith('r')) {
+                strongFootValue = 'rechts';
+            } else if (strongFootRaw.startsWith('l')) {
+                strongFootValue = 'links';
+            } else if (strongFootRaw.startsWith('beid')) {
+                strongFootValue = 'beidfuessig';
+            }
+            document.getElementById('editPlayerStrongFoot').value = strongFootValue;
+            document.getElementById('editPlayerCareer').value = player.werdegang || '';
+            document.getElementById('editPlayerInjuryHistory').value = player.verletzungshistorie || '';
 
             // Mannschaft Dropdown befüllen
             const teamSelect = document.getElementById('editPlayerTeam');
@@ -11524,6 +11570,9 @@
             const team = document.getElementById('editPlayerTeam').value;
             const height = document.getElementById('editPlayerHeight').value;
             const weight = document.getElementById('editPlayerWeight').value;
+            const starkerFuss = document.getElementById('editPlayerStrongFoot').value;
+            const werdegang = document.getElementById('editPlayerCareer').value.trim();
+            const verletzungshistorie = document.getElementById('editPlayerInjuryHistory').value.trim();
             const userIdValue = document.getElementById('editPlayerUser')?.value || '';
             const linkedUserId = userIdValue ? parseInt(userIdValue, 10) : null;
 
@@ -11570,7 +11619,10 @@
                         status: status,
                         user_id: linkedUserId,
                         groesse: height ? parseInt(height, 10) : null,
-                        gewicht: weight ? parseInt(weight, 10) : null
+                        gewicht: weight ? parseInt(weight, 10) : null,
+                        starker_fuss: starkerFuss,
+                        werdegang: werdegang,
+                        verletzungshistorie: verletzungshistorie
                     })
                 });
 
@@ -11607,7 +11659,10 @@
                     team,
                     height,
                     weight,
-                    user_id: linkedUserId || null
+                    user_id: linkedUserId || null,
+                    starker_fuss: starkerFuss,
+                    werdegang: werdegang,
+                    verletzungshistorie: verletzungshistorie
                 };
 
                 closeEditPlayerModal();

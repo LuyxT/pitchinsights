@@ -4228,7 +4228,8 @@ async def get_players(request: Request):
 
         if db_user.get("is_admin") or role_name in staff_roles:
             cursor.execute("""
-                SELECT id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen, user_id, groesse, gewicht
+                SELECT id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen,
+                       starker_fuss, werdegang, verletzungshistorie, user_id, groesse, gewicht
                 FROM players
                 WHERE team_id = ? AND deleted_at IS NULL
                 ORDER BY trikotnummer, name
@@ -4245,7 +4246,8 @@ async def get_players(request: Request):
         else:
             # Spieler/Eltern sehen nur sich selbst (verknüpft über user_id)
             cursor.execute("""
-                SELECT id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen, user_id, groesse, gewicht
+                SELECT id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen,
+                       starker_fuss, werdegang, verletzungshistorie, user_id, groesse, gewicht
                 FROM players
                 WHERE team_id = ? AND user_id = ? AND deleted_at IS NULL
             """, (db_user["team_id"], user["id"]))
@@ -4327,6 +4329,9 @@ async def create_player(request: Request):
     telefon = str(data.get("telefon", "")).strip()[:30]
     geburtsdatum = str(data.get("geburtsdatum", "")).strip()[:10] or None
     notizen = str(data.get("notizen", "")).strip()[:1000]
+    starker_fuss = str(data.get("starker_fuss", "")).strip()[:30]
+    werdegang = str(data.get("werdegang", "")).strip()[:1000]
+    verletzungshistorie = str(data.get("verletzungshistorie", "")).strip()[:1000]
 
     groesse = data.get("groesse")
     if groesse is not None and groesse != "":
@@ -4353,9 +4358,11 @@ async def create_player(request: Request):
     with get_db_connection() as db:
         cursor = db.cursor()
         cursor.execute("""
-            INSERT INTO players (team_id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen, groesse, gewicht)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (db_user["team_id"], name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen, groesse, gewicht))
+            INSERT INTO players (team_id, name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen,
+                                 starker_fuss, werdegang, verletzungshistorie, groesse, gewicht)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (db_user["team_id"], name, position, trikotnummer, status, email, telefon, geburtsdatum, notizen,
+              starker_fuss, werdegang, verletzungshistorie, groesse, gewicht))
         db.commit()
         player_id = cursor.lastrowid
 
@@ -4432,6 +4439,15 @@ async def update_player(request: Request, player_id: int):
         if "notizen" in data:
             updates.append("notizen = ?")
             params.append(str(data["notizen"]).strip()[:1000])
+        if "starker_fuss" in data:
+            updates.append("starker_fuss = ?")
+            params.append(str(data["starker_fuss"]).strip()[:30])
+        if "werdegang" in data:
+            updates.append("werdegang = ?")
+            params.append(str(data["werdegang"]).strip()[:1000])
+        if "verletzungshistorie" in data:
+            updates.append("verletzungshistorie = ?")
+            params.append(str(data["verletzungshistorie"]).strip()[:1000])
         if "groesse" in data:
             try:
                 groesse = int(data["groesse"])
