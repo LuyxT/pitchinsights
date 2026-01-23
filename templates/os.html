@@ -2962,6 +2962,11 @@
             pointer-events: auto;
         }
 
+        #videoDrawToolbar {
+            top: 72px;
+            bottom: auto;
+        }
+
         #videoPlayerModal {
             background: var(--bg-light) !important;
         }
@@ -7357,7 +7362,8 @@
             currentVideoId = videoId;
             clipStart = null;
             clipEnd = null;
-            videoDrawMode = false;
+            videoDrawState.drawMode = false;
+            updateVideoDrawModeUI(false);
             updateClipUI();
 
             const video = teamVideos.find(v => v.id === videoId);
@@ -7393,7 +7399,8 @@
             modalVideo.src = '';
             document.getElementById('videoPlayerModal').style.display = 'none';
             currentVideoId = null;
-            videoDrawMode = false;
+            videoDrawState.drawMode = false;
+            updateVideoDrawModeUI(false);
             clearVideoDrawing();
             resetVideoControls();
         }
@@ -7564,13 +7571,20 @@
         // =====================
         // VIDEO DRAWING
         // =====================
-        let videoDrawMode = false;
-        let videoDrawing = false;
+        const videoDrawState = {
+            drawMode: false,
+            isDrawing: false,
+            currentDrawTool: 'pen',
+            currentColor: '#ef4444',
+            currentSize: 4,
+            drawHistory: [],
+            shapeStart: null,
+            currentPath: [],
+            fadeMode: true,
+            fadeRunning: false
+        };
         let videoDrawCtx = null;
-        let videoStrokes = [];  // Array für Striche mit Timestamps
-        let videoFadeMode = true;  // Auto-Fade standardmäßig AN
-        let videoFadeAnimationRunning = false;
-        let currentVideoStroke = null;
+        let videoDrawToolsInitialized = false;
 
         function setupVideoDrawCanvas() {
             const video = document.getElementById('modalVideo');
@@ -7600,8 +7614,6 @@
             canvas.style.position = 'absolute';
 
             videoDrawCtx = canvas.getContext('2d');
-            videoDrawCtx.strokeStyle = '#ff0000';
-            videoDrawCtx.lineWidth = 3;
             videoDrawCtx.lineCap = 'round';
             videoDrawCtx.lineJoin = 'round';
 
@@ -7614,64 +7626,108 @@
                 canvas.addEventListener('mouseup', stopVideoDraw);
                 canvas.addEventListener('mouseleave', stopVideoDraw);
 
-                canvas.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    startVideoDraw({ offsetX: touch.clientX - canvas.getBoundingClientRect().left, offsetY: touch.clientY - canvas.getBoundingClientRect().top });
-                });
-                canvas.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    doVideoDraw({ offsetX: touch.clientX - canvas.getBoundingClientRect().left, offsetY: touch.clientY - canvas.getBoundingClientRect().top });
-                });
+                canvas.addEventListener('touchstart', startVideoDraw, { passive: false });
+                canvas.addEventListener('touchmove', doVideoDraw, { passive: false });
                 canvas.addEventListener('touchend', stopVideoDraw);
             }
+            setupVideoDrawTools();
+            redrawVideoStrokes();
+            updateVideoDrawModeUI(videoDrawState.drawMode);
         }
 
         function toggleDrawMode() {
-            videoDrawMode = !videoDrawMode;
-            const canvas = document.getElementById('modalDrawCanvas');
-            const btn = document.getElementById('drawModeBtn');
-
-            if (videoDrawMode) {
-                canvas.style.pointerEvents = 'auto';
-                canvas.style.cursor = 'crosshair';
-                btn.style.background = 'rgba(16,185,129,0.9)';
-                btn.title = 'Zeichnen (AN)';
-            } else {
-                canvas.style.pointerEvents = 'none';
-                canvas.style.cursor = 'default';
-                btn.style.background = 'rgba(0,0,0,0.6)';
-                btn.title = 'Zeichnen';
-            }
+            videoDrawState.drawMode = !videoDrawState.drawMode;
+            updateVideoDrawModeUI(videoDrawState.drawMode);
         }
 
         function startVideoDraw(e) {
-            if (!videoDrawMode || !videoDrawCtx) return;
-            videoDrawing = true;
-            currentVideoStroke = {
-                points: [{ x: e.offsetX, y: e.offsetY }],
-                timestamp: Date.now(),
-                opacity: 1
-            };
+            if (!videoDrawState.drawMode || !videoDrawCtx) return;
+            e.preventDefault();
+            videoDrawState.isDrawing = true;
+
+            const canvas = document.getElementById('modalDrawCanvas');
+            if (!canvas) return;
+            const point = getVideoCanvasPoint(e, canvas);
+
+            if (videoDrawState.currentDrawTool === 'arrow' || videoDrawState.currentDrawTool === 'line') {
+                videoDrawState.shapeStart = { x: point.x, y: point.y };
+            } else {
+                videoDrawState.currentPath = [{ x: point.x, y: point.y }];
+                videoDrawCtx.beginPath();
+                videoDrawCtx.moveTo(point.x, point.y);
+                videoDrawCtx.lineCap = 'round';
+                videoDrawCtx.lineJoin = 'round';
+
+                if (videoDrawState.currentDrawTool === 'eraser') {
+                    videoDrawCtx.globalCompositeOperation = 'destination-out';
+                    videoDrawCtx.lineWidth = 30;
+                } else if (videoDrawState.currentDrawTool === 'highlight') {
+                    videoDrawCtx.globalCompositeOperation = 'source-over';
+                    videoDrawCtx.strokeStyle = colorWithAlpha(videoDrawState.currentColor, 0.38);
+                    videoDrawCtx.lineWidth = videoDrawState.currentSize * 4;
+                } else {
+                    videoDrawCtx.globalCompositeOperation = 'source-over';
+                    videoDrawCtx.strokeStyle = videoDrawState.currentColor;
+                    videoDrawCtx.lineWidth = videoDrawState.currentSize;
+                }
+            }
         }
 
         function doVideoDraw(e) {
-            if (!videoDrawing || !videoDrawCtx || !currentVideoStroke) return;
-            currentVideoStroke.points.push({ x: e.offsetX, y: e.offsetY });
-            // Zeichne live
-            redrawVideoStrokes();
+            if (!videoDrawState.isDrawing || !videoDrawCtx) return;
+            e.preventDefault();
+            const canvas = document.getElementById('modalDrawCanvas');
+            if (!canvas) return;
+            const point = getVideoCanvasPoint(e, canvas);
+
+            if (videoDrawState.currentDrawTool === 'arrow' || videoDrawState.currentDrawTool === 'line') {
+                redrawVideoStrokes();
+                drawVideoLinePreview(videoDrawState.shapeStart, point);
+            } else {
+                videoDrawState.currentPath.push({ x: point.x, y: point.y });
+                videoDrawCtx.lineTo(point.x, point.y);
+                videoDrawCtx.stroke();
+            }
         }
 
-        function stopVideoDraw() {
-            if (videoDrawing && currentVideoStroke && currentVideoStroke.points.length > 1) {
-                videoStrokes.push(currentVideoStroke);
-                if (videoFadeMode) {
-                    startVideoFadeAnimation();
-                }
+        function stopVideoDraw(e) {
+            if (!videoDrawState.isDrawing) return;
+            videoDrawState.isDrawing = false;
+
+            const canvas = document.getElementById('modalDrawCanvas');
+            if (!canvas) return;
+            const now = Date.now();
+
+            if ((videoDrawState.currentDrawTool === 'arrow' || videoDrawState.currentDrawTool === 'line') && videoDrawState.shapeStart) {
+                const point = getVideoCanvasPoint(e, canvas);
+                videoDrawState.drawHistory.push({
+                    tool: videoDrawState.currentDrawTool,
+                    color: videoDrawState.currentColor,
+                    size: videoDrawState.currentSize,
+                    start: videoDrawState.shapeStart,
+                    end: { x: point.x, y: point.y },
+                    createdAt: now,
+                    opacity: 1
+                });
+                videoDrawState.shapeStart = null;
+            } else if (videoDrawState.currentPath.length > 0) {
+                videoDrawState.drawHistory.push({
+                    tool: videoDrawState.currentDrawTool,
+                    color: videoDrawState.currentColor,
+                    size: videoDrawState.currentSize,
+                    path: videoDrawState.currentPath.slice(),
+                    createdAt: now,
+                    opacity: 1
+                });
             }
-            videoDrawing = false;
-            currentVideoStroke = null;
+
+            videoDrawState.currentPath = [];
+            videoDrawCtx.globalCompositeOperation = 'source-over';
+            redrawVideoStrokes();
+
+            if (videoDrawState.fadeMode) {
+                startVideoFadeAnimation();
+            }
         }
 
         function redrawVideoStrokes() {
@@ -7681,62 +7737,97 @@
             videoDrawCtx.clearRect(0, 0, canvas.width, canvas.height);
 
             // Zeichne alle gespeicherten Striche
-            videoStrokes.forEach(stroke => {
-                if (stroke.points.length < 2) return;
+            videoDrawState.drawHistory.forEach(stroke => {
+                if (!stroke) return;
+                const alpha = typeof stroke.opacity === 'number' ? stroke.opacity : 1;
 
-                videoDrawCtx.beginPath();
-                videoDrawCtx.strokeStyle = `rgba(255, 0, 0, ${stroke.opacity})`;
-                videoDrawCtx.lineWidth = 3;
+                videoDrawCtx.save();
                 videoDrawCtx.lineCap = 'round';
                 videoDrawCtx.lineJoin = 'round';
 
-                videoDrawCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
-                for (let i = 1; i < stroke.points.length; i++) {
-                    videoDrawCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                if (stroke.tool === 'eraser') {
+                    if (!stroke.path || stroke.path.length < 2) {
+                        videoDrawCtx.restore();
+                        return;
+                    }
+                    videoDrawCtx.globalCompositeOperation = 'destination-out';
+                    videoDrawCtx.lineWidth = 30;
+                    videoDrawCtx.beginPath();
+                    videoDrawCtx.moveTo(stroke.path[0].x, stroke.path[0].y);
+                    stroke.path.forEach(point => videoDrawCtx.lineTo(point.x, point.y));
+                    videoDrawCtx.stroke();
+                    videoDrawCtx.restore();
+                    return;
                 }
-                videoDrawCtx.stroke();
+
+                if (stroke.tool === 'arrow' || stroke.tool === 'line') {
+                    videoDrawCtx.strokeStyle = colorWithAlpha(stroke.color, alpha);
+                    videoDrawCtx.lineWidth = stroke.size;
+                    videoDrawCtx.beginPath();
+                    videoDrawCtx.moveTo(stroke.start.x, stroke.start.y);
+                    videoDrawCtx.lineTo(stroke.end.x, stroke.end.y);
+                    videoDrawCtx.stroke();
+
+                    if (stroke.tool === 'arrow') {
+                        const angle = Math.atan2(stroke.end.y - stroke.start.y, stroke.end.x - stroke.start.x);
+                        const headLen = 15;
+                        videoDrawCtx.beginPath();
+                        videoDrawCtx.moveTo(stroke.end.x, stroke.end.y);
+                        videoDrawCtx.lineTo(stroke.end.x - headLen * Math.cos(angle - Math.PI / 6),
+                            stroke.end.y - headLen * Math.sin(angle - Math.PI / 6));
+                        videoDrawCtx.moveTo(stroke.end.x, stroke.end.y);
+                        videoDrawCtx.lineTo(stroke.end.x - headLen * Math.cos(angle + Math.PI / 6),
+                            stroke.end.y - headLen * Math.sin(angle + Math.PI / 6));
+                        videoDrawCtx.stroke();
+                    }
+                } else if (stroke.path && stroke.path.length > 1) {
+                    if (stroke.tool === 'highlight') {
+                        videoDrawCtx.strokeStyle = colorWithAlpha(stroke.color, alpha * 0.38);
+                        videoDrawCtx.lineWidth = stroke.size * 4;
+                    } else {
+                        videoDrawCtx.strokeStyle = colorWithAlpha(stroke.color, alpha);
+                        videoDrawCtx.lineWidth = stroke.size;
+                    }
+
+                    videoDrawCtx.beginPath();
+                    videoDrawCtx.moveTo(stroke.path[0].x, stroke.path[0].y);
+                    stroke.path.forEach(point => videoDrawCtx.lineTo(point.x, point.y));
+                    videoDrawCtx.stroke();
+                }
+
+                videoDrawCtx.restore();
             });
-
-            // Zeichne aktuellen Strich
-            if (currentVideoStroke && currentVideoStroke.points.length >= 2) {
-                videoDrawCtx.beginPath();
-                videoDrawCtx.strokeStyle = 'rgba(255, 0, 0, 1)';
-                videoDrawCtx.lineWidth = 3;
-                videoDrawCtx.lineCap = 'round';
-                videoDrawCtx.lineJoin = 'round';
-
-                videoDrawCtx.moveTo(currentVideoStroke.points[0].x, currentVideoStroke.points[0].y);
-                for (let i = 1; i < currentVideoStroke.points.length; i++) {
-                    videoDrawCtx.lineTo(currentVideoStroke.points[i].x, currentVideoStroke.points[i].y);
-                }
-                videoDrawCtx.stroke();
-            }
         }
 
         function startVideoFadeAnimation() {
-            if (videoFadeAnimationRunning) return;
-            videoFadeAnimationRunning = true;
+            if (videoDrawState.fadeRunning) return;
+            videoDrawState.fadeRunning = true;
 
             function animate() {
+                if (!videoDrawState.fadeMode) {
+                    videoDrawState.fadeRunning = false;
+                    return;
+                }
                 const now = Date.now();
                 let hasActiveStrokes = false;
 
-                videoStrokes = videoStrokes.filter(stroke => {
-                    const age = now - stroke.timestamp;
+                videoDrawState.drawHistory = videoDrawState.drawHistory.filter(stroke => {
+                    if (stroke.tool === 'eraser') {
+                        stroke.opacity = 1;
+                        return true;
+                    }
+                    const age = now - (stroke.createdAt || now);
                     if (age < 3000) {
-                        // Noch sichtbar (3 Sekunden)
                         stroke.opacity = 1;
                         hasActiveStrokes = true;
                         return true;
-                    } else if (age < 4000) {
-                        // Fade out (1 Sekunde)
+                    }
+                    if (age < 4000) {
                         stroke.opacity = 1 - ((age - 3000) / 1000);
                         hasActiveStrokes = true;
                         return true;
-                    } else {
-                        // Komplett verblasst
-                        return false;
                     }
+                    return false;
                 });
 
                 redrawVideoStrokes();
@@ -7744,7 +7835,7 @@
                 if (hasActiveStrokes) {
                     requestAnimationFrame(animate);
                 } else {
-                    videoFadeAnimationRunning = false;
+                    videoDrawState.fadeRunning = false;
                 }
             }
 
@@ -7752,21 +7843,23 @@
         }
 
         function toggleVideoFadeMode() {
-            videoFadeMode = !videoFadeMode;
+            videoDrawState.fadeMode = !videoDrawState.fadeMode;
             const btn = document.getElementById('fadeModeBtn');
 
-            if (videoFadeMode) {
+            if (videoDrawState.fadeMode) {
                 btn.style.background = 'rgba(139,92,246,0.9)';  // Lila wenn AN
                 btn.title = 'Auto-Fade (AN)';
                 // Starte Animation für existierende Striche
-                if (videoStrokes.length > 0) {
+                if (videoDrawState.drawHistory.length > 0) {
                     startVideoFadeAnimation();
                 }
             } else {
                 btn.style.background = 'rgba(0,0,0,0.6)';
                 btn.title = 'Auto-Fade (AUS)';
                 // Setze alle Striche auf volle Opacity
-                videoStrokes.forEach(s => s.opacity = 1);
+                videoDrawState.drawHistory.forEach(s => {
+                    if (s.tool !== 'eraser') s.opacity = 1;
+                });
                 redrawVideoStrokes();
             }
         }
@@ -7776,8 +7869,110 @@
             if (canvas && videoDrawCtx) {
                 videoDrawCtx.clearRect(0, 0, canvas.width, canvas.height);
             }
-            videoStrokes = [];
-            currentVideoStroke = null;
+            videoDrawState.drawHistory = [];
+            videoDrawState.currentPath = [];
+            videoDrawState.shapeStart = null;
+            videoDrawState.fadeRunning = false;
+        }
+
+        function updateVideoDrawModeUI(isEnabled) {
+            videoDrawState.drawMode = isEnabled;
+            const canvas = document.getElementById('modalDrawCanvas');
+            const btn = document.getElementById('drawModeBtn');
+            const toolbar = document.getElementById('videoDrawToolbar');
+            if (canvas) {
+                canvas.style.pointerEvents = isEnabled ? 'auto' : 'none';
+                canvas.style.cursor = isEnabled ? 'crosshair' : 'default';
+            }
+            if (btn) {
+                btn.style.background = isEnabled ? 'rgba(16,185,129,0.9)' : 'rgba(0,0,0,0.6)';
+                btn.title = isEnabled ? 'Zeichnen (AN)' : 'Zeichnen';
+            }
+            if (toolbar) {
+                toolbar.classList.toggle('visible', isEnabled);
+            }
+        }
+
+        function setupVideoDrawTools() {
+            if (videoDrawToolsInitialized) return;
+            videoDrawToolsInitialized = true;
+
+            const closeBtn = document.getElementById('videoDrawClose');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => updateVideoDrawModeUI(false));
+            }
+
+            document.querySelectorAll('[data-video-draw-tool]').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('[data-video-draw-tool]').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    videoDrawState.currentDrawTool = this.dataset.videoDrawTool;
+                });
+            });
+
+            document.querySelectorAll('[data-video-color]').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('[data-video-color]').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    videoDrawState.currentColor = this.dataset.videoColor;
+                });
+            });
+
+            document.querySelectorAll('[data-video-size]').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('[data-video-size]').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    videoDrawState.currentSize = parseInt(this.dataset.videoSize, 10);
+                });
+            });
+        }
+
+        function getVideoCanvasPoint(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : null);
+            const clientX = touch ? touch.clientX : e.clientX;
+            const clientY = touch ? touch.clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function drawVideoLinePreview(start, end) {
+            if (!start || !end || !videoDrawCtx) return;
+            const isArrow = videoDrawState.currentDrawTool === 'arrow';
+            videoDrawCtx.strokeStyle = colorWithAlpha(videoDrawState.currentColor, 1);
+            videoDrawCtx.lineWidth = videoDrawState.currentSize;
+            videoDrawCtx.lineCap = 'round';
+            videoDrawCtx.beginPath();
+            videoDrawCtx.moveTo(start.x, start.y);
+            videoDrawCtx.lineTo(end.x, end.y);
+            videoDrawCtx.stroke();
+
+            if (isArrow) {
+                const angle = Math.atan2(end.y - start.y, end.x - start.x);
+                const headLen = 15;
+                videoDrawCtx.beginPath();
+                videoDrawCtx.moveTo(end.x, end.y);
+                videoDrawCtx.lineTo(end.x - headLen * Math.cos(angle - Math.PI / 6),
+                    end.y - headLen * Math.sin(angle - Math.PI / 6));
+                videoDrawCtx.moveTo(end.x, end.y);
+                videoDrawCtx.lineTo(end.x - headLen * Math.cos(angle + Math.PI / 6),
+                    end.y - headLen * Math.sin(angle + Math.PI / 6));
+                videoDrawCtx.stroke();
+            }
+        }
+
+        function colorWithAlpha(hex, alpha) {
+            if (!hex) return `rgba(255, 255, 255, ${alpha})`;
+            const cleaned = hex.replace('#', '');
+            const normalized = cleaned.length === 3
+                ? cleaned.split('').map(c => c + c).join('')
+                : cleaned;
+            const r = parseInt(normalized.substring(0, 2), 16);
+            const g = parseInt(normalized.substring(2, 4), 16);
+            const b = parseInt(normalized.substring(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, alpha))})`;
         }
 
         // Video löschen
@@ -12850,6 +13045,75 @@
                     <button onclick="toggleVideoFullscreen()" id="fullscreenBtn" type="button" title="Vollbild"
                         style="width: 44px; height: 44px; background: rgba(0,0,0,0.6); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
                         <span class="iconoir-expand"></span>
+                    </button>
+                </div>
+
+                <!-- Video Drawing Toolbar -->
+                <div class="draw-toolbar" id="videoDrawToolbar" style="top: 72px; bottom: auto;">
+                    <button class="draw-tool-btn active" data-video-draw-tool="pen" title="Stift">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 19l7-7 3 3-7 7-3-3z" />
+                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+                        </svg>
+                    </button>
+                    <button class="draw-tool-btn" data-video-draw-tool="highlight" title="Marker">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M9 11l-6 6v3h9l3-3" />
+                            <path d="M22 12l-4.6 4.6a2 2 0 01-2.8 0l-5.2-5.2a2 2 0 010-2.8L14 4" />
+                        </svg>
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button class="draw-tool-btn" data-video-draw-tool="arrow" title="Pfeil">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                    </button>
+                    <button class="draw-tool-btn" data-video-draw-tool="line" title="Linie">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="4" y1="20" x2="20" y2="4" />
+                        </svg>
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button class="draw-tool-btn" data-video-draw-tool="eraser" title="Radierer">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M20 20H7L3 16c-.6-.6-.6-1.5 0-2.1l10-10c.6-.6 1.5-.6 2.1 0l6.9 6.9c.6.6.6 1.5 0 2.1L12 23" />
+                        </svg>
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button class="color-swatch active" data-video-color="#ef4444" style="background: #ef4444;"
+                        title="Rot"></button>
+                    <button class="color-swatch" data-video-color="#f59e0b" style="background: #f59e0b;"
+                        title="Orange"></button>
+                    <button class="color-swatch" data-video-color="#22c55e" style="background: #22c55e;"
+                        title="Grün"></button>
+                    <button class="color-swatch" data-video-color="#3b82f6" style="background: #3b82f6;"
+                        title="Blau"></button>
+                    <button class="color-swatch" data-video-color="#ffffff" style="background: #ffffff;"
+                        title="Weiß"></button>
+                    <div class="toolbar-divider"></div>
+                    <button class="size-btn" data-video-size="2" title="Dünn">
+                        <span style="width:4px;height:4px;background:white;border-radius:50%;display:block;"></span>
+                    </button>
+                    <button class="size-btn active" data-video-size="4" title="Mittel">
+                        <span style="width:8px;height:8px;background:white;border-radius:50%;display:block;"></span>
+                    </button>
+                    <button class="size-btn" data-video-size="8" title="Dick">
+                        <span
+                            style="width:12px;height:12px;background:white;border-radius:50%;display:block;"></span>
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button class="draw-tool-btn" id="videoDrawClose" title="Schließen">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
 
