@@ -372,6 +372,73 @@
             min-height: 100%;
         }
 
+        .app-view.subpage {
+            --subpage-bg: radial-gradient(1200px 600px at 15% -10%, rgba(16, 185, 129, 0.08), transparent 60%),
+                radial-gradient(900px 500px at 85% 0%, rgba(16, 185, 129, 0.06), transparent 55%),
+                var(--bg-light);
+            --subpage-card-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            --subpage-card-border: rgba(15, 23, 42, 0.08);
+            background: var(--subpage-bg);
+            padding: 32px 36px 140px;
+        }
+
+        body.dark-mode .app-view.subpage {
+            --subpage-bg: radial-gradient(1200px 600px at 15% -10%, rgba(16, 185, 129, 0.12), transparent 60%),
+                radial-gradient(900px 500px at 85% 0%, rgba(16, 185, 129, 0.08), transparent 55%),
+                var(--bg-light);
+            --subpage-card-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+            --subpage-card-border: rgba(148, 163, 184, 0.18);
+        }
+
+        .app-view.subpage h1 {
+            font-size: 28px;
+            letter-spacing: -0.02em;
+        }
+
+        .app-view.subpage .subtitle {
+            margin-bottom: 24px;
+            color: rgba(15, 23, 42, 0.65);
+        }
+
+        body.dark-mode .app-view.subpage .subtitle {
+            color: rgba(226, 232, 240, 0.6);
+        }
+
+        .app-view.subpage .stat-card,
+        .app-view.subpage .video-card,
+        .app-view.subpage .member-card,
+        .app-view.subpage .role-card,
+        .app-view.subpage .invitation-card,
+        .app-view.subpage .list-container,
+        .app-view.subpage .upload-area,
+        .app-view.subpage .widget-container,
+        .app-view.subpage #uploadFormArea,
+        .app-view.subpage #videoListEmpty,
+        .app-view.subpage #tabContentUpload,
+        .app-view.subpage #tabContentMeineVideos,
+        .app-view.subpage #tabContentShared {
+            border-color: var(--subpage-card-border) !important;
+            border-radius: 16px !important;
+            box-shadow: var(--subpage-card-shadow);
+        }
+
+        .app-view.subpage input[type="text"],
+        .app-view.subpage input[type="number"],
+        .app-view.subpage input[type="email"],
+        .app-view.subpage input[type="password"],
+        .app-view.subpage input[type="date"],
+        .app-view.subpage select,
+        .app-view.subpage textarea {
+            border-radius: 10px !important;
+            background: var(--card-light) !important;
+            border: 1px solid var(--border-light) !important;
+        }
+
+        .app-view.subpage button {
+            border-radius: 10px !important;
+            letter-spacing: 0.01em;
+        }
+
         .app-view.active {
             display: block;
             animation: viewFadeSlideIn var(--anim-duration-slow) var(--anim-easing) forwards;
@@ -3018,7 +3085,7 @@
 
         <div class="content-area">
             <!-- APP STORE -->
-            <div id="store" class="app-view">
+            <div id="store" class="app-view subpage">
                 <h1><span class="iconoir-app-store"></span> App Store</h1>
                 <p class="subtitle">Wähle die Apps für deine Sidebar & Home</p>
 
@@ -3277,7 +3344,7 @@
                     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
                 }
             </style>
-            <div id="profil" class="app-view">
+            <div id="profil" class="app-view subpage">
                 <h1><span class="iconoir-user"></span> Mein Profil</h1>
                 <p class="subtitle">Deine persönlichen Daten verwalten</p>
 
@@ -3643,7 +3710,7 @@
                     opacity: 0.7;
                 }
             </style>
-            <div id="kader" class="app-view">
+            <div id="kader" class="app-view subpage">
                 <h1>Kader</h1>
                 <p class="subtitle">Team Verwaltung & Spielerliste</p>
 
@@ -4115,7 +4182,7 @@
             </div>
 
             <!-- KALENDER -->
-            <div id="kalender" class="app-view">
+            <div id="kalender" class="app-view subpage">
                 <h1>Kalender</h1>
                 <p class="subtitle">Deine Matches und Events</p>
 
@@ -4253,7 +4320,7 @@
             </div>
 
             <!-- LIGA -->
-            <div id="liga" class="app-view">
+            <div id="liga" class="app-view subpage">
                 <h1>Liga</h1>
                 <p class="subtitle">Ligatabelle und Ergebnisse</p>
 
@@ -4283,7 +4350,7 @@
             </div>
 
             <!-- MESSENGER -->
-            <div id="messenger" class="app-view">
+            <div id="messenger" class="app-view subpage">
                 <h1>Messenger</h1>
                 <p class="subtitle">Direktnachrichten mit deinem Team</p>
 
@@ -4370,7 +4437,7 @@
             </div>
 
             <!-- VIDEO UPLOAD -->
-            <div id="upload" class="app-view">
+            <div id="upload" class="app-view subpage">
                 <h1>Video Analyse</h1>
                 <p class="subtitle">Videos hochladen, analysieren und mit deinem Team teilen</p>
 
@@ -4497,7 +4564,7 @@
 
         </div>
         <!-- FINANZEN (PREMIUM) -->
-        <div id="finanzen" class="app-view">
+        <div id="finanzen" class="app-view subpage">
             <h1><span class="iconoir-lock"></span> Finanzen</h1>
             <p class="subtitle">Premium Feature - Budget & Kosten Management</p>
 
@@ -4534,7 +4601,7 @@
         </div>
 
         <!-- MEDIZIN (PREMIUM) -->
-        <div id="medizin" class="app-view">
+        <div id="medizin" class="app-view subpage">
             <h1><span class="iconoir-lock"></span> Medizin</h1>
             <p class="subtitle">Premium Feature - Spieler Gesundheit & Fitness</p>
 
@@ -4563,7 +4630,7 @@
         </div>
 
         <!-- SCOUTING (PREMIUM) -->
-        <div id="scouting" class="app-view">
+        <div id="scouting" class="app-view subpage">
             <h1><span class="iconoir-lock"></span> Scouting</h1>
             <p class="subtitle">Premium Feature - Spieler Bewertung & Analyse</p>
 
@@ -4600,7 +4667,7 @@
         </div>
 
         <!-- ANALYSE (PREMIUM) -->
-        <div id="analyse" class="app-view">
+        <div id="analyse" class="app-view subpage">
             <h1><span class="iconoir-lock"></span> Analyse</h1>
             <p class="subtitle">Premium Feature - Erweiterte Video Analyse</p>
 
@@ -4637,7 +4704,7 @@
         </div>
 
         <!-- TAKTIK-TAFEL -->
-        <div id="taktik" class="app-view" style="padding: 0;">
+        <div id="taktik" class="app-view subpage" style="padding: 0;">
             <div class="taktik-content">
                 <!-- Taktik Toolbar -->
                 <div class="taktik-toolbar">
@@ -4756,7 +4823,7 @@
 
         <!-- SETTINGS -->
         <!-- ANALYSE -->
-        <div id="analyse" class="app-view">
+        <div id="analyse" class="app-view subpage">
             <h1>Analyse</h1>
             <p class="subtitle">Spielanalysen</p>
 
@@ -4769,7 +4836,7 @@
         </div>
 
         <!-- MEDIZIN -->
-        <div id="medizin" class="app-view">
+        <div id="medizin" class="app-view subpage">
             <h1>Medizin</h1>
             <p class="subtitle">Verletzungen und Fitness</p>
 
@@ -4782,7 +4849,7 @@
         </div>
 
         <!-- FINANZEN -->
-        <div id="finanzen" class="app-view">
+        <div id="finanzen" class="app-view subpage">
             <h1>Finanzen</h1>
             <p class="subtitle">Einnahmen und Ausgaben</p>
 
@@ -4795,7 +4862,7 @@
         </div>
 
         <!-- SCOUTING -->
-        <div id="scouting" class="app-view">
+        <div id="scouting" class="app-view subpage">
             <h1>Scouting</h1>
             <p class="subtitle">Spielersuche und Beobachtungen</p>
 
@@ -4808,7 +4875,7 @@
         </div>
 
         <!-- TIPPS & TUTORIALS -->
-        <div id="tipps" class="app-view" style="overflow-y: auto !important;">
+        <div id="tipps" class="app-view subpage" style="overflow-y: auto !important;">
             <h1>Tipps & Tutorials</h1>
             <p class="subtitle">Lerne PitchInsights kennen</p>
 
@@ -5023,7 +5090,7 @@
         </div>
 
         <!-- VERWALTUNGS-VIEW -->
-        <div id="verwaltung" class="app-view" style="overflow-y: auto !important;">
+        <div id="verwaltung" class="app-view subpage" style="overflow-y: auto !important;">
             <h1>Verwaltung</h1>
             <p class="subtitle">Team & Rollen verwalten</p>
 
@@ -5177,7 +5244,7 @@
         </div>
 
         <!-- MANNSCHAFTSKASSE VIEW -->
-        <div id="kasse" class="app-view" style="max-width: 100%; width: 100%;">
+        <div id="kasse" class="app-view subpage" style="max-width: 100%; width: 100%;">
             <h1>Mannschaftskasse</h1>
             <p class="subtitle">Ein- und Ausgaben verwalten</p>
 
@@ -5291,7 +5358,7 @@
             </div>
         </div>
 
-        <div id="settings" class="app-view" style="overflow-y: auto !important;">
+        <div id="settings" class="app-view subpage" style="overflow-y: auto !important;">
             <h1>Einstellungen</h1>
             <p class="subtitle">Profil & App Konfiguration</p>
 
