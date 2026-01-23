@@ -9924,6 +9924,10 @@
             const repeat = document.getElementById('eventRepeat').value;
             const repeatUntil = document.getElementById('eventRepeatUntil').value;
             const rosterUserIds = type === 'match' ? getSelectedMatchRoster() : [];
+            if (type === 'match' && rosterUserIds.length === 0) {
+                alert('Bitte wähle den Kader für das Spiel aus');
+                return;
+            }
 
             if (!title) {
                 alert('Bitte einen Titel eingeben');
