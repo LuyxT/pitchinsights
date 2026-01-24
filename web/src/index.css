@@ -168,6 +168,15 @@ button:disabled {
   margin-top: var(--space-1);
 }
 
+.form-error {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--danger);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+
 .section {
   display: flex;
   flex-direction: column;

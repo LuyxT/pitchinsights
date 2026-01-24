@@ -1,14 +1,42 @@
+import { useEffect, useState } from "react";
 import SectionHeader from "../components/SectionHeader.jsx";
 import Card from "../components/Card.jsx";
 import List from "../components/List.jsx";
-
-const samplePlayers = [
-  { id: 1, title: "M. Schneider", subtitle: "Torhüter · Fit", meta: "Tor" },
-  { id: 2, title: "L. Baum", subtitle: "Innenverteidiger · Fit", meta: "IV" },
-  { id: 3, title: "N. Klein", subtitle: "Stürmer · Reha", meta: "ST" },
-];
+import EmptyState from "../components/EmptyState.jsx";
+import LoadingState from "../components/LoadingState.jsx";
+import { fetchJson } from "../lib/api.js";
 
 export default function Players() {
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      try {
+        const data = await fetchJson("/api/players");
+        if (!active) return;
+        setPlayers(data.players || []);
+      } catch (err) {
+        if (!active) return;
+        setPlayers([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const items = players.map((player) => ({
+    id: player.id,
+    title: player.name || "Ohne Namen",
+    subtitle: [player.position, player.status].filter(Boolean).join(" · "),
+    meta: player.trikotnummer ? `#${player.trikotnummer}` : null,
+  }));
+
   return (
     <div className="page">
       <div>
@@ -16,9 +44,19 @@ export default function Players() {
         <div className="page-subtitle">Kaderübersicht mit konsistenten Aktionen.</div>
       </div>
       <SectionHeader title="Kaderliste" actionLabel="Spieler:in hinzufügen" />
-      <Card>
-        <List items={samplePlayers} />
-      </Card>
+      {loading ? (
+        <LoadingState rows={5} />
+      ) : items.length ? (
+        <Card>
+          <List items={items} />
+        </Card>
+      ) : (
+        <EmptyState
+          title="Noch kein Kader"
+          description="Füge Spieler:innen hinzu, um mit der Planung zu starten."
+          actionLabel="Spieler:in hinzufügen"
+        />
+      )}
     </div>
   );
 }

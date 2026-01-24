@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppShell from "./components/AppShell.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Training from "./pages/Training.jsx";
@@ -18,9 +18,12 @@ import Legal from "./pages/Legal.jsx";
 import AccessGate from "./pages/AccessGate.jsx";
 import PaymentPending from "./pages/PaymentPending.jsx";
 import Player from "./pages/Player.jsx";
+import LoadingState from "./components/LoadingState.jsx";
+import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 
 const routes = {
   "/": { component: Dashboard, title: "Dashboard" },
+  "/dashboard": { component: Dashboard, title: "Dashboard" },
   "/training": { component: Training, title: "Trainingsplanung" },
   "/players": { component: Players, title: "Spieler:innen" },
   "/calendar": { component: Calendar, title: "Kalender" },
@@ -30,6 +33,7 @@ const routes = {
   "/landing": { component: Landing, title: "Start" },
   "/login": { component: Login, title: "Anmelden" },
   "/register": { component: Register, title: "Registrieren" },
+  "/access-gate": { component: AccessGate, title: "Zugang" },
   "/onboarding": { component: Onboarding, title: "Onboarding" },
   "/team-select": { component: TeamSelect, title: "Team wählen" },
   "/join": { component: Join, title: "Einladung" },
@@ -37,15 +41,20 @@ const routes = {
   "/impressum": { component: () => <Legal title="Impressum" />, title: "Impressum" },
   "/datenschutz": { component: () => <Legal title="Datenschutz" />, title: "Datenschutz" },
   "/agb": { component: () => <Legal title="AGB" />, title: "AGB" },
-  "/access-gate": { component: AccessGate, title: "Zugang" },
   "/payment-pending": { component: PaymentPending, title: "Zahlung" },
   "/player": { component: Player, title: "Spielerprofil" },
 };
 
 const defaultMeta = "Team · Woche 1 · Trainer";
 
-export default function App() {
+function AppContent() {
   const [path, setPath] = useState(window.location.pathname);
+  const { user, loading, accessAllowed } = useAuth();
+
+  const publicRoutes = useMemo(
+    () => new Set(["/landing", "/login", "/register", "/access-gate", "/join"]),
+    []
+  );
 
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
@@ -59,12 +68,55 @@ export default function App() {
     setPath(to);
   };
 
+  useEffect(() => {
+    if (loading) return;
+    if (!accessAllowed && path !== "/landing" && path !== "/access-gate") {
+      navigate("/access-gate");
+      return;
+    }
+    if (!user && !publicRoutes.has(path)) {
+      navigate("/login");
+      return;
+    }
+    if (user && (path === "/login" || path === "/register" || path === "/access-gate")) {
+      navigate("/dashboard");
+    }
+  }, [accessAllowed, loading, path, publicRoutes, user]);
+
+  if (loading) {
+    return (
+      <div className="page">
+        <LoadingState title="Lade Daten" description="Wir bereiten deine Inhalte vor." />
+      </div>
+    );
+  }
+
+  if (!accessAllowed && path !== "/landing" && path !== "/access-gate") {
+    return (
+      <div className="page">
+        <AccessGate onNavigate={navigate} />
+      </div>
+    );
+  }
+
   const route = routes[path] || routes["/"];
   const Page = route.component;
+
+  if (publicRoutes.has(path)) {
+    return <Page onNavigate={navigate} />;
+  }
 
   return (
     <AppShell currentPath={path} onNavigate={navigate} title={route.title} meta={defaultMeta}>
       <Page onNavigate={navigate} />
     </AppShell>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

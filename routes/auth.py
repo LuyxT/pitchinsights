@@ -69,6 +69,31 @@ async def get_csrf_token(purpose: str = "login_form"):
     token = generate_csrf_token(purpose)
     return {"csrf_token": token}
 
+
+@router.get("/api/access/status")
+async def access_status(request: Request):
+    stored_code = request.cookies.get("beta_access")
+    return {"allowed": _is_beta_access_cookie_valid(stored_code)}
+
+
+@router.post("/api/access/verify")
+async def access_verify(request: Request):
+    data = await request.json()
+    code = (data.get("code") or "").strip()
+    if code != ACCESS_CODE:
+        return JSONResponse({"error": "Ungültiger Code"}, status_code=401)
+
+    response = JSONResponse({"status": "ok"})
+    response.set_cookie(
+        key="beta_access",
+        value=_create_beta_access_cookie_token(),
+        httponly=True,
+        secure=SecurityConfig.COOKIE_SECURE,
+        samesite=SecurityConfig.COOKIE_SAMESITE,
+        max_age=86400 * 30
+    )
+    return response
+
 # Security Logger
 logger = logging.getLogger("pitchinsights.security")
 
