@@ -549,9 +549,10 @@ async def register(request: Request, data: RegisterRequest):
             raise HTTPException(
                 status_code=409, detail="Email already registered")
 
-        # Hash password
+        # Hash password (peppered, consistent with web)
+        peppered_password = f"{data.password}{SecurityConfig.PASSWORD_PEPPER}"
         password_hash = bcrypt.hashpw(
-            data.password.encode(), bcrypt.gensalt()).decode()
+            peppered_password.encode(), bcrypt.gensalt()).decode()
 
         # Create user
         with get_db_connection() as conn:
@@ -616,8 +617,28 @@ async def login(request: Request, data: LoginRequest):
         raise HTTPException(
             status_code=401, detail="Invalid email or password")
 
-    # Verify password
-    if not bcrypt.checkpw(data.password.encode(), user["password_hash"].encode()):
+    # Verify password (support legacy unpeppered hashes, upgrade on success)
+    password_valid = False
+    try:
+        peppered_password = f"{data.password}{SecurityConfig.PASSWORD_PEPPER}"
+        if bcrypt.checkpw(peppered_password.encode(), user["password_hash"].encode()):
+            password_valid = True
+        elif bcrypt.checkpw(data.password.encode(), user["password_hash"].encode()):
+            password_valid = True
+            new_hash = bcrypt.hashpw(
+                peppered_password.encode(),
+                bcrypt.gensalt()
+            ).decode()
+            with get_db_connection() as conn:
+                conn.execute(
+                    "UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (new_hash, user["id"])
+                )
+                conn.commit()
+    except Exception:
+        password_valid = False
+
+    if not password_valid:
         record_login_attempt(data.email, client_ip, success=False)
         raise HTTPException(
             status_code=401, detail="Invalid email or password")
