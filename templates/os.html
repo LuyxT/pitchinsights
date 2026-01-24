@@ -1915,6 +1915,21 @@
             border-color: var(--primary-color);
         }
 
+        button,
+        [role="button"],
+        [onclick],
+        .app-item,
+        .app-card,
+        .widget-container,
+        .video-card {
+            cursor: pointer;
+        }
+
+        button {
+            font-family: inherit;
+            line-height: var(--line-height-normal);
+        }
+
         .btn-primary {
             background: var(--primary-color);
             color: white;
@@ -1956,6 +1971,56 @@
 
         .btn-secondary:active {
             transform: scale(0.98);
+        }
+
+        .btn-tertiary {
+            background: transparent;
+            color: var(--text-light);
+            border: 1px solid transparent;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            transition: background-color var(--anim-duration-fast) var(--anim-easing),
+                transform var(--anim-duration-fast) var(--anim-easing);
+        }
+
+        .btn-tertiary:hover {
+            background: rgba(15, 23, 42, 0.06);
+        }
+
+        .btn-tertiary:active {
+            transform: scale(0.98);
+        }
+
+        button[style*="linear-gradient"]:not(.draw-tool-btn):not(.color-swatch):not(.size-btn):not(.taktik-segment) {
+            background: var(--primary-color) !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+        }
+
+        button[style*="#10b981"]:not(.draw-tool-btn):not(.color-swatch):not(.size-btn):not(.taktik-segment),
+        button[style*="#22c55e"]:not(.draw-tool-btn):not(.color-swatch):not(.size-btn):not(.taktik-segment) {
+            background: var(--primary-color) !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+        }
+
+        button[style*="#ef4444"]:not(.draw-tool-btn):not(.color-swatch):not(.size-btn):not(.taktik-segment),
+        button[style*="#dc2626"]:not(.draw-tool-btn):not(.color-swatch):not(.size-btn):not(.taktik-segment) {
+            background: rgba(239, 68, 68, 0.12) !important;
+            color: #b91c1c !important;
+            border: 1px solid rgba(239, 68, 68, 0.25) !important;
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
         }
 
         .btn-danger {
