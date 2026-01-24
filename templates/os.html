@@ -55,6 +55,15 @@
             --radius-lg: 16px;
             --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.06);
             --shadow-elevated: 0 8px 24px rgba(15, 23, 42, 0.08);
+            --text-muted: rgba(15, 23, 42, 0.6);
+            --text-muted-dark: rgba(226, 232, 240, 0.6);
+            --focus-ring: 0 0 0 3px rgba(16, 185, 129, 0.16);
+            --surface-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+            --surface-shadow-hover: 0 8px 20px rgba(15, 23, 42, 0.08);
+            --surface-border: rgba(15, 23, 42, 0.08);
+            --surface-border-dark: rgba(148, 163, 184, 0.18);
+            --input-height: 40px;
+            --control-height: 40px;
 
             /* ========================================
                APPLE-STYLE ANIMATION TOKENS
@@ -158,6 +167,7 @@
             --text-light: #f5f5f7;
             --bg-light: #1c1c1e;
             --video-thumb-bg: linear-gradient(135deg, #1a1a2e, #16213e);
+            --text-muted: var(--text-muted-dark);
         }
 
         .menubar {
@@ -409,8 +419,6 @@
             --subpage-bg: radial-gradient(1200px 600px at 15% -10%, rgba(16, 185, 129, 0.12), transparent 60%),
                 radial-gradient(900px 500px at 85% 0%, rgba(16, 185, 129, 0.08), transparent 55%),
                 var(--bg-light);
-            --subpage-card-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
-            --subpage-card-border: rgba(148, 163, 184, 0.18);
         }
 
         .app-view.subpage h1 {
@@ -420,11 +428,25 @@
 
         .app-view.subpage .subtitle {
             margin-bottom: var(--space-5);
-            color: rgba(15, 23, 42, 0.65);
+            color: var(--text-muted);
         }
 
         body.dark-mode .app-view.subpage .subtitle {
             color: rgba(226, 232, 240, 0.6);
+        }
+
+        .app-view .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-4);
+            margin-bottom: var(--space-4);
+        }
+
+        .app-view .section-title {
+            font-size: var(--text-lg);
+            font-weight: 600;
+            line-height: var(--line-height-tight);
         }
 
         .app-view.subpage .stat-card,
@@ -440,9 +462,9 @@
         .app-view.subpage #tabContentUpload,
         .app-view.subpage #tabContentMeineVideos,
         .app-view.subpage #tabContentShared {
-            border-color: var(--subpage-card-border) !important;
-            border-radius: 16px !important;
-            box-shadow: var(--subpage-card-shadow);
+            border-color: var(--surface-border) !important;
+            border-radius: var(--radius-lg) !important;
+            box-shadow: var(--surface-shadow);
         }
 
         .app-view.subpage input[type="text"],
@@ -550,7 +572,7 @@
         .app-view textarea:focus {
             outline: none;
             border-color: rgba(16, 185, 129, 0.6);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+            box-shadow: var(--focus-ring);
         }
 
         body.dark-mode .stat-card {
@@ -577,7 +599,7 @@
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-light);
             overflow: hidden;
-            box-shadow: var(--shadow-soft);
+            box-shadow: var(--surface-shadow);
         }
 
         body.dark-mode .list-container {
@@ -631,6 +653,85 @@
             transition: border-color var(--anim-duration-normal) var(--anim-easing),
                 background var(--anim-duration-normal) var(--anim-easing);
             margin-bottom: var(--space-6);
+        }
+
+        .app-card,
+        .dashboard-card,
+        .member-card,
+        .role-card,
+        .invitation-card,
+        .video-card,
+        .widget-container,
+        .event-card {
+            border-radius: var(--radius-lg) !important;
+            border: 1px solid var(--surface-border) !important;
+            box-shadow: var(--surface-shadow);
+            transition: box-shadow var(--anim-duration-normal) var(--anim-easing),
+                transform var(--anim-duration-fast) var(--anim-easing);
+        }
+
+        .app-card:hover,
+        .dashboard-card:hover,
+        .video-card:hover,
+        .widget-container:hover,
+        .event-card:hover {
+            box-shadow: var(--surface-shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .member-card,
+        .role-card,
+        .invitation-card {
+            cursor: default;
+        }
+
+        .verwaltung-tab,
+        .video-tab-btn,
+        .taktik-segment {
+            height: var(--control-height);
+            border-radius: var(--radius-sm);
+            font-size: var(--text-sm);
+            font-weight: 600;
+            padding: 0 16px;
+        }
+
+        .verwaltung-tab,
+        .video-tab-btn {
+            background: transparent;
+            border: 1px solid var(--border-light);
+            color: var(--text-light);
+            transition: background-color var(--anim-duration-fast) var(--anim-easing),
+                color var(--anim-duration-fast) var(--anim-easing),
+                border-color var(--anim-duration-fast) var(--anim-easing);
+        }
+
+        .verwaltung-tab.active,
+        .video-tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .verwaltung-tab:hover,
+        .video-tab-btn:hover {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .taktik-segment {
+            background: rgba(15, 23, 42, 0.06);
+            border: 1px solid transparent;
+            color: var(--text-light);
+        }
+
+        .taktik-segment.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .card-grid {
+            display: grid;
+            gap: var(--space-4);
         }
 
         body.dark-mode .upload-area {
