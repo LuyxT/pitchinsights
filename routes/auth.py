@@ -15,7 +15,6 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Request, Form, HTTPException, Depends, UploadFile, File, BackgroundTasks, Header
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 import bcrypt
 
@@ -53,7 +52,22 @@ from email_service import (
 )
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
+_spa_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web", "dist")
+_spa_index = os.path.join(_spa_dist, "index.html")
+
+
+class _SpaTemplates:
+    def TemplateResponse(self, name: str, context: Dict[str, Any], status_code: int = 200):
+        return FileResponse(_spa_index, status_code=status_code)
+
+
+templates = _SpaTemplates()
+
+
+@router.get("/api/auth/csrf")
+async def get_csrf_token(purpose: str = "login_form"):
+    token = generate_csrf_token(purpose)
+    return {"csrf_token": token}
 
 # Security Logger
 logger = logging.getLogger("pitchinsights.security")
