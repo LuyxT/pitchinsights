@@ -52,7 +52,7 @@ export default function Dashboard({ onNavigate }) {
   return (
     <div className="page">
       <div>
-        <div className="page-title">Dashboard</div>
+        <div className="page-title">Home</div>
         <div className="page-subtitle">Überblick über Trainings, Spieler:innen und nächste Termine.</div>
       </div>
       <SectionHeader

@@ -1,5 +1,5 @@
 const navItems = [
-  { id: "dashboard", label: "Dashboard", path: "/" },
+  { id: "dashboard", label: "Home", path: "/" },
   { id: "trainings", label: "Trainingsplanung", path: "/training" },
   { id: "players", label: "Spieler:innen", path: "/players" },
   { id: "calendar", label: "Kalender", path: "/calendar" },

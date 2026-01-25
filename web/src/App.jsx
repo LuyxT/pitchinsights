@@ -22,8 +22,8 @@ import LoadingState from "./components/LoadingState.jsx";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 
 const routes = {
-  "/": { component: Dashboard, title: "Dashboard" },
-  "/dashboard": { component: Dashboard, title: "Dashboard" },
+  "/": { component: Dashboard, title: "Home" },
+  "/dashboard": { component: Dashboard, title: "Home" },
   "/training": { component: Training, title: "Trainingsplanung" },
   "/players": { component: Players, title: "Spieler:innen" },
   "/calendar": { component: Calendar, title: "Kalender" },
