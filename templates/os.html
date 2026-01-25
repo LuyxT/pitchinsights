@@ -377,6 +377,11 @@
             animation: viewFadeSlideIn var(--anim-duration-slow) var(--anim-easing) forwards;
         }
 
+        #kasse {
+            height: 100%;
+            overflow-y: auto;
+        }
+
         /* Apple-Style View Transition: Fade + subtle slide */
         @keyframes viewFadeSlideIn {
             from {
@@ -1698,6 +1703,13 @@
         #videoContainer:-webkit-full-screen #videoPreview {
             max-height: 100vh !important;
             max-width: 100vw !important;
+        }
+
+        #videoPlayerContainer:fullscreen #modalVideo,
+        #videoPlayerContainer:-webkit-full-screen #modalVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         #videoContainer:fullscreen #drawCanvas,
@@ -4166,6 +4178,12 @@
                                     style="width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; box-sizing: border-box;">
                             </div>
                         </div>
+                        <div>
+                            <label
+                                style="font-size: 13px; font-weight: 600; color: #666; display: block; margin-bottom: 6px;">Dauer (Minuten)</label>
+                            <input type="number" id="eventDuration" min="0" step="5" placeholder="z.B. 90"
+                                style="width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                        </div>
 
                         <div>
                             <label
@@ -4335,7 +4353,7 @@
                         </div>
                         <div
                             style="padding: 16px; border-top: 1px solid var(--border-light); display: flex; gap: 12px; flex-wrap: wrap;">
-                            <input type="file" id="messengerFileInput" accept="image/*,.pdf,.doc,.docx"
+                            <input type="file" id="messengerFileInput" accept="image/*,video/*,.pdf,.doc,.docx"
                                 style="display: none;" onchange="attachFile()">
                             <button onclick="document.getElementById('messengerFileInput').click()"
                                 style="padding: 10px 12px; background: #999; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;"
@@ -4343,13 +4361,14 @@
                             <input type="text" id="messengerInput" placeholder="Nachricht schreiben..."
                                 style="flex: 1; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; box-sizing: border-box;"
                                 disabled onkeypress="if(event.key==='Enter') sendMessage()">
-                            <button onclick="sendMessage()"
+                            <button onclick="sendMessage()" id="messengerSendBtn"
                                 style="padding: 10px 20px; background: var(--primary-green); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Senden</button>
                         </div>
                         <div id="attachmentPreview" style="padding: 0 16px 8px 16px; display: none;">
                             <div
                                 style="background: #f0f0f0; padding: 8px; border-radius: 6px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
                                 <span id="attachmentName">Datei angehängt</span>
+                                <span id="attachmentStatus" style="margin-left: auto; margin-right: 10px; opacity: 0.6;"></span>
                                 <button onclick="clearAttachment()"
                                     style="background: none; border: none; cursor: pointer; font-weight: 600;"><span class="iconoir-xmark"></span></button>
                             </div>
@@ -4704,8 +4723,10 @@
                     <div class="toolbar-group" style="margin-left: auto;">
                         <button class="taktik-segment taktik-btn-action" id="taktikUndoBtn" type="button"
                             onclick="taktikUndo()">Undo</button>
-                        <button class="taktik-segment taktik-btn-delete" id="taktikClearBtn" type="button"
-                            onclick="taktikClearAll()">Löschen</button>
+                        <button class="taktik-segment taktik-btn-delete" id="taktikClearDrawBtn" type="button"
+                            onclick="taktikClearDrawings()">Zeichnung löschen</button>
+                        <button class="taktik-segment taktik-btn-delete" id="taktikResetFormationBtn" type="button"
+                            onclick="taktikResetFormation()">Aufstellung zurücksetzen</button>
                     </div>
                 </div>
 
@@ -6757,6 +6778,10 @@
                     select.innerHTML = '<option value="">Keine Rollen verfügbar</option>';
                 } else {
                     select.innerHTML = roles.map(r => `<option value="${parseInt(r.id)}">${escapeHtml(r.name)}</option>`).join('');
+                    const playerRole = roles.find(r => (r.name || '').toLowerCase() === 'spieler');
+                    if (playerRole) {
+                        select.value = String(playerRole.id);
+                    }
                 }
 
                 document.getElementById('invitation-max-uses').value = 1;
@@ -6767,6 +6792,7 @@
                 console.error('Fehler beim Laden der Rollen:', error);
                 // Öffne Modal trotzdem mit Fallback
                 select.innerHTML = '<option value="1">Spieler</option><option value="2">Trainer</option>';
+                select.value = '1';
                 document.getElementById('invitation-max-uses').value = 1;
                 document.getElementById('invitation-days').value = 7;
                 modal.style.display = 'flex';
@@ -6785,11 +6811,17 @@
 
                 if (roles.length > 0) {
                     select.innerHTML = roles.map(r => `<option value="${parseInt(r.id)}">${escapeHtml(r.name)}</option>`).join('');
+                    const playerRole = roles.find(r => (r.name || '').toLowerCase() === 'spieler');
+                    if (playerRole) {
+                        select.value = String(playerRole.id);
+                    }
                 } else {
                     select.innerHTML = '<option value="1">Spieler</option><option value="2">Trainer</option>';
+                    select.value = '1';
                 }
             } catch (e) {
                 select.innerHTML = '<option value="1">Spieler</option><option value="2">Trainer</option>';
+                select.value = '1';
             }
 
             document.getElementById('invitation-max-uses').value = 1;
@@ -7302,6 +7334,7 @@
             clipStart = null;
             clipEnd = null;
             videoDrawMode = false;
+            currentVideoMarkers = [];
             updateClipUI();
 
             const video = teamVideos.find(v => v.id === videoId);
@@ -7315,6 +7348,9 @@
             // Canvas Setup nach Video-Load
             modalVideo.onloadedmetadata = function () {
                 setupVideoDrawCanvas();
+                initCustomVideoControls();
+                updateVideoTimeDisplay();
+                updateVideoTimelineMarkers();
             };
 
             document.getElementById('videoPlayerModal').style.display = 'flex';
@@ -7336,7 +7372,117 @@
             document.getElementById('videoPlayerModal').style.display = 'none';
             currentVideoId = null;
             videoDrawMode = false;
+            currentVideoMarkers = [];
             clearVideoDrawing();
+        }
+
+        // =====================
+        // CUSTOM VIDEO CONTROLS
+        // =====================
+        let videoControlsInitialized = false;
+        let currentVideoMarkers = [];
+        let videoUpdateRaf = null;
+
+        function initCustomVideoControls() {
+            if (videoControlsInitialized) return;
+            const video = document.getElementById('modalVideo');
+            const progress = document.getElementById('videoProgress');
+            if (!video || !progress) return;
+
+            progress.addEventListener('input', () => {
+                const duration = video.duration || 0;
+                if (!duration) return;
+                const target = (parseFloat(progress.value) / 100) * duration;
+                video.currentTime = target;
+                updateVideoTimeDisplay();
+            });
+
+            video.addEventListener('timeupdate', () => {
+                if (videoUpdateRaf) return;
+                videoUpdateRaf = requestAnimationFrame(() => {
+                    updateVideoTimeDisplay();
+                    videoUpdateRaf = null;
+                });
+            });
+
+            video.addEventListener('play', updateVideoPlayButton);
+            video.addEventListener('pause', updateVideoPlayButton);
+            videoControlsInitialized = true;
+        }
+
+        function updateVideoPlayButton() {
+            const video = document.getElementById('modalVideo');
+            const btn = document.getElementById('videoPlayPauseBtn');
+            if (!video || !btn) return;
+            if (video.paused) {
+                btn.innerHTML = '<span class="iconoir-play"></span>';
+            } else {
+                btn.innerHTML = '<span class="iconoir-square"></span>';
+            }
+        }
+
+        function toggleVideoPlay() {
+            const video = document.getElementById('modalVideo');
+            if (!video) return;
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+            updateVideoPlayButton();
+        }
+
+        function updateVideoTimeDisplay() {
+            const video = document.getElementById('modalVideo');
+            const display = document.getElementById('videoTimeDisplay');
+            const progress = document.getElementById('videoProgress');
+            if (!video || !display || !progress) return;
+            const duration = video.duration || 0;
+            const current = video.currentTime || 0;
+            display.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+            if (duration > 0) {
+                progress.value = Math.min(100, (current / duration) * 100);
+            } else {
+                progress.value = 0;
+            }
+        }
+
+        function changeVideoSpeed(rate) {
+            const video = document.getElementById('modalVideo');
+            if (!video) return;
+            const speed = parseFloat(rate);
+            video.playbackRate = Number.isFinite(speed) ? speed : 1;
+        }
+
+        function updateVideoTimelineMarkers() {
+            const track = document.getElementById('videoMarkerTrack');
+            const video = document.getElementById('modalVideo');
+            if (!track || !video) return;
+            const duration = video.duration || 0;
+            track.innerHTML = '';
+            if (!duration || !currentVideoMarkers.length) return;
+            currentVideoMarkers.forEach(marker => {
+                const percent = Math.min(100, Math.max(0, (marker.time_seconds / duration) * 100));
+                const markerEl = document.createElement('button');
+                markerEl.type = 'button';
+                markerEl.title = marker.label || 'Marker';
+                markerEl.style.position = 'absolute';
+                markerEl.style.left = `calc(${percent}% - 3px)`;
+                markerEl.style.top = '-6px';
+                markerEl.style.width = '6px';
+                markerEl.style.height = '18px';
+                markerEl.style.border = 'none';
+                markerEl.style.borderRadius = '4px';
+                markerEl.style.background = '#f59e0b';
+                markerEl.style.cursor = 'pointer';
+                markerEl.style.pointerEvents = 'auto';
+                markerEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    video.currentTime = marker.time_seconds;
+                    video.play();
+                });
+                track.appendChild(markerEl);
+            });
         }
 
         // =====================
@@ -7349,6 +7495,11 @@
             const container = document.getElementById('videoPlayerContainer');
             const sidebar = document.getElementById('videoSidebar');
             const btn = document.getElementById('fullscreenBtn');
+
+            if (!container || !container.requestFullscreen) {
+                alert('Fullscreen wird von diesem Browser nicht unterstützt.');
+                return;
+            }
 
             if (!document.fullscreenElement) {
                 // Fullscreen aktivieren - nur der Container (Video + Toolbar + Clip-Bar)
@@ -7783,6 +7934,8 @@
         // Marker rendern
         function renderVideoMarkers(markers) {
             const container = document.getElementById('videoMarkersList');
+            currentVideoMarkers = Array.isArray(markers) ? markers : [];
+            updateVideoTimelineMarkers();
             if (!Array.isArray(markers) || markers.length === 0) {
                 container.innerHTML = '<p style="color: var(--text-light); opacity: 0.4; font-size: 12px; text-align: center; padding: 8px;">Keine Marker</p>';
                 return;
@@ -7795,6 +7948,9 @@
                      onmouseout="this.style.background='rgba(245,158,11,0.15)'">
                     <span style="font-family: monospace; color: #f59e0b; font-size: 13px; font-weight: 600;">${formatTime(marker.time_seconds)}</span>
                     <span style="flex: 1; font-size: 12px; color: var(--text-light); opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(marker.label) || 'Marker'}</span>
+                    <button onclick="event.stopPropagation(); editMarker(${marker.id}, '${escapeHtml(marker.label || '')}')" 
+                            style="background: none; border: none; color: var(--text-light); opacity: 0.6; cursor: pointer; font-size: 14px; padding: 2px 6px;"
+                            title="Umbenennen"><span class="iconoir-edit-pencil"></span></button>
                     <button onclick="event.stopPropagation(); deleteMarker(${marker.id})" 
                             style="background: none; border: none; color: var(--text-light); opacity: 0.4; cursor: pointer; font-size: 14px; padding: 2px 6px;"
                             title="Löschen"><span class="iconoir-xmark"></span></button>
@@ -7829,6 +7985,26 @@
             }
         }
 
+        async function editMarker(markerId, currentLabel) {
+            const newLabel = prompt('Marker-Name bearbeiten:', currentLabel || '');
+            if (newLabel === null) return;
+            const label = newLabel.trim();
+            try {
+                const response = await fetch(`/api/markers/${markerId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ label })
+                });
+                if (!response.ok) throw new Error('Fehler');
+                showToast('Marker aktualisiert', 'success');
+                loadVideoMarkers(currentVideoId);
+            } catch (error) {
+                console.error('Fehler:', error);
+                showToast('Fehler beim Speichern des Markers', 'error');
+            }
+        }
+
         // Clips rendern
         function renderVideoClips(clips) {
             const container = document.getElementById('videoClipsList');
@@ -7847,6 +8023,9 @@
                                 <span style="opacity: 0.5; color: var(--text-light); font-size: 10px;"> → </span>
                                 <span style="font-family: monospace; font-size: 12px; color: #ef4444;">${formatTime(clip.end_time)}</span>
                             </div>
+                            <button onclick="editClip(${clip.id}, '${escapeHtml(clip.title || '')}', '${escapeHtml(clip.note || '')}')" title="Umbenennen" style="width: 28px; height: 28px; background: rgba(59,130,246,0.15); color: #3b82f6; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                <span class="iconoir-edit-pencil"></span>
+                            </button>
                             <button onclick="openShareModal(${clip.id})" title="Teilen" style="width: 28px; height: 28px; background: linear-gradient(135deg, #007AFF, #00C7BE); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
                                 <span class="iconoir-send"></span>
                             </button>
@@ -7880,6 +8059,28 @@
             } catch (error) {
                 console.error('Fehler:', error);
                 showToast('Fehler beim Löschen', 'error');
+            }
+        }
+
+        async function editClip(clipId, currentTitle, currentNote) {
+            const newTitle = prompt('Clip-Name bearbeiten:', currentTitle || '');
+            if (newTitle === null) return;
+            const title = newTitle.trim();
+            try {
+                const response = await fetch(`/api/clips/${clipId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ title, note: currentNote || '' })
+                });
+                if (!response.ok) throw new Error('Fehler');
+                showToast('Clip aktualisiert', 'success');
+                if (currentVideoId) {
+                    await loadVideoClips(currentVideoId);
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+                showToast('Fehler beim Speichern des Clips', 'error');
             }
         }
 
@@ -9208,17 +9409,38 @@
             }
         }
 
-        async function sendMessageToAPI(content, recipientId = null) {
+        async function sendMessageToAPI(content, recipientId = null, attachmentFile = null) {
             try {
-                const response = await fetch('/api/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content, recipient_id: recipientId })
-                });
-                return response.ok;
+                let response;
+                if (attachmentFile) {
+                    const formData = new FormData();
+                    formData.append('content', content || '');
+                    if (recipientId) formData.append('recipient_id', recipientId);
+                    formData.append('attachment', attachmentFile);
+                    response = await fetch('/api/messages', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    response = await fetch('/api/messages', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content, recipient_id: recipientId })
+                    });
+                }
+                if (response.ok) return { ok: true };
+                let message = 'Nachricht konnte nicht gesendet werden';
+                try {
+                    const data = await response.json();
+                    message = data.error || message;
+                } catch (e) {
+                    const text = await response.text();
+                    if (text) message = text.slice(0, 200);
+                }
+                return { ok: false, error: message };
             } catch (e) {
                 console.error('Fehler beim Senden der Nachricht:', e);
-                return false;
+                return { ok: false, error: 'Nachricht konnte nicht gesendet werden' };
             }
         }
 
@@ -9842,12 +10064,24 @@
         }
 
         function mapApiEventsToCalendar(events) {
+            const computeDuration = (startTime, endTime) => {
+                if (!startTime || !endTime) return 1;
+                const [sh, sm] = startTime.split(':').map(Number);
+                const [eh, em] = endTime.split(':').map(Number);
+                if (Number.isNaN(sh) || Number.isNaN(sm) || Number.isNaN(eh) || Number.isNaN(em)) return 1;
+                const startMinutes = sh * 60 + sm;
+                const endMinutes = eh * 60 + em;
+                const diff = endMinutes - startMinutes;
+                if (diff <= 0) return 1;
+                return diff / 60;
+            };
             return events.map(e => ({
                 id: e.id,
                 date: e.event_date || '',
                 title: e.title || '',
                 type: e.event_type || 'training',
                 time: e.start_time || '',
+                duration: computeDuration(e.start_time, e.end_time),
                 location: e.location || '',
                 notes: e.description || '',
                 visibility: e.visibility || 'team',
@@ -9918,6 +10152,7 @@
             document.getElementById('eventTitle').value = '';
             document.getElementById('eventDate').value = dateStr || '';
             document.getElementById('eventTime').value = time || '';
+            document.getElementById('eventDuration').value = '';
             document.getElementById('eventType').value = 'training';
             document.getElementById('eventRepeat').value = 'none';
             document.getElementById('eventRepeatUntil').value = '';
@@ -10020,6 +10255,7 @@
             const dateStr = document.getElementById('eventDate').value;
             const time = document.getElementById('eventTime').value;
             const type = document.getElementById('eventType').value;
+            const durationMinutes = parseInt(document.getElementById('eventDuration').value, 10);
             const location = document.getElementById('eventLocation').value.trim();
             const notes = document.getElementById('eventNotes').value.trim();
             const visibility = document.querySelector('input[name="eventVisibility"]:checked')?.value || 'private';
@@ -10056,6 +10292,16 @@
                 repeat_until: repeatUntil,
                 roster_user_ids: rosterUserIds
             };
+
+            if (time && Number.isFinite(durationMinutes) && durationMinutes > 0) {
+                const [hh, mm] = time.split(':').map(Number);
+                if (!Number.isNaN(hh) && !Number.isNaN(mm)) {
+                    const total = hh * 60 + mm + durationMinutes;
+                    const endH = Math.floor((total % (24 * 60)) / 60);
+                    const endM = total % 60;
+                    eventData.end_time = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+                }
+            }
 
             if (editIndex !== '' && editIndex !== undefined && editIndex !== null) {
                 const idx = parseInt(editIndex);
@@ -10110,6 +10356,7 @@
             document.getElementById('eventTitle').value = event.title || '';
             document.getElementById('eventDate').value = event.date || '';
             document.getElementById('eventTime').value = event.time || '';
+            document.getElementById('eventDuration').value = event.duration ? Math.round(event.duration * 60) : '';
             document.getElementById('eventType').value = event.type || 'training';
             document.getElementById('eventRepeat').value = 'none';
             document.getElementById('eventRepeatUntil').value = '';
@@ -11659,6 +11906,7 @@
         // MESSENGER FUNKTIONEN
         let currentChat = null;
         let currentAttachment = null;
+        let messengerSending = false;
         let currentChatPeerId = null;
         let sentClipsForChat = [];
 
@@ -11763,8 +12011,21 @@
                 const textColor = isOwn ? 'white' : 'black';
 
                 const content = escapeHtml(msg.content || '');
+                let attachmentHtml = '';
+                if (msg.attachment_url) {
+                    const attachmentName = escapeHtml(msg.attachment_name || 'Anhang');
+                    const attachmentType = (msg.attachment_type || '').toLowerCase();
+                    if (attachmentType.startsWith('image/')) {
+                        attachmentHtml = `<div style="margin-top: 8px;"><img src="${msg.attachment_url}" alt="${attachmentName}" style="max-width: 220px; border-radius: 8px; display: block;"></div>`;
+                    } else if (attachmentType.startsWith('video/')) {
+                        attachmentHtml = `<div style="margin-top: 8px;"><a href="${msg.attachment_url}" target="_blank" rel="noopener" style="color: ${isOwn ? 'white' : '#111'}; text-decoration: underline; font-size: 12px;">${attachmentName} ansehen</a></div>`;
+                    } else {
+                        attachmentHtml = `<div style="margin-top: 8px;"><a href="${msg.attachment_url}" target="_blank" rel="noopener" style="color: ${isOwn ? 'white' : '#111'}; text-decoration: underline; font-size: 12px;">${attachmentName} herunterladen</a></div>`;
+                    }
+                }
                 const timestamp = msg.created_at ? new Date(msg.created_at) : new Date();
-                msgDiv.innerHTML = `<div style="align-self: ${alignment}; background: ${bgColor}; color: ${textColor}; padding: 12px 16px; border-radius: 12px; max-width: 60%; word-wrap: break-word;">${content}<div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">${timestamp.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</div></div>`;
+                const safeContent = content === '__attachment__' ? '' : content;
+                msgDiv.innerHTML = `<div style="align-self: ${alignment}; background: ${bgColor}; color: ${textColor}; padding: 12px 16px; border-radius: 12px; max-width: 60%; word-wrap: break-word;">${safeContent}${attachmentHtml}<div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">${timestamp.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</div></div>`;
                 chatArea.appendChild(msgDiv);
             });
             chatArea.scrollTop = chatArea.scrollHeight;
@@ -11791,41 +12052,43 @@
             const fileInput = document.getElementById('messengerFileInput');
             const file = fileInput.files[0];
             if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                currentAttachment = {
-                    name: file.name,
-                    data: e.target.result,
-                    type: file.type
-                };
-                document.getElementById('attachmentName').innerHTML = '<span class="iconoir-attachment"></span> ' + escapeHtml(file.name);
-                document.getElementById('attachmentPreview').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+            currentAttachment = file;
+            document.getElementById('attachmentName').innerHTML = '<span class="iconoir-attachment"></span> ' + escapeHtml(file.name);
+            document.getElementById('attachmentStatus').textContent = '';
+            document.getElementById('attachmentPreview').style.display = 'block';
         }
 
         function clearAttachment() {
             currentAttachment = null;
             document.getElementById('attachmentPreview').style.display = 'none';
+            document.getElementById('attachmentStatus').textContent = '';
             document.getElementById('messengerFileInput').value = '';
         }
 
         async function sendMessage() {
             if (!currentChat) return;
+            if (messengerSending) return;
             const input = document.getElementById('messengerInput');
+            const sendBtn = document.getElementById('messengerSendBtn');
             if (!input.value.trim() && !currentAttachment) return;
 
             const content = input.value.trim();
             const recipientId = currentChatPeerId || null;
-            const ok = await sendMessageToAPI(content, recipientId);
-            if (ok) {
+            messengerSending = true;
+            if (sendBtn) sendBtn.disabled = true;
+            if (currentAttachment) {
+                document.getElementById('attachmentStatus').textContent = 'Upload...';
+            }
+            const result = await sendMessageToAPI(content, recipientId, currentAttachment);
+            if (result.ok) {
                 input.value = '';
                 clearAttachment();
                 await renderMessages();
             } else {
-                alert('Nachricht konnte nicht gesendet werden');
+                alert(result.error || 'Nachricht konnte nicht gesendet werden');
             }
+            messengerSending = false;
+            if (sendBtn) sendBtn.disabled = false;
         }
 
         function deleteConversation() {
@@ -12416,13 +12679,18 @@
             }
         }
 
-        function taktikClearAll() {
-            if (confirm('Alle Zeichnungen löschen?')) {
-                taktikState.drawHistory = [];
-                taktikState.actionHistory = [];
-                createTaktikPlayers();
-                redrawTaktikAll();
-            }
+        function taktikClearDrawings() {
+            if (!confirm('Zeichnungen löschen?')) return;
+            taktikState.drawHistory = [];
+            taktikState.actionHistory = taktikState.actionHistory.filter(action => action.type !== 'draw');
+            redrawTaktikAll();
+        }
+
+        function taktikResetFormation() {
+            if (!confirm('Aufstellung zurücksetzen?')) return;
+            taktikState.actionHistory = taktikState.actionHistory.filter(action => action.type === 'draw');
+            createTaktikPlayers();
+            redrawTaktikAll();
         }
 
         function setupTaktikEventListeners() {
@@ -12487,9 +12755,11 @@
             }
 
             const undoBtn = document.getElementById('taktikUndoBtn');
-            const clearBtn = document.getElementById('taktikClearBtn');
+            const clearDrawBtn = document.getElementById('taktikClearDrawBtn');
+            const resetFormationBtn = document.getElementById('taktikResetFormationBtn');
             if (undoBtn) undoBtn.addEventListener('click', taktikUndo);
-            if (clearBtn) clearBtn.addEventListener('click', taktikClearAll);
+            if (clearDrawBtn) clearDrawBtn.addEventListener('click', taktikClearDrawings);
+            if (resetFormationBtn) resetFormationBtn.addEventListener('click', taktikResetFormation);
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -12504,8 +12774,8 @@
 
             <!-- Video Wrapper -->
             <div id="videoWrapper"
-                style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: var(--bg-light); overflow: hidden;">
-                <video id="modalVideo" style="max-width: 100%; max-height: 100%;" controls playsinline></video>
+                style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden;">
+                <video id="modalVideo" style="width: 100%; height: 100%; object-fit: contain;" playsinline></video>
                 <canvas id="modalDrawCanvas"
                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
 
@@ -12554,6 +12824,31 @@
                     style="position: absolute; top: 16px; right: 300px; width: 44px; height: 44px; background: rgba(220,38,38,0.9); border: none; border-radius: 12px; cursor: pointer; color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); z-index: 100;">
                     <span class="iconoir-trash"></span>
                 </button>
+            </div>
+
+            <!-- Custom Video Controls -->
+            <div id="customVideoControls"
+                style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <button onclick="toggleVideoPlay()" id="videoPlayPauseBtn"
+                    style="padding: 6px 12px; background: rgba(255,255,255,0.12); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px;">
+                    <span class="iconoir-play"></span>
+                </button>
+                <div id="videoTimeDisplay" style="font-family: monospace; color: rgba(255,255,255,0.8); font-size: 12px; min-width: 100px;">00:00 / 00:00</div>
+                <div style="flex: 1; min-width: 160px; position: relative;">
+                    <input id="videoProgress" type="range" min="0" max="100" step="0.1" value="0"
+                        style="width: 100%;">
+                    <div id="videoMarkerTrack"
+                        style="position: absolute; left: 0; right: 0; top: 50%; height: 0; pointer-events: none;"></div>
+                </div>
+                <select id="videoSpeedSelect" onchange="changeVideoSpeed(this.value)"
+                    style="padding: 6px 8px; background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-size: 12px;">
+                    <option value="0.5">0.5x</option>
+                    <option value="0.75">0.75x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
             </div>
 
             <!-- Clip Creation Bar (bottom, always visible) -->
