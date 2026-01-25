@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Request, Form, HTTPException, Depends, UploadFile, File, BackgroundTasks, Header
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse, StreamingResponse
+from fastapi.templating import Jinja2Templates
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 import bcrypt
 
@@ -52,47 +53,13 @@ from email_service import (
 )
 
 router = APIRouter()
-_spa_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web", "dist")
-_spa_index = os.path.join(_spa_dist, "index.html")
-
-
-class _SpaTemplates:
-    def TemplateResponse(self, name: str, context: Dict[str, Any], status_code: int = 200):
-        return FileResponse(_spa_index, status_code=status_code)
-
-
-templates = _SpaTemplates()
+templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/api/auth/csrf")
 async def get_csrf_token(purpose: str = "login_form"):
     token = generate_csrf_token(purpose)
     return {"csrf_token": token}
-
-
-@router.get("/api/access/status")
-async def access_status(request: Request):
-    stored_code = request.cookies.get("beta_access")
-    return {"allowed": _is_beta_access_cookie_valid(stored_code)}
-
-
-@router.post("/api/access/verify")
-async def access_verify(request: Request):
-    data = await request.json()
-    code = (data.get("code") or "").strip()
-    if code != ACCESS_CODE:
-        return JSONResponse({"error": "Ungültiger Code"}, status_code=401)
-
-    response = JSONResponse({"status": "ok"})
-    response.set_cookie(
-        key="beta_access",
-        value=_create_beta_access_cookie_token(),
-        httponly=True,
-        secure=SecurityConfig.COOKIE_SECURE,
-        samesite=SecurityConfig.COOKIE_SAMESITE,
-        max_age=86400 * 30
-    )
-    return response
 
 # Security Logger
 logger = logging.getLogger("pitchinsights.security")
