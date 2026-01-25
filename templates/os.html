@@ -5497,8 +5497,18 @@
     <script>
         const appStorage = (() => {
             try {
+                const preserved = {};
+                for (let i = 0; i < window.localStorage.length; i += 1) {
+                    const key = window.localStorage.key(i);
+                    if (key && key.startsWith('kasseTransactions_user_')) {
+                        preserved[key] = window.localStorage.getItem(key);
+                    }
+                }
                 window.localStorage.clear();
                 window.sessionStorage.clear();
+                Object.keys(preserved).forEach(key => {
+                    window.localStorage.setItem(key, preserved[key]);
+                });
             } catch (e) {
                 // Ignore storage errors
             }
@@ -9710,7 +9720,7 @@
 
         function initializeKasse() {
             const storageKey = getUserStorageKey('kasseTransactions');
-            const stored = appStorage.getItem(storageKey);
+            const stored = window.localStorage.getItem(storageKey) || appStorage.getItem(storageKey);
             if (stored) {
                 kasseTransactions = JSON.parse(stored);
             }
@@ -9719,6 +9729,7 @@
 
         function saveKasseToStorage() {
             const storageKey = getUserStorageKey('kasseTransactions');
+            window.localStorage.setItem(storageKey, JSON.stringify(kasseTransactions));
             appStorage.setItem(storageKey, JSON.stringify(kasseTransactions));
         }
 
