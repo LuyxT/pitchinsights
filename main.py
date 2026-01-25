@@ -12,8 +12,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 import uvicorn
 
 from config import SecurityConfig
@@ -24,7 +23,7 @@ from security import (
     get_secure_headers, check_rate_limit, api_rate_limiter,
     get_client_ip, validate_json_request_origin,
     ip_blacklist, validate_request_integrity, generate_request_id,
-    generate_csp_nonce, get_secure_headers_with_nonce, generate_csrf_token
+    generate_csp_nonce, get_secure_headers_with_nonce
 )
 
 
@@ -190,9 +189,18 @@ async def lifespan(app: FastAPI):
 
 
 # ============================================
-# Templates Setup
+# Templates Setup (SPA)
 # ============================================
-templates = Jinja2Templates(directory="templates")
+SPA_DIST = os.path.join(os.path.dirname(__file__), "web", "dist")
+SPA_INDEX = os.path.join(SPA_DIST, "index.html")
+
+
+class _SpaTemplates:
+    def TemplateResponse(self, name, context, status_code=200):
+        return FileResponse(SPA_INDEX, status_code=status_code)
+
+
+templates = _SpaTemplates()
 
 
 # ============================================
@@ -497,6 +505,8 @@ async def not_found_handler(request: Request, exc):
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/frames", StaticFiles(directory="landingpage scrol animation.jpg"), name="frames")
+if os.path.isdir(SPA_DIST):
+    app.mount("/assets", StaticFiles(directory=os.path.join(SPA_DIST, "assets")), name="spa-assets")
 
 
 # ============================================
@@ -522,12 +532,8 @@ async def serve_os(request: Request):
         user_data = get_user_by_id(user.get("id"))
 
     response = templates.TemplateResponse(
-        "os.html",
-        {
-            "request": request,
-            "user": user_data,
-            "logout_csrf_token": generate_csrf_token("logout_form"),
-        }
+        "index.html",
+        {"request": request, "user": user_data}
     )
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
@@ -537,7 +543,22 @@ async def serve_os(request: Request):
 @app.get("/taktik")
 async def serve_taktik():
     """Serve the Taktik-Tafel page."""
-    return RedirectResponse(url="/dashboard", status_code=303)
+    return FileResponse(
+        SPA_INDEX,
+        media_type="text/html",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+    )
+
+
+@app.get("/{full_path:path}", response_class=HTMLResponse)
+async def serve_spa(full_path: str):
+    if full_path.startswith(("api", "static", "assets", "frames")):
+        return JSONResponse(status_code=404, content={"error": "Nicht gefunden"})
+    return FileResponse(
+        SPA_INDEX,
+        media_type="text/html",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+    )
 
 
 # ============================================
