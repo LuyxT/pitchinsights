@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - PitchInsights</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: rgba(28, 28, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #007AFF, #00C7BE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 8px;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(44, 44, 46, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #007AFF;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #007AFF, #00C7BE);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 122, 255, 0.3);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            gap: 16px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .divider span {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .register-link {
+            text-align: center;
+        }
+
+        .register-link a {
+            color: #007AFF;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .register-link a:hover {
+            color: #00C7BE;
+        }
+
+        .home-link {
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        .home-link a {
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .home-link a:hover {
+            color: #00C7BE;
+        }
+
+        .features {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .features p {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+        }
+
+        .features-list {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .feature-item span {
+            font-size: 14px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 16px;
+            }
+
+            .login-card {
+                padding: 24px 20px;
+                border-radius: 16px;
+            }
+
+            .logo-icon {
+                font-size: 40px;
+            }
+
+            .logo h1 {
+                font-size: 24px;
+            }
+
+            .form-group input {
+                padding: 12px 14px;
+                font-size: 16px;
+                /* Verhindert Zoom auf iOS */
+            }
+
+            .submit-btn {
+                padding: 14px;
+                font-size: 15px;
+            }
+
+            .features {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .login-card {
+                padding: 20px 16px;
+            }
+
+            .logo h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/iconoir-subset.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <div class="logo-icon"><span class="iconoir-soccer-ball"></span></div>
+                <h1>PitchInsights</h1>
+                <p>Dein Fußball-Management System</p>
+            </div>
+
+            {% if error %}
+            <div class="error-message">
+                <span class="iconoir-shield-alert"></span> {{ error }}
+            </div>
+            {% endif %}
+            {% if success %}
+            <div class="error-message" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #22c55e;">
+                <span class="iconoir-check-circle"></span> {{ success }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/login">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                {% if mode %}
+                <input type="hidden" name="mode" value="{{ mode }}">
+                {% endif %}
+                {% if redirect %}
+                <input type="hidden" name="redirect" value="{{ redirect }}">
+                {% endif %}
+                <!-- SECURITY: Honeypot fields - hidden from real users, filled by bots -->
+                <div style="position: absolute; left: -9999px; opacity: 0; height: 0; width: 0; overflow: hidden;"
+                    aria-hidden="true">
+                    <input type="text" name="website" tabindex="-1" autocomplete="off">
+                    <input type="text" name="phone_number" tabindex="-1" autocomplete="off">
+                    <input type="text" name="fax_number" tabindex="-1" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>E-Mail</label>
+                    <input type="email" name="email" placeholder="deine@email.de" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Passwort</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="submit-btn">Einloggen</button>
+            </form>
+
+            <div class="divider">
+                <span>oder</span>
+            </div>
+
+            <div class="register-link">
+                {% if mode == 'player' %}
+                Spieler-Account nur per Einladungslink.
+                {% else %}
+                Noch kein Account? <a href="/register">Jetzt registrieren</a>
+                {% endif %}
+            </div>
+            <div class="home-link">
+                <a href="/landing">Zur Homepage</a>
+            </div>
+
+            <div class="features">
+                <p>Was dich erwartet:</p>
+                <div class="features-list">
+                    <div class="feature-item"><span><span class="iconoir-stats-up-square"></span></span> Kader</div>
+                    <div class="feature-item"><span><span class="iconoir-calendar"></span></span> Kalender</div>
+                    <div class="feature-item"><span><span class="iconoir-message"></span></span> Messenger</div>
+                    <div class="feature-item"><span><span class="iconoir-football-ball"></span></span> Taktik</div>
+                </div>
+            </div>
+
+            <!-- Rechtliche Links -->
+            <div class="legal-links" style="
+                margin-top: 24px;
+                padding-top: 20px;
+                border-top: 1px solid rgba(255,255,255,0.1);
+                text-align: center;
+                font-size: 12px;
+            ">
+                <a href="/datenschutz"
+                    style="color: rgba(255,255,255,0.4); text-decoration: none; margin: 0 8px;">Datenschutz</a>
+                <span style="color: rgba(255,255,255,0.2);">|</span>
+                <a href="/impressum"
+                    style="color: rgba(255,255,255,0.4); text-decoration: none; margin: 0 8px;">Impressum</a>
+                <span style="color: rgba(255,255,255,0.2);">|</span>
+                <a href="/agb" style="color: rgba(255,255,255,0.4); text-decoration: none; margin: 0 8px;">AGB</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
