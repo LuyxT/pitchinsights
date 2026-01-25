@@ -2835,7 +2835,7 @@ ALLOWED_VIDEO_MIME_TYPES = {
     "video/x-matroska",
     "application/octet-stream",
 }
-MAX_VIDEO_SIZE = 500 * 1024 * 1024  # 500 MB
+MAX_VIDEO_SIZE = 5 * 1024 * 1024 * 1024  # 5 GB
 TEAM_VIDEO_QUOTA = 5 * 1024 * 1024 * 1024  # 5 GB pro Mannschaft
 
 
@@ -2875,7 +2875,7 @@ async def upload_video(
     if content_length:
         try:
             if int(content_length) > MAX_VIDEO_SIZE + (5 * 1024 * 1024):
-                return JSONResponse({"error": "Video zu groß (max. 500 MB)"}, status_code=400)
+                return JSONResponse({"error": "Video zu groß (max. 5 GB)"}, status_code=400)
         except ValueError:
             return JSONResponse({"error": "Ungültige Upload-Größe"}, status_code=400)
 
@@ -2895,7 +2895,7 @@ async def upload_video(
     file.file.seek(0)
 
     if file_size > MAX_VIDEO_SIZE:
-        return JSONResponse({"error": "Video zu groß (max. 500 MB)"}, status_code=400)
+        return JSONResponse({"error": "Video zu groß (max. 5 GB)"}, status_code=400)
 
     # SECURITY: Team-Quota prüfen (nur nicht-gelöschte Videos)
     with get_db_connection() as db:

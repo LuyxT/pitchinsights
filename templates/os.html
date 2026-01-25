@@ -4423,6 +4423,16 @@
 
                 <!-- TAB: Meine Videos -->
                 <div id="tabContentMeineVideos" class="video-tab-content">
+                    <div id="videoListUploadProgress"
+                        style="display: none; background: var(--card-light); border: 1px solid var(--border-light); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 13px; font-weight: 600; color: var(--text-light);">Upload läuft...</span>
+                            <span id="videoListUploadPercent" style="font-size: 12px; color: var(--text-light); opacity: 0.7;">0%</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 6px; overflow: hidden;">
+                            <div id="videoListUploadBar" style="width: 0%; height: 100%; background: linear-gradient(135deg, #007AFF, #00C7BE);"></div>
+                        </div>
+                    </div>
                     <div id="videoListEmpty"
                         style="text-align: center; padding: 60px 20px; background: var(--card-light); border-radius: 16px; border: 2px dashed var(--border-light);">
                         <span style="font-size: 64px; display: block; margin-bottom: 16px; opacity: 0.5;"><span class="iconoir-movie"></span></span>
@@ -8314,10 +8324,10 @@
             const file = e.target.files[0];
             if (!file) return;
 
-            // Prüfen ob Datei zu groß (500MB Limit)
-            const maxSize = 500 * 1024 * 1024;
+            // Prüfen ob Datei zu groß (5GB Limit)
+            const maxSize = 5 * 1024 * 1024 * 1024;
             if (file.size > maxSize) {
-                showToast('Datei zu groß! Maximal 500MB erlaubt.', 'error');
+                showToast('Datei zu groß! Maximal 5GB erlaubt.', 'error');
                 return;
             }
 
@@ -8370,6 +8380,9 @@
             // UI für Upload-Progress
             document.getElementById('startUploadBtn').disabled = true;
             document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('videoListUploadProgress').style.display = 'block';
+            document.getElementById('videoListUploadBar').style.width = '0%';
+            document.getElementById('videoListUploadPercent').textContent = '0%';
 
             const formData = new FormData();
             formData.append('file', selectedFile);
@@ -8386,6 +8399,8 @@
                         document.getElementById('uploadProgressBar').style.width = percent + '%';
                         document.getElementById('uploadPercent').textContent = percent + '%';
                         document.getElementById('uploadStatus').textContent = percent < 100 ? 'Hochladen...' : 'Verarbeiten...';
+                        document.getElementById('videoListUploadBar').style.width = percent + '%';
+                        document.getElementById('videoListUploadPercent').textContent = percent + '%';
                     }
                 };
 
@@ -8394,6 +8409,7 @@
                         showToast('Video erfolgreich hochgeladen!', 'success');
                         clearVideoSelection();
                         document.getElementById('uploadProgress').style.display = 'none';
+                        document.getElementById('videoListUploadProgress').style.display = 'none';
                         document.getElementById('startUploadBtn').disabled = false;
                         switchVideoTab('meineVideos');
                     } else {
@@ -8404,6 +8420,7 @@
                 xhr.onerror = function () {
                     showToast('Fehler beim Upload', 'error');
                     document.getElementById('uploadProgress').style.display = 'none';
+                    document.getElementById('videoListUploadProgress').style.display = 'none';
                     document.getElementById('startUploadBtn').disabled = false;
                 };
 
@@ -8415,6 +8432,7 @@
                 console.error('Upload error:', error);
                 showToast('Fehler beim Upload', 'error');
                 document.getElementById('uploadProgress').style.display = 'none';
+                document.getElementById('videoListUploadProgress').style.display = 'none';
                 document.getElementById('startUploadBtn').disabled = false;
             }
         }
