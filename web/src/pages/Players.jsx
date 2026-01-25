@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import SectionHeader from "../components/SectionHeader.jsx";
-import Card from "../components/Card.jsx";
-import List from "../components/List.jsx";
-import EmptyState from "../components/EmptyState.jsx";
-import LoadingState from "../components/LoadingState.jsx";
+import SectionHeader from "../components/SectionHeader.tsx";
+import Card from "../components/Card.tsx";
+import List from "../components/List.tsx";
+import EmptyState from "../components/EmptyState.tsx";
+import LoadingState from "../components/LoadingState.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { fetchJson } from "../lib/api.js";
 
 export default function Players() {
@@ -38,11 +39,7 @@ export default function Players() {
   }));
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Spieler:innen</div>
-        <div className="page-subtitle">Kaderübersicht mit konsistenten Aktionen.</div>
-      </div>
+    <PageLayout title="Spieler:innen" subtitle="Kaderübersicht mit konsistenten Aktionen.">
       <SectionHeader title="Kaderliste" actionLabel="Spieler:in hinzufügen" />
       {loading ? (
         <LoadingState rows={5} />
@@ -57,6 +54,6 @@ export default function Players() {
           actionLabel="Spieler:in hinzufügen"
         />
       )}
-    </div>
+    </PageLayout>
   );
 }

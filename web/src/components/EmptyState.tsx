@@ -1,4 +1,4 @@
-import Button from "./Button.jsx";
+import Button from "./Button.tsx";
 
 export default function EmptyState({ title, description, actionLabel, onAction }) {
   return (

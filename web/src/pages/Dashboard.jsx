@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import Card from "../components/Card.jsx";
-import SectionHeader from "../components/SectionHeader.jsx";
-import EmptyState from "../components/EmptyState.jsx";
-import LoadingState from "../components/LoadingState.jsx";
+import Card from "../components/Card.tsx";
+import SectionHeader from "../components/SectionHeader.tsx";
+import EmptyState from "../components/EmptyState.tsx";
+import LoadingState from "../components/LoadingState.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { fetchJson } from "../lib/api.js";
 
 const formatDate = (value) => {
@@ -50,11 +51,7 @@ export default function Dashboard({ onNavigate }) {
   const hasData = nextEvents.length > 0;
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Home</div>
-        <div className="page-subtitle">Überblick über Trainings, Spieler:innen und nächste Termine.</div>
-      </div>
+    <PageLayout title="Home" subtitle="Überblick über Trainings, Spieler:innen und nächste Termine.">
       <SectionHeader
         title="Nächste Termine"
         actionLabel="Neues Training"
@@ -102,6 +99,6 @@ export default function Dashboard({ onNavigate }) {
           </div>
         </Card>
       </div>
-    </div>
+    </PageLayout>
   );
 }

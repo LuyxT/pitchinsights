@@ -1,4 +1,4 @@
-import Button from "./Button.jsx";
+import Button from "./Button.tsx";
 
 export default function Modal({ title, description, confirmLabel, cancelLabel, onConfirm, onCancel }) {
   return (

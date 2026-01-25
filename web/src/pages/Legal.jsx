@@ -1,15 +1,12 @@
-import Card from "../components/Card.jsx";
+import Card from "../components/Card.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 
 export default function Legal({ title }) {
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">{title}</div>
-        <div className="page-subtitle">Rechtliche Informationen.</div>
-      </div>
+    <PageLayout title={title} subtitle="Rechtliche Informationen.">
       <Card>
         <div className="page-subtitle">Inhalt folgt.</div>
       </Card>
-    </div>
+    </PageLayout>
   );
 }

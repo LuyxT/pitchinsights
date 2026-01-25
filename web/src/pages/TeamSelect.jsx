@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import Card from "../components/Card.jsx";
-import SectionHeader from "../components/SectionHeader.jsx";
-import LoadingState from "../components/LoadingState.jsx";
-import EmptyState from "../components/EmptyState.jsx";
+import Card from "../components/Card.tsx";
+import SectionHeader from "../components/SectionHeader.tsx";
+import LoadingState from "../components/LoadingState.tsx";
+import EmptyState from "../components/EmptyState.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { fetchJson } from "../lib/api.js";
 
 export default function TeamSelect({ onNavigate }) {
@@ -40,11 +41,7 @@ export default function TeamSelect({ onNavigate }) {
   };
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Team auswählen</div>
-        <div className="page-subtitle">Wähle die aktive Mannschaft.</div>
-      </div>
+    <PageLayout title="Team auswählen" subtitle="Wähle die aktive Mannschaft.">
       <SectionHeader title="Teams" />
       {loading ? (
         <LoadingState rows={3} />
@@ -72,6 +69,6 @@ export default function TeamSelect({ onNavigate }) {
           onAction={() => onNavigate("/dashboard")}
         />
       )}
-    </div>
+    </PageLayout>
   );
 }

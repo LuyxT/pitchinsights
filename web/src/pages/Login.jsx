@@ -1,7 +1,8 @@
 import { useState } from "react";
-import Button from "../components/Button.jsx";
-import InputField from "../components/InputField.jsx";
-import Card from "../components/Card.jsx";
+import Button from "../components/Button.tsx";
+import Input from "../components/Input.tsx";
+import Card from "../components/Card.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
 
 export default function Login({ onNavigate }) {
@@ -25,14 +26,10 @@ export default function Login({ onNavigate }) {
   };
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Anmelden</div>
-        <div className="page-subtitle">Zugang für Trainer:innen und Staff.</div>
-      </div>
+    <PageLayout title="Anmelden" subtitle="Zugang für Trainer:innen und Staff.">
       <Card>
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
-          <InputField
+          <Input
             label="E-Mail"
             name="email"
             type="email"
@@ -40,7 +37,7 @@ export default function Login({ onNavigate }) {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
-          <InputField
+          <Input
             label="Passwort"
             name="password"
             type="password"
@@ -59,6 +56,6 @@ export default function Login({ onNavigate }) {
           </Button>
         </div>
       </Card>
-    </div>
+    </PageLayout>
   );
 }

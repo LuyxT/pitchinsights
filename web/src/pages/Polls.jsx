@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import SectionHeader from "../components/SectionHeader.jsx";
-import Card from "../components/Card.jsx";
-import EmptyState from "../components/EmptyState.jsx";
-import LoadingState from "../components/LoadingState.jsx";
+import SectionHeader from "../components/SectionHeader.tsx";
+import Card from "../components/Card.tsx";
+import EmptyState from "../components/EmptyState.tsx";
+import LoadingState from "../components/LoadingState.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { fetchJson } from "../lib/api.js";
 
 export default function Polls() {
@@ -31,11 +32,7 @@ export default function Polls() {
 
   const hasPolls = events.length > 0;
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Abstimmungen</div>
-        <div className="page-subtitle">Zusagen und Absagen im eigenen Bereich.</div>
-      </div>
+    <PageLayout title="Abstimmungen" subtitle="Zusagen und Absagen im eigenen Bereich.">
       <SectionHeader title="Aktive Abstimmungen" actionLabel="Abstimmung erstellen" />
       {loading ? (
         <LoadingState rows={4} />
@@ -62,6 +59,6 @@ export default function Polls() {
           actionLabel="Abstimmung erstellen"
         />
       )}
-    </div>
+    </PageLayout>
   );
 }

@@ -1,5 +1,5 @@
-import Sidebar from "./Sidebar.jsx";
-import Topbar from "./Topbar.jsx";
+import Sidebar from "./Sidebar.tsx";
+import Topbar from "./Topbar.tsx";
 
 export default function AppShell({ children, currentPath, onNavigate, title, meta }) {
   return (

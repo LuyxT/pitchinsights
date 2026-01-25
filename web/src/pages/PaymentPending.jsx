@@ -1,15 +1,12 @@
-import Card from "../components/Card.jsx";
+import Card from "../components/Card.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 
 export default function PaymentPending() {
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Zahlung ausstehend</div>
-        <div className="page-subtitle">Dein Zugriff wird nach Zahlung aktiviert.</div>
-      </div>
+    <PageLayout title="Zahlung ausstehend" subtitle="Dein Zugriff wird nach Zahlung aktiviert.">
       <Card>
         <div className="page-subtitle">Bei Fragen wende dich an den Support.</div>
       </Card>
-    </div>
+    </PageLayout>
   );
 }

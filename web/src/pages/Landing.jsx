@@ -1,13 +1,10 @@
-import Button from "../components/Button.jsx";
-import Card from "../components/Card.jsx";
+import Button from "../components/Button.tsx";
+import Card from "../components/Card.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 
 export default function Landing({ onNavigate }) {
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Pitch Insights</div>
-        <div className="page-subtitle">Planung, Kommunikation und Analyse in einem klaren System.</div>
-      </div>
+    <PageLayout title="Pitch Insights" subtitle="Planung, Kommunikation und Analyse in einem klaren System.">
       <Card>
         <div className="section-title">Schneller Einstieg</div>
         <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
@@ -15,6 +12,6 @@ export default function Landing({ onNavigate }) {
           <Button variant="secondary" onClick={() => onNavigate("/register")}>Konto erstellen</Button>
         </div>
       </Card>
-    </div>
+    </PageLayout>
   );
 }

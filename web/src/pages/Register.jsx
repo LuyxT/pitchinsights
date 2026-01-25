@@ -1,7 +1,8 @@
 import { useState } from "react";
-import Button from "../components/Button.jsx";
-import InputField from "../components/InputField.jsx";
-import Card from "../components/Card.jsx";
+import Button from "../components/Button.tsx";
+import Input from "../components/Input.tsx";
+import Card from "../components/Card.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
 
 export default function Register({ onNavigate }) {
@@ -32,28 +33,24 @@ export default function Register({ onNavigate }) {
   };
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Konto erstellen</div>
-        <div className="page-subtitle">Lege dein Trainer:innenkonto an.</div>
-      </div>
+    <PageLayout title="Konto erstellen" subtitle="Lege dein Trainer:innenkonto an.">
       <Card>
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
-          <InputField
+          <Input
             label="Vorname"
             name="firstName"
             placeholder="Vorname"
             value={firstName}
             onChange={(event) => setFirstName(event.target.value)}
           />
-          <InputField
+          <Input
             label="Nachname"
             name="lastName"
             placeholder="Nachname"
             value={lastName}
             onChange={(event) => setLastName(event.target.value)}
           />
-          <InputField
+          <Input
             label="E-Mail"
             name="email"
             type="email"
@@ -61,7 +58,7 @@ export default function Register({ onNavigate }) {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
-          <InputField
+          <Input
             label="Passwort"
             name="password"
             type="password"
@@ -80,6 +77,6 @@ export default function Register({ onNavigate }) {
           </Button>
         </div>
       </Card>
-    </div>
+    </PageLayout>
   );
 }

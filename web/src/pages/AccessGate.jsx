@@ -1,6 +1,7 @@
-import Card from "../components/Card.jsx";
-import Button from "../components/Button.jsx";
-import InputField from "../components/InputField.jsx";
+import Card from "../components/Card.tsx";
+import Button from "../components/Button.tsx";
+import Input from "../components/Input.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 
@@ -24,14 +25,10 @@ export default function AccessGate({ onNavigate }) {
   };
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Zugang erforderlich</div>
-        <div className="page-subtitle">Bitte gib deinen Zugriffscode ein.</div>
-      </div>
+    <PageLayout title="Zugang erforderlich" subtitle="Bitte gib deinen Zugriffscode ein.">
       <Card>
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
-          <InputField
+          <Input
             label="Zugriffscode"
             placeholder="Code"
             value={code}
@@ -43,6 +40,6 @@ export default function AccessGate({ onNavigate }) {
           </Button>
         </form>
       </Card>
-    </div>
+    </PageLayout>
   );
 }

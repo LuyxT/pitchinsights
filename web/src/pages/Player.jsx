@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import Card from "../components/Card.jsx";
-import SectionHeader from "../components/SectionHeader.jsx";
-import LoadingState from "../components/LoadingState.jsx";
+import Card from "../components/Card.tsx";
+import SectionHeader from "../components/SectionHeader.tsx";
+import LoadingState from "../components/LoadingState.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { fetchJson } from "../lib/api.js";
 
 export default function Player() {
@@ -35,11 +36,7 @@ export default function Player() {
   }, []);
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Spielerprofil</div>
-        <div className="page-subtitle">Detailansicht mit Leistung und Anwesenheit.</div>
-      </div>
+    <PageLayout title="Spielerprofil" subtitle="Detailansicht mit Leistung und Anwesenheit.">
       <SectionHeader title="Profil" />
       {loading ? (
         <LoadingState rows={4} />
@@ -75,6 +72,6 @@ export default function Player() {
           </Card>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }

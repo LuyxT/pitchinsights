@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import SectionHeader from "../components/SectionHeader.jsx";
-import Card from "../components/Card.jsx";
-import InputField from "../components/InputField.jsx";
-import LoadingState from "../components/LoadingState.jsx";
+import SectionHeader from "../components/SectionHeader.tsx";
+import Card from "../components/Card.tsx";
+import Input from "../components/Input.tsx";
+import LoadingState from "../components/LoadingState.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { fetchJson } from "../lib/api.js";
 
 export default function Settings() {
@@ -58,26 +59,22 @@ export default function Settings() {
   };
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Einstellungen</div>
-        <div className="page-subtitle">Konto und Organisation an einem Ort.</div>
-      </div>
+    <PageLayout title="Einstellungen" subtitle="Konto und Organisation an einem Ort.">
       <SectionHeader title="Profil" actionLabel={saving ? "Speichern..." : "Speichern"} onAction={handleSave} />
       {loading ? (
         <LoadingState rows={4} />
       ) : (
         <div className="card-grid">
           <Card>
-            <InputField label="Vorname" placeholder="Vorname" value={form.vorname} onChange={handleChange("vorname")} />
+            <Input label="Vorname" placeholder="Vorname" value={form.vorname} onChange={handleChange("vorname")} />
             <div style={{ height: 16 }} />
-            <InputField label="Nachname" placeholder="Nachname" value={form.nachname} onChange={handleChange("nachname")} />
+            <Input label="Nachname" placeholder="Nachname" value={form.nachname} onChange={handleChange("nachname")} />
             <div style={{ height: 16 }} />
-            <InputField label="Telefon" placeholder="Telefon" value={form.telefon} onChange={handleChange("telefon")} />
+            <Input label="Telefon" placeholder="Telefon" value={form.telefon} onChange={handleChange("telefon")} />
             {status ? <div className="page-subtitle" style={{ marginTop: 12 }}>{status}</div> : null}
           </Card>
           <Card>
-            <InputField
+            <Input
               label="E-Mail"
               type="email"
               placeholder="name@club.de"
@@ -85,10 +82,10 @@ export default function Settings() {
               readOnly
             />
             <div style={{ height: 16 }} />
-            <InputField label="Rolle" placeholder="Trainer" value={profile?.rolle || ""} readOnly />
+            <Input label="Rolle" placeholder="Trainer" value={profile?.rolle || ""} readOnly />
           </Card>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }

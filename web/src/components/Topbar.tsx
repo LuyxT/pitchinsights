@@ -1,4 +1,4 @@
-import Button from "./Button.jsx";
+import Button from "./Button.tsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
 
 export default function Topbar({ title, meta }) {

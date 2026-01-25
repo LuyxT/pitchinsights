@@ -1,7 +1,8 @@
 import { useState } from "react";
-import Card from "../components/Card.jsx";
-import SectionHeader from "../components/SectionHeader.jsx";
-import InputField from "../components/InputField.jsx";
+import Card from "../components/Card.tsx";
+import SectionHeader from "../components/SectionHeader.tsx";
+import Input from "../components/Input.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { fetchJson } from "../lib/api.js";
 
 export default function Onboarding({ onNavigate }) {
@@ -31,25 +32,21 @@ export default function Onboarding({ onNavigate }) {
   };
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Onboarding</div>
-        <div className="page-subtitle">Grunddaten für dein Team.</div>
-      </div>
+    <PageLayout title="Onboarding" subtitle="Grunddaten für dein Team.">
       <SectionHeader title="Teamdetails" actionLabel={saving ? "Speichern..." : "Speichern"} onAction={handleSave} />
       <div className="card-grid">
         <Card>
-          <InputField label="Vereinsname" placeholder="Club" value={form.verein} onChange={handleChange("verein")} />
+          <Input label="Vereinsname" placeholder="Club" value={form.verein} onChange={handleChange("verein")} />
           <div style={{ height: 16 }} />
-          <InputField label="Mannschaft" placeholder="1. Mannschaft" value={form.mannschaft} onChange={handleChange("mannschaft")} />
+          <Input label="Mannschaft" placeholder="1. Mannschaft" value={form.mannschaft} onChange={handleChange("mannschaft")} />
         </Card>
         <Card>
-          <InputField label="Saison" placeholder="2024/25" />
+          <Input label="Saison" placeholder="2024/25" />
           <div style={{ height: 16 }} />
-          <InputField label="Rolle" placeholder="trainer" value={form.rolle} onChange={handleChange("rolle")} />
+          <Input label="Rolle" placeholder="trainer" value={form.rolle} onChange={handleChange("rolle")} />
           {status ? <div className="page-subtitle" style={{ marginTop: 12 }}>{status}</div> : null}
         </Card>
       </div>
-    </div>
+    </PageLayout>
   );
 }

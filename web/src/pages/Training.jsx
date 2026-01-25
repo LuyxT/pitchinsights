@@ -1,8 +1,9 @@
 import { useState } from "react";
-import SectionHeader from "../components/SectionHeader.jsx";
-import Card from "../components/Card.jsx";
-import InputField from "../components/InputField.jsx";
-import Button from "../components/Button.jsx";
+import SectionHeader from "../components/SectionHeader.tsx";
+import Card from "../components/Card.tsx";
+import Input from "../components/Input.tsx";
+import Button from "../components/Button.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { fetchJson } from "../lib/api.js";
 
 export default function Training() {
@@ -43,11 +44,7 @@ export default function Training() {
   };
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Trainingsplanung</div>
-        <div className="page-subtitle">Schritte klar strukturieren und logisch gruppieren.</div>
-      </div>
+    <PageLayout title="Trainingsplanung" subtitle="Schritte klar strukturieren und logisch gruppieren.">
       <SectionHeader
         title="Neues Training"
         actionLabel={saving ? "Speichern..." : "Speichern"}
@@ -57,20 +54,20 @@ export default function Training() {
         <Card>
           <div className="section-title">Datum & Zeit</div>
           <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
-            <InputField label="Datum" type="date" value={form.date} onChange={handleChange("date")} />
-            <InputField label="Uhrzeit" type="time" value={form.time} onChange={handleChange("time")} />
+            <Input label="Datum" type="date" value={form.date} onChange={handleChange("date")} />
+            <Input label="Uhrzeit" type="time" value={form.time} onChange={handleChange("time")} />
           </div>
         </Card>
         <Card>
           <div className="section-title">Übungen</div>
           <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
-            <InputField
+            <Input
               label="Schwerpunkt"
               placeholder="z. B. Umschalten"
               value={form.title}
               onChange={handleChange("title")}
             />
-            <InputField
+            <Input
               label="Notizen"
               placeholder="Optionale Details"
               value={form.notes}
@@ -87,11 +84,11 @@ export default function Training() {
         <Card>
           <div className="section-title">Notizen</div>
           <div style={{ marginTop: 16 }}>
-            <InputField label="Zusatz" placeholder="Kurz und klar" value={form.notes} onChange={handleChange("notes")} />
+            <Input label="Zusatz" placeholder="Kurz und klar" value={form.notes} onChange={handleChange("notes")} />
             {status ? <div className="page-subtitle" style={{ marginTop: 12 }}>{status}</div> : null}
           </div>
         </Card>
       </div>
-    </div>
+    </PageLayout>
   );
 }

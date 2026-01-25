@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import Card from "../components/Card.jsx";
-import InputField from "../components/InputField.jsx";
-import Button from "../components/Button.jsx";
-import LoadingState from "../components/LoadingState.jsx";
+import Card from "../components/Card.tsx";
+import Input from "../components/Input.tsx";
+import Button from "../components/Button.tsx";
+import LoadingState from "../components/LoadingState.tsx";
+import PageLayout from "../components/PageLayout.tsx";
 import { fetchJson } from "../lib/api.js";
 import { useAuth } from "../contexts/AuthContext.jsx";
 
@@ -69,14 +70,10 @@ export default function Join({ onNavigate }) {
   };
 
   return (
-    <div className="page">
-      <div>
-        <div className="page-title">Einladung annehmen</div>
-        <div className="page-subtitle">Verbinde dein Konto mit dem Team.</div>
-      </div>
+    <PageLayout title="Einladung annehmen" subtitle="Verbinde dein Konto mit dem Team.">
       <Card>
         <div style={{ display: "grid", gap: 16 }}>
-          <InputField
+          <Input
             label="Einladungscode"
             placeholder="Code"
             value={code}
@@ -100,6 +97,6 @@ export default function Join({ onNavigate }) {
           )}
         </div>
       </Card>
-    </div>
+    </PageLayout>
   );
 }

@@ -18,7 +18,7 @@ import Legal from "./pages/Legal.jsx";
 import AccessGate from "./pages/AccessGate.jsx";
 import PaymentPending from "./pages/PaymentPending.jsx";
 import Player from "./pages/Player.jsx";
-import LoadingState from "./components/LoadingState.jsx";
+import LoadingState from "./components/LoadingState.tsx";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 
 const routes = {
