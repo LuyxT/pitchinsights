@@ -809,29 +809,9 @@ async def login(
 
     # SECURITY: Exponential Backoff prüfen (zusätzlich zu DB-basiertem Lockout)
     exp_locked, exp_remaining = exponential_lockout.is_locked(f"login:{email}")
-    if exp_locked:
-        logger.warning(
-            f"Exponential backoff active for {email[:3]}***, {exp_remaining}s remaining")
-        new_csrf = generate_csrf_token("login_form")
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request,
-                "error": f"Zu viele Fehlversuche. Bitte warten Sie {exp_remaining} Sekunden.",
-                "csrf_token": new_csrf}
-        )
 
     # SECURITY: Rate Limiting prüfen (DB-basiert)
     is_blocked, remaining = is_login_blocked(email, client_ip)
-    if is_blocked:
-        logger.warning(
-            f"Login blocked due to rate limiting: email={email[:3]}***, ip={client_ip}")
-        new_csrf = generate_csrf_token("login_form")
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request,
-                "error": f"Zu viele Versuche. Bitte warten Sie {remaining // 60} Minuten.",
-                "csrf_token": new_csrf}
-        )
 
     # User laden
     user = get_user_by_email(email)
@@ -851,6 +831,26 @@ async def login(
                  "csrf_token": new_csrf, "mode": mode, "redirect": redirect}
             )
         logging.warning(f"[LOGIN DEBUG] User not found in database: {email}")
+        if exp_locked:
+            logger.warning(
+                f"Exponential backoff active for {email[:3]}***, {exp_remaining}s remaining")
+            new_csrf = generate_csrf_token("login_form")
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request,
+                    "error": f"Zu viele Fehlversuche. Bitte warten Sie {exp_remaining} Sekunden.",
+                    "csrf_token": new_csrf}
+            )
+        if is_blocked:
+            logger.warning(
+                f"Login blocked due to rate limiting: email={email[:3]}***, ip={client_ip}")
+            new_csrf = generate_csrf_token("login_form")
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request,
+                    "error": f"Zu viele Versuche. Bitte warten Sie {remaining // 60} Minuten.",
+                    "csrf_token": new_csrf}
+            )
         bcrypt.checkpw(b"timing_attack_prevention_dummy_password", DUMMY_HASH)
         record_login_attempt(email, client_ip, False)
         activity_detector.record_failed_login(client_ip)
@@ -879,6 +879,26 @@ async def login(
         password_valid = False
 
     if not password_valid:
+        if exp_locked:
+            logger.warning(
+                f"Exponential backoff active for {email[:3]}***, {exp_remaining}s remaining")
+            new_csrf = generate_csrf_token("login_form")
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request,
+                    "error": f"Zu viele Fehlversuche. Bitte warten Sie {exp_remaining} Sekunden.",
+                    "csrf_token": new_csrf}
+            )
+        if is_blocked:
+            logger.warning(
+                f"Login blocked due to rate limiting: email={email[:3]}***, ip={client_ip}")
+            new_csrf = generate_csrf_token("login_form")
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request,
+                    "error": f"Zu viele Versuche. Bitte warten Sie {remaining // 60} Minuten.",
+                    "csrf_token": new_csrf}
+            )
         record_login_attempt(email, client_ip, False)
         activity_detector.record_failed_login(client_ip)
 
