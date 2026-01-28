@@ -6394,11 +6394,243 @@
             }
         };
 
+        const I18N_WORD_MAP = {
+            "e-mail": "email",
+            "email": "email",
+            "passwort": "password",
+            "bestätigen": "confirm",
+            "vorname": "first name",
+            "nachname": "last name",
+            "team": "team",
+            "verein": "club",
+            "rolle": "role",
+            "position": "position",
+            "spieler": "player",
+            "trainer": "coach",
+            "co-trainer": "assistant coach",
+            "sportdirektor": "sporting director",
+            "manager": "manager",
+            "analyst": "analyst",
+            "betreuer": "staff",
+            "physiotherapeut": "physiotherapist",
+            "andere": "other",
+            "einstellungen": "settings",
+            "profil": "profile",
+            "speichern": "save",
+            "abbrechen": "cancel",
+            "löschen": "delete",
+            "ausloggen": "log out",
+            "konto": "account",
+            "sicherheit": "security",
+            "benachrichtigungen": "notifications",
+            "aktiviert": "enabled",
+            "deaktiviert": "disabled",
+            "sprache": "language",
+            "deutsch": "german",
+            "englisch": "english",
+            "kalender": "calendar",
+            "kader": "roster",
+            "mannschaft": "team",
+            "mannschaftskasse": "team fund",
+            "messenger": "messenger",
+            "taktik": "tactics",
+            "taktik-tafel": "tactics board",
+            "verwaltung": "administration",
+            "einladungen": "invitations",
+            "mitglieder": "members",
+            "rollen": "roles",
+            "einladung": "invitation",
+            "neu": "new",
+            "start": "start",
+            "ende": "end",
+            "datum": "date",
+            "dauer": "duration",
+            "minuten": "minutes",
+            "notiz": "note",
+            "optional": "optional",
+            "hochladen": "upload",
+            "clips": "clips",
+            "clip": "clip",
+            "marker": "marker",
+            "keine": "no",
+            "keiner": "none",
+            "kein": "no",
+            "anzeigen": "show",
+            "öffnen": "open",
+            "schließen": "close",
+            "zurück": "back",
+            "weiter": "next",
+            "senden": "send",
+            "datei": "file",
+            "anhängen": "attach",
+            "suche": "search",
+            "suchen": "search",
+            "kontakt": "contact",
+            "kontakte": "contacts",
+            "aktuelle": "current",
+            "termine": "events",
+            "nächste": "upcoming",
+            "training": "training",
+            "spiel": "match",
+            "spieltag": "matchday",
+            "spiele": "matches",
+            "tore": "goals",
+            "punkte": "points",
+            "tabelle": "table",
+            "ergebnisse": "results",
+            "letzte": "latest",
+            "übersicht": "overview",
+            "analyse": "analysis",
+            "analysen": "analyses",
+            "finanzen": "finance",
+            "medizin": "medical",
+            "liga": "league",
+            "scouting": "scouting",
+            "bald": "soon",
+            "verfügbar": "available",
+            "ausgabe": "expense",
+            "einnahme": "income",
+            "ausgaben": "expenses",
+            "einnahmen": "income",
+            "hochgeladene": "uploaded",
+            "videos": "videos",
+            "hinzufügen": "add",
+            "hinzufÃ¼gen": "add",
+            "ändern": "change",
+            "bearbeiten": "edit",
+            "auswählen": "select",
+            "auswaehlen": "select",
+            "erstellen": "create",
+            "löschen": "delete",
+            "entfernen": "remove",
+            "anzeigen": "show",
+            "laden": "load",
+            "lade": "loading",
+            "laden...": "loading...",
+            "laden…": "loading...",
+            "neue": "new",
+            "eintrag": "entry",
+            "einträge": "entries",
+            "eintraege": "entries",
+            "beitrag": "contribution",
+            "betrag": "amount",
+            "beschreibung": "description",
+            "kategorie": "category",
+            "gültig": "valid",
+            "tage": "days",
+            "jahrgang": "year",
+            "größe": "height",
+            "gewicht": "weight",
+            "nationalität": "nationality",
+            "benutzername": "username",
+            "einladungslink": "invitation link",
+            "kopieren": "copy",
+            "fertig": "done",
+            "weiter": "next",
+            "zurücksetzen": "reset",
+            "aufstellung": "formation",
+            "zeichnung": "drawing",
+            "trainingsdauer": "training duration",
+            "dauer": "duration",
+            "minuten": "minutes",
+            "stunden": "hours",
+            "kalender anzeigen": "show calendar",
+            "nächste termine": "upcoming events",
+            "keine termine": "no events",
+            "keine clips": "no clips",
+            "keine marker": "no markers",
+            "keine nachrichten": "no messages",
+            "keine spieler": "no players",
+            "keine spieler vorhanden": "no players available",
+            "keine spieler hinzugefügt": "no players added",
+            "keine trainingseinheiten geplant": "no trainings scheduled",
+            "keine geteilten clips": "no shared clips",
+            "keine analysen vorhanden": "no analyses available",
+            "keine finanzdaten vorhanden": "no financial data available",
+            "keine medizinischen einträge": "no medical entries",
+            "direktnachrichten": "direct messages",
+            "mit deinem team": "with your team",
+            "nachricht": "message",
+            "nachrichten": "messages",
+            "profil speichern": "save profile",
+            "profil bearbeiten": "edit profile",
+            "bitte": "please",
+            "erstelle": "create",
+            "erstellen": "create",
+            "erst": "first",
+            "bevor": "before",
+            "du": "you",
+            "ihr": "you",
+            "dein": "your",
+            "deine": "your",
+            "deinen": "your",
+            "deiner": "your",
+            "deinem": "your",
+            "deines": "your",
+            "euer": "your",
+            "ein": "a",
+            "eine": "a",
+            "einen": "a",
+            "einem": "a",
+            "einer": "a",
+            "der": "the",
+            "die": "the",
+            "das": "the",
+            "den": "the",
+            "dem": "the",
+            "des": "the",
+            "und": "and",
+            "oder": "or",
+            "für": "for",
+            "mit": "with",
+            "ohne": "without",
+            "von": "from",
+            "im": "in",
+            "in": "in",
+            "am": "at",
+            "auf": "on",
+            "bei": "at",
+            "als": "as",
+            "bis": "until",
+            "um": "at",
+            "kann": "can",
+            "kannst": "can",
+            "können": "can",
+            "muss": "must",
+            "müssen": "must",
+            "soll": "should",
+            "sollen": "should",
+            "sollte": "should",
+            "wird": "will",
+            "werden": "be",
+            "wähle": "select",
+            "wählen": "select"
+        };
+
         const i18nState = {
             lang: 'de',
             textNodeOriginals: new WeakMap(),
             placeholderOriginals: new WeakMap()
         };
+
+        function translateByWords(value) {
+            const tokens = value.split(/(\s+|[\/\-\:\,\.\!\?\(\)]+)/);
+            let changed = false;
+            const translated = tokens.map(token => {
+                const key = token.toLowerCase();
+                if (I18N_WORD_MAP[key]) {
+                    changed = true;
+                    const replacement = I18N_WORD_MAP[key];
+                    if (token === token.toUpperCase()) return replacement.toUpperCase();
+                    if (token[0] && token[0] === token[0].toUpperCase()) {
+                        return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+                    }
+                    return replacement;
+                }
+                return token;
+            }).join('');
+            return changed ? translated : value;
+        }
 
         function translateTextNodes(root, lang) {
             const map = I18N_TEXT_MAP[lang] || {};
@@ -6410,8 +6642,13 @@
                     i18nState.textNodeOriginals.set(node, original);
                 }
                 const trimmed = original.trim();
-                if (lang === 'en' && map[trimmed]) {
-                    node.nodeValue = original.replace(trimmed, map[trimmed]);
+                if (lang === 'en') {
+                    if (map[trimmed]) {
+                        node.nodeValue = original.replace(trimmed, map[trimmed]);
+                    } else {
+                        const fallback = translateByWords(trimmed);
+                        node.nodeValue = original.replace(trimmed, fallback);
+                    }
                 } else {
                     node.nodeValue = original;
                 }
@@ -6427,8 +6664,12 @@
                 if (!i18nState.placeholderOriginals.has(el)) {
                     i18nState.placeholderOriginals.set(el, original);
                 }
-                if (lang === 'en' && map[original]) {
-                    el.setAttribute('placeholder', map[original]);
+                if (lang === 'en') {
+                    if (map[original]) {
+                        el.setAttribute('placeholder', map[original]);
+                    } else {
+                        el.setAttribute('placeholder', translateByWords(original));
+                    }
                 } else {
                     el.setAttribute('placeholder', original);
                 }
