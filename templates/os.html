@@ -5462,7 +5462,11 @@
                 </div>
                 <div class="list-item">
                     <span>Sprache</span>
-                    <span style="opacity: 0.7;">Deutsch</span>
+                    <select id="languageSelect" onchange="setLanguage(this.value)"
+                        style="border: 1px solid var(--border-light); border-radius: 8px; padding: 6px 10px; background: white; color: #333; cursor: pointer;">
+                        <option value="de">Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
                 </div>
                 <div class="list-item">
                     <span>Benachrichtigungen</span>
@@ -6254,6 +6258,217 @@
             if (typeof renderTeamsList === 'function') {
                 renderTeamsList();
             }
+        }
+
+        const I18N_TEXT_MAP = {
+            en: {
+                "Einstellungen": "Settings",
+                "Profil & App Konfiguration": "Profile & App Configuration",
+                "Mein Profil": "My Profile",
+                "Home": "Home",
+                "Kader": "Roster",
+                "Kalender": "Calendar",
+                "Messenger": "Messenger",
+                "Taktik-Tafel": "Tactics Board",
+                "Video Upload": "Video Upload",
+                "Tipps & Tutorials": "Tips & Tutorials",
+                "Verwaltung": "Administration",
+                "Mannschaftskasse": "Team Fund",
+                "App Store": "App Store",
+                "Einstellungen": "Settings",
+                "Profil speichern": "Save profile",
+                "App Einstellungen": "App Settings",
+                "Dark Mode": "Dark Mode",
+                "Sprache": "Language",
+                "Deutsch": "German",
+                "Benachrichtigungen": "Notifications",
+                "Aktiviert": "Enabled",
+                "Version": "Version",
+                "Sicherheit": "Security",
+                "E-Mail-Bestätigung bei Login": "Email verification on login",
+                "Deaktiviert": "Disabled",
+                "Passwort ändern": "Change password",
+                "Aktive Sitzungen": "Active sessions",
+                "Konto": "Account",
+                "Ausloggen": "Log out",
+                "Account löschen": "Delete account",
+                "Profil": "Profile",
+                "Speichern": "Save",
+                "Abbrechen": "Cancel",
+                "Löschen": "Delete",
+                "Zur Homepage": "Go to homepage",
+                "Jetzt registrieren": "Register now",
+                "Noch kein Account?": "No account yet?",
+                "Einloggen": "Log in",
+                "Registrieren & beitreten": "Register & join",
+                "Du wurdest eingeladen!": "You were invited!",
+                "Als: Spieler": "As: Player",
+                "Fehler": "Error",
+                "Ein Fehler ist aufgetreten. Bitte versuche es erneut.": "An error occurred. Please try again.",
+                "E-Mail": "Email",
+                "Passwort": "Password",
+                "Passwort bestätigen": "Confirm password",
+                "Benutzername": "Username",
+                "Vorname": "First name",
+                "Nachname": "Last name",
+                "Teamname / Verein": "Team / Club",
+                "Rolle / Position": "Role / Position",
+                "Geburtsdatum": "Date of birth",
+                "Telefon": "Phone",
+                "Werdegang": "Career",
+                "Profil speichern": "Save profile",
+                "Training": "Training",
+                "Trainer": "Coach",
+                "Spieler": "Player",
+                "Co-Trainer": "Assistant Coach",
+                "Sportdirektor": "Sporting Director",
+                "Manager": "Manager",
+                "Analyst": "Analyst",
+                "Betreuer": "Staff",
+                "Physiotherapeut": "Physiotherapist",
+                "Andere": "Other",
+                "Mannschaft auswählen:": "Select team:",
+                "Spieler hinzufügen": "Add player",
+                "Aktuelle Spieler": "Current players",
+                "Positionen": "Positions",
+                "Spieler Status": "Player status",
+                "Fit": "Fit",
+                "Training:": "Training:",
+                "Reha:": "Rehab:",
+                "Ausfall:": "Out:",
+                "Torwart": "Goalkeeper",
+                "Abwehr": "Defense",
+                "Mittelfeld": "Midfield",
+                "Sturm": "Forward",
+                "Kalender anzeigen": "Show calendar",
+                "Nächste Termine": "Upcoming events",
+                "Keine kommenden Termine": "No upcoming events",
+                "Messenger": "Messenger",
+                "Direktnachrichten mit deinem Team": "Direct messages with your team",
+                "Kontakte durchsuchen...": "Search contacts...",
+                "Neue Gruppe": "New group",
+                "Team Chat": "Team Chat",
+                "Wähle einen Kontakt": "Select a contact",
+                "Wähle einen Chat": "Select a chat",
+                "Datei anhängen": "Attach file",
+                "Nachricht schreiben...": "Type a message...",
+                "Senden": "Send",
+                "Kalender": "Calendar",
+                "Kader": "Roster",
+                "Taktik": "Tactics",
+                "Profil": "Profile",
+                "Zurück": "Back",
+                "Speichern": "Save",
+                "Löschen": "Delete",
+                "Hinweis": "Note",
+                "Notiz (optional)": "Note (optional)",
+                "Clip speichern": "Save clip",
+                "Clip ansehen": "View clip",
+                "Marker": "Marker",
+                "Clips": "Clips",
+                "Keine Marker": "No markers",
+                "Keine Clips": "No clips",
+                "Keine Nachrichten": "No messages",
+                "Neue Einladung": "New invitation",
+                "Neue Rolle": "New role",
+                "Einladungen": "Invitations",
+                "Mitglieder": "Members",
+                "Rollen": "Roles",
+                "Start": "Start",
+                "Ende": "End"
+            }
+        };
+
+        const I18N_PLACEHOLDER_MAP = {
+            en: {
+                "Dein Vorname": "Your first name",
+                "Dein Nachname": "Your last name",
+                "deine@email.de": "your@email.com",
+                "Deine E-Mail": "Your email",
+                "Mind. 8 Zeichen": "Min. 8 characters",
+                "Passwort wiederholen": "Repeat password",
+                "Kontakte durchsuchen...": "Search contacts...",
+                "Nachricht schreiben...": "Type a message...",
+                "Notiz (optional)": "Note (optional)",
+                "Benutzername": "Username"
+            }
+        };
+
+        const i18nState = {
+            lang: 'de',
+            textNodeOriginals: new WeakMap(),
+            placeholderOriginals: new WeakMap()
+        };
+
+        function translateTextNodes(root, lang) {
+            const map = I18N_TEXT_MAP[lang] || {};
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+            let node = walker.nextNode();
+            while (node) {
+                const original = i18nState.textNodeOriginals.get(node) ?? node.nodeValue;
+                if (!i18nState.textNodeOriginals.has(node)) {
+                    i18nState.textNodeOriginals.set(node, original);
+                }
+                const trimmed = original.trim();
+                if (lang === 'en' && map[trimmed]) {
+                    node.nodeValue = original.replace(trimmed, map[trimmed]);
+                } else {
+                    node.nodeValue = original;
+                }
+                node = walker.nextNode();
+            }
+        }
+
+        function translatePlaceholders(root, lang) {
+            const map = I18N_PLACEHOLDER_MAP[lang] || {};
+            const elements = root.querySelectorAll('input[placeholder], textarea[placeholder]');
+            elements.forEach(el => {
+                const original = i18nState.placeholderOriginals.get(el) ?? el.getAttribute('placeholder');
+                if (!i18nState.placeholderOriginals.has(el)) {
+                    i18nState.placeholderOriginals.set(el, original);
+                }
+                if (lang === 'en' && map[original]) {
+                    el.setAttribute('placeholder', map[original]);
+                } else {
+                    el.setAttribute('placeholder', original);
+                }
+            });
+        }
+
+        function applyLanguage(lang) {
+            i18nState.lang = lang;
+            document.documentElement.setAttribute('lang', lang === 'en' ? 'en' : 'de');
+            translateTextNodes(document.body, lang);
+            translatePlaceholders(document.body, lang);
+        }
+
+        function setLanguage(lang) {
+            appStorage.setItem('language', lang);
+            applyLanguage(lang);
+            const select = document.getElementById('languageSelect');
+            if (select) select.value = lang;
+        }
+
+        const i18nObserver = new MutationObserver(mutations => {
+            if (i18nState.lang !== 'en') return;
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        translateTextNodes(node, 'en');
+                        translatePlaceholders(node, 'en');
+                    } else if (node.nodeType === Node.TEXT_NODE) {
+                        translateTextNodes(node.parentNode || document.body, 'en');
+                    }
+                });
+            });
+        });
+
+        function initLanguage() {
+            const saved = appStorage.getItem('language') || 'de';
+            const select = document.getElementById('languageSelect');
+            if (select) select.value = saved;
+            applyLanguage(saved);
+            i18nObserver.observe(document.body, { childList: true, subtree: true });
         }
 
         // Mobile Menu Toggle
@@ -7195,6 +7410,7 @@
         // 2FA-Status beim Laden der Settings prüfen
         document.addEventListener('DOMContentLoaded', function () {
             setTimeout(load2FAStatus, 500);
+            initLanguage();
         });
 
         const logoutCsrfToken = "{{ logout_csrf_token|e }}";
