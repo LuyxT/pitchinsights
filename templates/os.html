@@ -3439,21 +3439,28 @@
                             </div>
                         </div>
 
-                        <!-- PROFIL-TYP WÄHLER (für Admin sichtbar) -->
-                        <div class="profil-card" id="profilTypWaehler" style="margin-bottom: 20px; display: none;">
-                            <h3 style="margin-bottom: 16px; font-size: 18px;"><span class="iconoir-mask-square"></span> Profil-Typ</h3>
+                        <!-- ADMIN-ZWEITROLLE (nur Admin sichtbar) -->
+                        <div class="profil-card" id="adminSecondaryRoleCard" style="margin-bottom: 20px; display: none;">
+                            <h3 style="margin-bottom: 16px; font-size: 18px;"><span class="iconoir-user-crown"></span> Zweitrolle</h3>
                             <p style="font-size: 13px; opacity: 0.7; margin-bottom: 12px;">
-                                Als Admin kannst du wählen, welche Profilfelder du bearbeiten möchtest:
+                                Als Admin musst du eine Zweitrolle wählen (Spieler ist nicht möglich).
                             </p>
-                            <div style="display: flex; gap: 12px;">
-                                <button onclick="setProfilTyp('trainer')" id="btnProfilTrainer"
-                                    style="flex: 1; padding: 12px; border: 2px solid var(--border-light); border-radius: 10px; background: transparent; color: var(--text-light); cursor: pointer; font-size: 14px; transition: all 0.2s;">
-                                    <span class="iconoir-user-crown"></span> Trainer
-                                </button>
-                                <button onclick="setProfilTyp('spieler')" id="btnProfilSpieler"
-                                    style="flex: 1; padding: 12px; border: 2px solid var(--border-light); border-radius: 10px; background: transparent; color: var(--text-light); cursor: pointer; font-size: 14px; transition: all 0.2s;">
-                                    <span class="iconoir-football-ball"></span> Spieler
-                                </button>
+                            <div id="adminSecondaryRoleHint"
+                                style="display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: #fef3c7; color: #92400e; font-size: 13px;">
+                                Bitte wähle deine Zweitrolle, damit du Zugriff auf Trainer‑Funktionen bekommst.
+                            </div>
+                            <div class="profil-field">
+                                <label>Zweitrolle (Admin)</label>
+                                <select id="adminSecondaryRole">
+                                    <option value="">Bitte wählen</option>
+                                    <option value="trainer">Trainer</option>
+                                    <option value="co-trainer">Co-Trainer</option>
+                                    <option value="torwarttrainer">Torwarttrainer</option>
+                                    <option value="athletiktrainer">Athletiktrainer</option>
+                                    <option value="physio">Physio</option>
+                                    <option value="scout">Scout</option>
+                                    <option value="analyst">Analyst</option>
+                                </select>
                             </div>
                         </div>
 
@@ -4457,6 +4464,10 @@
                         <div>Neu in PitchInsights</div>
                         <div style="font-weight: 600;">Trainer‑fokussiert</div>
                     </div>
+                </div>
+                <div id="trainerHubAccessNotice"
+                    style="display: none; margin-bottom: 18px; padding: 12px 14px; border-radius: 12px; background: #fef3c7; color: #92400e; font-size: 13px;">
+                    Zugriff gesperrt: Bitte wähle im Profil eine Zweitrolle (kein Spieler), um den Trainer Hub zu nutzen.
                 </div>
 
                 <div class="trainer-hub-tabs">
@@ -5878,13 +5889,16 @@
         }
 
         function canViewApp(appId) {
+            if (appId === 'trainerhub' && !isTrainerRole()) {
+                const role = (window.currentUserRolle || '').toLowerCase();
+                if (role === 'admin') return true;
+                return false;
+            }
             // Wenn keine Berechtigungen geladen oder Admin = alles erlaubt
             if (!userPermissions || isTeamAdmin) return true;
 
             // Home, Store, Settings immer erlaubt
             if (['home', 'store', 'settings'].includes(appId)) return true;
-
-            if (appId === 'trainerhub' && !isTrainerRole()) return false;
 
             // Prüfe Berechtigung
             return userPermissions[appId]?.view || false;
@@ -5892,7 +5906,16 @@
 
         function isTrainerRole() {
             const role = (window.currentUserRolle || '').toLowerCase();
-            return ['admin', 'trainer', 'co-trainer', 'torwarttrainer', 'athletiktrainer', 'scout', 'analyst', 'physio'].includes(role);
+            const adminSecondary = (window.currentAdminSecondaryRole || '').toLowerCase();
+            const trainerRoles = ['trainer', 'co-trainer', 'torwarttrainer', 'athletiktrainer'];
+            if (role === 'admin') return trainerRoles.includes(adminSecondary);
+            return trainerRoles.includes(role);
+        }
+
+        function isAdminWithoutTrainerSecondary() {
+            const role = (window.currentUserRolle || '').toLowerCase();
+            if (role !== 'admin') return false;
+            return !isTrainerRole();
         }
 
         function getAppConfig() {
@@ -6371,6 +6394,13 @@
             }
 
             if (appName === 'trainerhub' && !isTrainerRole()) {
+                if (isAdminWithoutTrainerSecondary()) {
+                    const accessNotice = document.getElementById('trainerHubAccessNotice');
+                    if (accessNotice) accessNotice.style.display = 'block';
+                    appElement.classList.add('active');
+                    showToast('Bitte wähle im Profil eine Zweitrolle.', 'error');
+                    return;
+                }
                 showToast('Trainer Hub ist nur für Trainer verfügbar.', 'error');
                 return;
             }
@@ -6386,6 +6416,10 @@
             }
 
             // Initialize specific apps
+            if (appName === 'trainerhub') {
+                const accessNotice = document.getElementById('trainerHubAccessNotice');
+                if (accessNotice) accessNotice.style.display = 'none';
+            }
             if (appName === 'kalender') {
                 console.log('Initializing calendar');
                 initializeCalendar();
@@ -7296,26 +7330,37 @@
                     // Rollenspezifische Cards anzeigen/verstecken
                     const spielerCard = document.getElementById('spielerProfilCard');
                     const trainerCard = document.getElementById('trainerProfilCard');
-                    const profilTypWaehler = document.getElementById('profilTypWaehler');
+                    const adminSecondaryRoleCard = document.getElementById('adminSecondaryRoleCard');
 
                     if (spielerCard) spielerCard.style.display = 'none';
                     if (trainerCard) trainerCard.style.display = 'none';
-                    if (profilTypWaehler) profilTypWaehler.style.display = 'none';
+                    if (adminSecondaryRoleCard) adminSecondaryRoleCard.style.display = 'none';
 
                     // Rollen-Checks - case-insensitive
                     const rolleLower = rolle.toLowerCase();
                     const isSpieler = rolleLower === 'spieler';
                     const isAdmin = isTeamAdmin || rolleLower === 'admin';
-                    const isTrainer = rolleLower === 'trainer' || rolleLower === 'co-trainer';
+                    const isTrainer = ['trainer', 'co-trainer'].includes(rolleLower);
 
                     console.log('[Profil] rolleLower:', rolleLower, '| isAdmin:', isAdmin, '| isTrainer:', isTrainer, '| isSpieler:', isSpieler);
 
-                    // Admin kann Profil-Typ wählen
+                    // Admin: Zweitrolle wählen, Trainer-Felder anzeigen
                     if (isAdmin) {
-                        if (profilTypWaehler) profilTypWaehler.style.display = 'block';
-                        // Gespeicherten Profil-Typ laden oder Standard: Trainer
-                        const savedProfilTyp = appStorage.getItem('profilTyp') || 'trainer';
-                        setProfilTyp(savedProfilTyp, data);
+                        if (adminSecondaryRoleCard) adminSecondaryRoleCard.style.display = 'block';
+                        const adminSecondarySelect = document.getElementById('adminSecondaryRole');
+                        const adminSecondaryHint = document.getElementById('adminSecondaryRoleHint');
+                        if (adminSecondarySelect) {
+                            adminSecondarySelect.value = data.admin_secondary_role || '';
+                        }
+                        if (adminSecondaryHint) {
+                            adminSecondaryHint.style.display = data.admin_secondary_role ? 'none' : 'block';
+                        }
+                        if (trainerCard) trainerCard.style.display = 'block';
+                        setVal('profilSpielsystem', data.spielsystem);
+                        setVal('profilTaktischeGrundidee', data.taktische_grundidee);
+                        setVal('profilTrainingsschwerpunkte', data.trainingsschwerpunkte);
+                        setVal('profilBisherigeStationen', data.bisherige_stationen);
+                        setVal('profilLizenzen', data.lizenzen);
                     }
                     // Spieler-spezifische Felder
                     else if (isSpieler) {
@@ -7345,6 +7390,7 @@
 
                     // Rolle global speichern für saveProfile
                     window.currentUserRolle = rolle;
+                    window.currentAdminSecondaryRole = data.admin_secondary_role || '';
                     // Profil-Daten global speichern für setProfilTyp
                     window.currentProfilData = data;
 
@@ -7492,69 +7538,6 @@
             } catch (e) {
                 console.error('Fehler beim Laden der Team-Info:', e);
             }
-        }
-
-        // Profil-Typ wählen (für Admin)
-        function setProfilTyp(typ, data = null) {
-            const spielerCard = document.getElementById('spielerProfilCard');
-            const trainerCard = document.getElementById('trainerProfilCard');
-            const btnTrainer = document.getElementById('btnProfilTrainer');
-            const btnSpieler = document.getElementById('btnProfilSpieler');
-
-            // Daten aus globalem Speicher oder Parameter
-            const profilData = data || window.currentProfilData || {};
-
-            // Alle Cards ausblenden
-            if (spielerCard) spielerCard.style.display = 'none';
-            if (trainerCard) trainerCard.style.display = 'none';
-
-            // Buttons zurücksetzen
-            if (btnTrainer) {
-                btnTrainer.style.background = 'transparent';
-                btnTrainer.style.borderColor = 'var(--border-light)';
-            }
-            if (btnSpieler) {
-                btnSpieler.style.background = 'transparent';
-                btnSpieler.style.borderColor = 'var(--border-light)';
-            }
-
-            const setVal = (id, val) => {
-                const el = document.getElementById(id);
-                if (el) el.value = val || '';
-            };
-
-            if (typ === 'spieler') {
-                if (spielerCard) spielerCard.style.display = 'block';
-                if (btnSpieler) {
-                    btnSpieler.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                    btnSpieler.style.borderColor = '#10b981';
-                    btnSpieler.style.color = 'white';
-                }
-                // Spieler-Felder laden
-                setVal('profilGroesse', profilData.groesse);
-                setVal('profilGewicht', profilData.gewicht);
-                setVal('profilPosition', profilData.position);
-                setVal('profilNebenpositionen', profilData.nebenpositionen);
-                setVal('profilStarkerFuss', profilData.starker_fuss);
-                setVal('profilJahrgang', profilData.jahrgang);
-            } else {
-                if (trainerCard) trainerCard.style.display = 'block';
-                if (btnTrainer) {
-                    btnTrainer.style.background = 'linear-gradient(135deg, #3b82f6, #8b5cf6)';
-                    btnTrainer.style.borderColor = '#3b82f6';
-                    btnTrainer.style.color = 'white';
-                }
-                // Trainer-Felder laden
-                setVal('profilSpielsystem', profilData.spielsystem);
-                setVal('profilTaktischeGrundidee', profilData.taktische_grundidee);
-                setVal('profilTrainingsschwerpunkte', profilData.trainingsschwerpunkte);
-                setVal('profilBisherigeStationen', profilData.bisherige_stationen);
-                setVal('profilLizenzen', profilData.lizenzen);
-            }
-
-            // Typ speichern
-            appStorage.setItem('profilTyp', typ);
-            window.currentProfilTyp = typ;
         }
 
         // ========================
@@ -10219,16 +10202,13 @@
             // Rollen-Checks - case-insensitive
             const rolleLower = rolle.toLowerCase();
             const isAdmin = rolleLower === 'admin';
-
-            // Admin kann wählen, welches Profil er bearbeitet
-            let effektiveRolle = rolleLower;
-            if (isAdmin) {
-                const gewaehlterTyp = window.currentProfilTyp || appStorage.getItem('profilTyp') || 'trainer';
-                effektiveRolle = gewaehlterTyp;
+            const adminSecondaryRole = (document.getElementById('adminSecondaryRole')?.value || '').trim();
+            const isSpieler = rolleLower === 'spieler';
+            const isTrainer = ['trainer', 'co-trainer'].includes(rolleLower) || isAdmin;
+            if (isAdmin && !adminSecondaryRole) {
+                showToast('Bitte wähle eine Zweitrolle (kein Spieler).', 'error');
+                return;
             }
-
-            const isSpieler = effektiveRolle === 'spieler';
-            const isTrainer = ['trainer', 'co-trainer'].includes(effektiveRolle) || (isAdmin && effektiveRolle === 'trainer');
 
             // Spieler-spezifische Felder
             if (isSpieler) {
@@ -10247,6 +10227,9 @@
                 data.trainingsschwerpunkte = document.getElementById('profilTrainingsschwerpunkte')?.value?.trim() || '';
                 data.bisherige_stationen = document.getElementById('profilBisherigeStationen')?.value?.trim() || '';
                 data.lizenzen = document.getElementById('profilLizenzen')?.value?.trim() || '';
+            }
+            if (isAdmin) {
+                data.admin_secondary_role = adminSecondaryRole;
             }
 
             try {

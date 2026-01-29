@@ -99,6 +99,23 @@ STAFF_ROLE_NAMES = {
     "physio",
 }
 
+ADMIN_SECONDARY_ROLE_NAMES = {
+    "trainer",
+    "co-trainer",
+    "torwarttrainer",
+    "athletiktrainer",
+    "scout",
+    "analyst",
+    "physio",
+}
+
+TRAINER_HUB_ROLE_NAMES = {
+    "trainer",
+    "co-trainer",
+    "torwarttrainer",
+    "athletiktrainer",
+}
+
 
 def get_user_role_name(db_user: Dict[str, Any]) -> str:
     """
@@ -392,7 +409,12 @@ def require_trainer_user(request: Request) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
 
     role = get_user_role_name(db_user)
-    if not (role in ["trainer", "co-trainer"] or db_user.get("is_admin") or is_staff_user(db_user)):
+    admin_secondary_role = str(db_user.get("admin_secondary_role", "")).strip().lower()
+    if role == "admin":
+        if admin_secondary_role not in TRAINER_HUB_ROLE_NAMES:
+            raise HTTPException(status_code=403, detail="Nur für Trainer")
+        return db_user
+    if role not in TRAINER_HUB_ROLE_NAMES:
         raise HTTPException(status_code=403, detail="Nur für Trainer")
     return db_user
 
@@ -1790,8 +1812,12 @@ async def get_profile(request: Request):
 
     rolle = get_user_role_name(db_user)
     is_admin = rolle == "admin"
-    is_trainer = rolle in ["trainer", "co-trainer"] or is_admin
-    is_spieler = rolle == "spieler" or is_admin
+    if is_admin:
+        is_trainer = True
+        is_spieler = False
+    else:
+        is_trainer = rolle in ["trainer", "co-trainer"]
+        is_spieler = rolle == "spieler"
 
     # Basis-Profil für alle Rollen
     profile = {
@@ -1806,6 +1832,8 @@ async def get_profile(request: Request):
         "mannschaft": db_user.get("mannschaft", ""),
         "telefon": db_user.get("telefon", ""),
     }
+    if is_admin:
+        profile["admin_secondary_role"] = db_user.get("admin_secondary_role", "")
 
     # Spieler-spezifische Felder (für Spieler UND Admin)
     if is_spieler:
@@ -1866,8 +1894,6 @@ async def update_profile(request: Request):
 
     rolle = get_user_role_name(db_user)
 
-    # Admin kann wählen welches Profil (Trainer oder Spieler)
-    # Erkennung: Anhand der gesendeten Felder
     is_admin = rolle == "admin"
 
     # Prüfen welcher Profiltyp vom Frontend gewählt wurde
@@ -1876,11 +1902,15 @@ async def update_profile(request: Request):
     has_trainer_fields = any(k in data for k in [
                              "spielsystem", "taktische_grundidee", "trainingsschwerpunkte", "bisherige_stationen", "lizenzen"])
 
-    # Für Admin: Anhand der gesendeten Felder entscheiden
     if is_admin:
-        is_spieler = has_spieler_fields and not has_trainer_fields
-        is_trainer = has_trainer_fields or (
-            not has_spieler_fields)  # Default: Trainer
+        admin_secondary_role = str(data.get(
+            "admin_secondary_role", db_user.get("admin_secondary_role", ""))).strip().lower()
+        if admin_secondary_role not in ADMIN_SECONDARY_ROLE_NAMES:
+            return JSONResponse({"error": "Bitte wähle eine gültige Zweitrolle (kein Spieler)."}, status_code=400)
+        if has_spieler_fields:
+            return JSONResponse({"error": "Admin darf keine Spieler-Felder bearbeiten."}, status_code=400)
+        is_trainer = True
+        is_spieler = False
     else:
         is_trainer = rolle in ["trainer", "co-trainer"]
         is_spieler = rolle == "spieler"
@@ -1906,6 +1936,8 @@ async def update_profile(request: Request):
         "geburtsdatum": geburtsdatum,
         "werdegang": werdegang,
     }
+    if is_admin:
+        update_fields["admin_secondary_role"] = admin_secondary_role
 
     # Spieler-spezifische Felder
     if is_spieler:

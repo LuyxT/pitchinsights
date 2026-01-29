@@ -95,6 +95,7 @@ def init_db():
                 team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
                 role_id INTEGER REFERENCES roles(id) ON DELETE SET NULL,
                 is_admin INTEGER DEFAULT 0 CHECK(is_admin IN (0, 1)),
+                admin_secondary_role TEXT DEFAULT '' CHECK(length(admin_secondary_role) <= 50),
                 
                 -- Legacy/Kompatibilität
                 teamname TEXT DEFAULT '' CHECK(length(teamname) <= 200),
@@ -843,6 +844,7 @@ def _run_migrations(conn):
         ("users", "mannschaft", "TEXT DEFAULT ''"),
         ("users", "onboarding_complete", "INTEGER DEFAULT 0"),
         ("users", "is_admin", "INTEGER DEFAULT 0"),
+        ("users", "admin_secondary_role", "TEXT DEFAULT ''"),
         ("users", "team_id", "INTEGER"),
         ("users", "role_id", "INTEGER"),
         ("users", "is_active", "INTEGER DEFAULT 1"),
