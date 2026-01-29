@@ -377,6 +377,71 @@
             animation: viewFadeSlideIn var(--anim-duration-slow) var(--anim-easing) forwards;
         }
 
+        .trainer-hub-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            background: var(--card-light);
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+        }
+
+        .trainer-hub-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.12);
+            color: #1d4ed8;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .trainer-hub-tabs {
+            display: flex;
+            gap: 10px;
+            margin: 0 0 18px 0;
+        }
+
+        .trainer-hub-tab {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-light);
+            background: var(--card-light);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .trainer-hub-tab.active {
+            background: linear-gradient(135deg, #1e40af, #2563eb);
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .trainer-hub-card {
+            background: var(--card-light);
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .trainer-hub-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .trainer-hub-icon {
+            width: 22px;
+            height: 22px;
+            display: inline-block;
+        }
+
         #kasse {
             height: 100%;
             overflow-y: auto;
@@ -4377,6 +4442,99 @@
                 </div>
             </div>
 
+            <!-- TRAINER HUB -->
+            <div id="trainerhub" class="app-view">
+                <div class="trainer-hub-header">
+                    <div>
+                        <div class="trainer-hub-badge">
+                            <span class="iconoir-network"></span>
+                            Trainer Hub
+                        </div>
+                        <h1 style="margin: 10px 0 4px 0;">Trainer Hub</h1>
+                        <p class="subtitle" style="margin: 0;">Neuer Bereich für Trainer-Austausch</p>
+                    </div>
+                    <div style="text-align: right; font-size: 12px; color: var(--secondary-text);">
+                        <div>Neu in PitchInsights</div>
+                        <div style="font-weight: 600;">Trainer‑fokussiert</div>
+                    </div>
+                </div>
+
+                <div class="trainer-hub-tabs">
+                    <button class="trainer-hub-tab active" onclick="switchTrainerHubTab('feed')">Feed</button>
+                    <button class="trainer-hub-tab" onclick="switchTrainerHubTab('testspiele')">Testspiele</button>
+                    <button class="trainer-hub-tab" onclick="switchTrainerHubTab('discover')">Trainer entdecken</button>
+                </div>
+
+                <div id="trainerHubFeed" class="trainer-hub-card" style="margin-bottom: 16px;">
+                    <h2 style="margin-top: 0;">Trainer‑Feed</h2>
+                    <div style="display: grid; gap: 12px; margin-bottom: 16px;">
+                        <textarea id="trainerHubPostContent" rows="3" placeholder="Teile Erfahrungen oder stelle eine Frage..."
+                            style="width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 10px; resize: vertical;"></textarea>
+                        <div style="display: flex; gap: 12px;">
+                            <input id="trainerHubPostMedia" type="url" placeholder="Optional: Bild/Video URL"
+                                style="flex: 1; padding: 10px; border: 1px solid var(--border-light); border-radius: 10px;">
+                            <button onclick="createTrainerHubPost()"
+                                style="padding: 10px 18px; background: #2563eb; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                                Posten
+                            </button>
+                        </div>
+                    </div>
+                    <div id="trainerHubFeedList" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="dashboard-placeholder">Lade Feed…</div>
+                    </div>
+                </div>
+
+                <div id="trainerHubTestspiele" class="trainer-hub-card" style="display: none; margin-bottom: 16px;">
+                    <h2 style="margin-top: 0;">Testspiele</h2>
+                    <div class="trainer-hub-grid" style="margin-bottom: 16px;">
+                        <input id="hubMatchTeam" placeholder="Mannschaft"
+                            style="padding: 10px; border: 1px solid var(--border-light); border-radius: 10px;">
+                        <input id="hubMatchAge" placeholder="Altersklasse"
+                            style="padding: 10px; border: 1px solid var(--border-light); border-radius: 10px;">
+                        <input id="hubMatchFrom" type="date"
+                            style="padding: 10px; border: 1px solid var(--border-light); border-radius: 10px;">
+                        <input id="hubMatchTo" type="date"
+                            style="padding: 10px; border: 1px solid var(--border-light); border-radius: 10px;">
+                        <select id="hubMatchLocation"
+                            style="padding: 10px; border: 1px solid var(--border-light); border-radius: 10px;">
+                            <option value="heim">Heim</option>
+                            <option value="auswaerts">Auswärts</option>
+                            <option value="neutral">Neutral</option>
+                        </select>
+                        <input id="hubMatchLocationDetail" placeholder="Ort / Region"
+                            style="padding: 10px; border: 1px solid var(--border-light); border-radius: 10px;">
+                    </div>
+                    <textarea id="hubMatchInfo" rows="3" placeholder="Zusatzinfos"
+                        style="width: 100%; padding: 12px; border: 1px solid var(--border-light); border-radius: 10px; resize: vertical;"></textarea>
+                    <button onclick="createTrainerHubTestMatch()"
+                        style="margin-top: 12px; padding: 10px 18px; background: #2563eb; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                        Testspiel anbieten
+                    </button>
+                    <div id="trainerHubTestMatchList" style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                        <div class="dashboard-placeholder">Lade Testspiele…</div>
+                    </div>
+                </div>
+
+                <div id="trainerHubDiscover" class="trainer-hub-card" style="display: none;">
+                    <h2 style="margin-top: 0;">Trainer entdecken</h2>
+                    <div class="trainer-hub-grid" style="margin-bottom: 16px;">
+                        <input id="hubDiscoverLiga" placeholder="Liga"
+                            style="padding: 10px; border: 1px solid var(--border-light); border-radius: 10px;">
+                        <input id="hubDiscoverAge" placeholder="Altersklasse"
+                            style="padding: 10px; border: 1px solid var(--border-light); border-radius: 10px;">
+                        <input id="hubDiscoverRegion" placeholder="Region / Verein"
+                            style="padding: 10px; border: 1px solid var(--border-light); border-radius: 10px;">
+                        <button onclick="loadTrainerHubDiscover()"
+                            style="padding: 10px; border-radius: 10px; border: none; background: #2563eb; color: white; font-weight: 600; cursor: pointer;">
+                            Filtern
+                        </button>
+                    </div>
+                    <div id="trainerHubDiscoverList" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="dashboard-placeholder">Lade Trainer…</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Modal für Gruppenerstellung -->
             <div id="createGroupModal"
                 style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
@@ -5650,6 +5808,7 @@
             { id: 'kader', name: 'Kader', icon: '<span class="iconoir-group"></span>', sidebarIcon: 'iconoir-group', category: 'free', canDisable: true },
             { id: 'kalender', name: 'Kalender', icon: '<span class="iconoir-calendar"></span>', sidebarIcon: 'iconoir-calendar', category: 'free', canDisable: true },
             { id: 'messenger', name: 'Messenger', icon: '<span class="iconoir-message"></span>', sidebarIcon: 'iconoir-message', category: 'free', canDisable: true },
+            { id: 'trainerhub', name: 'Trainer Hub', icon: '<span class="iconoir-network"></span>', sidebarIcon: 'iconoir-network', category: 'free', canDisable: true, trainerOnly: true, isNew: true },
             { id: 'taktik', name: 'Taktik-Tafel', icon: '<span class="iconoir-football-ball"></span>', sidebarIcon: 'iconoir-football-ball', category: 'free', canDisable: true },
             { id: 'upload', name: 'Video Upload', icon: '<span class="iconoir-video-camera"></span>', sidebarIcon: 'iconoir-video-camera', category: 'free', canDisable: true },
             { id: 'tipps', name: 'Tipps & Tutorials', icon: '<span class="iconoir-light-bulb"></span>', sidebarIcon: 'iconoir-light-bulb', category: 'free', canDisable: true },
@@ -5672,6 +5831,7 @@
             kader: { sidebar: true, home: true },
             kalender: { sidebar: true, home: true },
             messenger: { sidebar: true, home: true },
+            trainerhub: { sidebar: true, home: false },
             taktik: { sidebar: true, home: true },
             upload: { sidebar: true, home: true },
             tipps: { sidebar: true, home: true },
@@ -5724,8 +5884,15 @@
             // Home, Store, Settings immer erlaubt
             if (['home', 'store', 'settings'].includes(appId)) return true;
 
+            if (appId === 'trainerhub' && !isTrainerRole()) return false;
+
             // Prüfe Berechtigung
             return userPermissions[appId]?.view || false;
+        }
+
+        function isTrainerRole() {
+            const role = (window.currentUserRolle || '').toLowerCase();
+            return ['admin', 'trainer', 'co-trainer', 'torwarttrainer', 'athletiktrainer', 'scout', 'analyst', 'physio'].includes(role);
         }
 
         function getAppConfig() {
@@ -5787,6 +5954,8 @@
 
                 // Verwaltung nur für Admins anzeigen
                 if (app.adminOnly && !isTeamAdmin) return;
+                // Trainer Hub nur für Trainer
+                if (app.trainerOnly && !isTrainerRole()) return;
 
                 if (config[app.id]?.sidebar) {
                     const isActive = document.getElementById(app.id)?.classList.contains('active') ? 'active' : '';
@@ -5810,9 +5979,10 @@
                                 </div>`;
                     } else {
                         html += `
-                                <div class="app-item ${isActive}" onclick="switchApp('${app.id}')">
+                                <div class="app-item ${isActive}" onclick="switchApp('${app.id}')" style="position: relative;">
                                     <div class="app-icon-small">${sidebarIcon}</div>
                                     <div class="app-label">${app.name}</div>
+                                    ${app.isNew ? `<span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: #2563eb; color: white; padding: 2px 6px; border-radius: 6px; font-size: 9px; font-weight: 700;">NEU</span>` : ''}
                                 </div>`;
                     }
                 }
@@ -6200,6 +6370,11 @@
                 return;
             }
 
+            if (appName === 'trainerhub' && !isTrainerRole()) {
+                showToast('Trainer Hub ist nur für Trainer verfügbar.', 'error');
+                return;
+            }
+
             appElement.classList.add('active');
             console.log('Active class added to:', appName);
             updateAddWidgetVisibility(appName);
@@ -6247,6 +6422,267 @@
                     loadTeamVideos();
                     loadSharedClips();
                 }, 100);
+            } else if (appName === 'trainerhub') {
+                setTimeout(() => {
+                    initTrainerHub();
+                }, 100);
+            }
+        }
+
+        // ============================================
+        // TRAINER HUB
+        // ============================================
+
+        function switchTrainerHubTab(tab) {
+            const tabs = document.querySelectorAll('.trainer-hub-tab');
+            tabs.forEach(btn => btn.classList.remove('active'));
+            if (tab === 'feed') {
+                tabs[0].classList.add('active');
+            } else if (tab === 'testspiele') {
+                tabs[1].classList.add('active');
+            } else {
+                tabs[2].classList.add('active');
+            }
+
+            document.getElementById('trainerHubFeed').style.display = tab === 'feed' ? 'block' : 'none';
+            document.getElementById('trainerHubTestspiele').style.display = tab === 'testspiele' ? 'block' : 'none';
+            document.getElementById('trainerHubDiscover').style.display = tab === 'discover' ? 'block' : 'none';
+        }
+
+        async function initTrainerHub() {
+            switchTrainerHubTab('feed');
+            await loadTrainerHubFeed();
+            await loadTrainerHubTestMatches();
+            await loadTrainerHubDiscover();
+        }
+
+        async function loadTrainerHubFeed() {
+            const list = document.getElementById('trainerHubFeedList');
+            if (!list) return;
+            list.innerHTML = '<div class="dashboard-placeholder">Lade Feed…</div>';
+            try {
+                const response = await fetch('/api/trainer-hub/feed');
+                if (!response.ok) {
+                    list.innerHTML = '<div class="dashboard-placeholder">Feed nicht verfügbar</div>';
+                    return;
+                }
+                const data = await response.json();
+                const posts = data.posts || [];
+                if (!posts.length) {
+                    list.innerHTML = '<div class="dashboard-placeholder">Noch keine Beiträge</div>';
+                    return;
+                }
+                list.innerHTML = posts.map(post => `
+                    <div style="border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+                        <div style="font-weight: 600;">${escapeHtml(post.author.vorname || '')} ${escapeHtml(post.author.nachname || '')}</div>
+                        <div style="font-size: 12px; opacity: 0.6;">${escapeHtml(post.author.verein || '')} ${escapeHtml(post.author.mannschaft || '')}</div>
+                        <div style="margin-top: 8px; white-space: pre-wrap;">${escapeHtml(post.content || '')}</div>
+                        ${post.media_url ? `<div style="margin-top: 10px;"><a href="${escapeHtml(post.media_url)}" target="_blank">Media öffnen</a></div>` : ''}
+                        <div style="margin-top: 10px; display: flex; gap: 10px; font-size: 12px; opacity: 0.7;">
+                            <span>${post.created_at || ''}</span>
+                            <span>${post.comment_count || 0} Kommentare</span>
+                            <button onclick="toggleTrainerHubComments(${post.id})" style="background: none; border: none; color: #2563eb; cursor: pointer;">Kommentare</button>
+                            <button onclick="reportTrainerHubContent('post', ${post.id})" style="background: none; border: none; color: #f97316; cursor: pointer;">Melden</button>
+                        </div>
+                        <div id="trainerHubComments-${post.id}" style="display: none; margin-top: 10px;"></div>
+                        <div style="margin-top: 10px; display: flex; gap: 8px;">
+                            <input id="trainerHubCommentInput-${post.id}" placeholder="Kommentar schreiben"
+                                style="flex: 1; padding: 8px; border: 1px solid var(--border-light); border-radius: 8px;">
+                            <button onclick="addTrainerHubComment(${post.id})"
+                                style="padding: 8px 12px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">Senden</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+                list.innerHTML = '<div class="dashboard-placeholder">Fehler beim Laden</div>';
+            }
+        }
+
+        async function createTrainerHubPost() {
+            const content = document.getElementById('trainerHubPostContent')?.value?.trim() || '';
+            const media = document.getElementById('trainerHubPostMedia')?.value?.trim() || '';
+            if (!content) {
+                showToast('Bitte Text eingeben', 'error');
+                return;
+            }
+            const response = await fetch('/api/trainer-hub/feed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, media_url: media })
+            });
+            if (response.ok) {
+                document.getElementById('trainerHubPostContent').value = '';
+                document.getElementById('trainerHubPostMedia').value = '';
+                await loadTrainerHubFeed();
+            } else {
+                const err = await response.json().catch(() => ({}));
+                showToast(err.error || 'Fehler beim Posten', 'error');
+            }
+        }
+
+        async function toggleTrainerHubComments(postId) {
+            const container = document.getElementById(`trainerHubComments-${postId}`);
+            if (!container) return;
+            if (container.style.display === 'block') {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'block';
+            container.innerHTML = '<div class="dashboard-placeholder">Lade Kommentare…</div>';
+            const response = await fetch(`/api/trainer-hub/feed/${postId}/comments`);
+            if (!response.ok) {
+                container.innerHTML = '<div class="dashboard-placeholder">Kommentare nicht verfügbar</div>';
+                return;
+            }
+            const data = await response.json();
+            const comments = data.comments || [];
+            container.innerHTML = comments.map(comment => `
+                <div style="padding: 8px 0; border-bottom: 1px solid var(--border-light);">
+                    <div style="font-weight: 600; font-size: 13px;">${escapeHtml(comment.author.vorname || '')} ${escapeHtml(comment.author.nachname || '')}</div>
+                    <div style="font-size: 13px; white-space: pre-wrap;">${escapeHtml(comment.content || '')}</div>
+                    <div style="font-size: 11px; opacity: 0.6;">${comment.created_at || ''}</div>
+                </div>
+            `).join('') || '<div class="dashboard-placeholder">Noch keine Kommentare</div>';
+        }
+
+        async function addTrainerHubComment(postId) {
+            const input = document.getElementById(`trainerHubCommentInput-${postId}`);
+            if (!input) return;
+            const content = input.value.trim();
+            if (!content) return;
+            const response = await fetch(`/api/trainer-hub/feed/${postId}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+            if (response.ok) {
+                input.value = '';
+                await toggleTrainerHubComments(postId);
+                await loadTrainerHubFeed();
+            }
+        }
+
+        async function loadTrainerHubTestMatches() {
+            const list = document.getElementById('trainerHubTestMatchList');
+            if (!list) return;
+            list.innerHTML = '<div class="dashboard-placeholder">Lade Testspiele…</div>';
+            const response = await fetch('/api/trainer-hub/test-matches');
+            if (!response.ok) {
+                list.innerHTML = '<div class="dashboard-placeholder">Testspiele nicht verfügbar</div>';
+                return;
+            }
+            const data = await response.json();
+            const matches = data.matches || [];
+            if (!matches.length) {
+                list.innerHTML = '<div class="dashboard-placeholder">Noch keine Testspiele</div>';
+                return;
+            }
+            list.innerHTML = matches.map(match => `
+                <div style="border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+                    <div style="font-weight: 600;">${escapeHtml(match.mannschaft)} (${escapeHtml(match.altersklasse)})</div>
+                    <div style="font-size: 12px; opacity: 0.7;">${escapeHtml(match.zeitraum_von)} – ${escapeHtml(match.zeitraum_bis)} · ${escapeHtml(match.ort_typ)}</div>
+                    <div style="margin-top: 6px; font-size: 13px;">${escapeHtml(match.zusatzinfos || '')}</div>
+                    <div style="margin-top: 8px; display: flex; gap: 8px;">
+                        <button onclick="interestTrainerHubMatch(${match.id})"
+                            style="padding: 8px 12px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            Interesse
+                        </button>
+                        <button onclick="reportTrainerHubContent('test_match', ${match.id})"
+                            style="padding: 8px 12px; background: #f97316; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            Melden
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function createTrainerHubTestMatch() {
+            const payload = {
+                mannschaft: document.getElementById('hubMatchTeam')?.value?.trim() || '',
+                altersklasse: document.getElementById('hubMatchAge')?.value?.trim() || '',
+                zeitraum_von: document.getElementById('hubMatchFrom')?.value || '',
+                zeitraum_bis: document.getElementById('hubMatchTo')?.value || '',
+                ort_typ: document.getElementById('hubMatchLocation')?.value || 'heim',
+                ort_details: document.getElementById('hubMatchLocationDetail')?.value?.trim() || '',
+                zusatzinfos: document.getElementById('hubMatchInfo')?.value?.trim() || ''
+            };
+            const response = await fetch('/api/trainer-hub/test-matches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (response.ok) {
+                showToast('Testspiel veröffentlicht', 'success');
+                await loadTrainerHubTestMatches();
+            } else {
+                const err = await response.json().catch(() => ({}));
+                showToast(err.error || 'Fehler beim Speichern', 'error');
+            }
+        }
+
+        async function interestTrainerHubMatch(matchId) {
+            await fetch(`/api/trainer-hub/test-matches/${matchId}/interest`, { method: 'POST' });
+            showToast('Interesse gesendet', 'success');
+        }
+
+        async function loadTrainerHubDiscover() {
+            const list = document.getElementById('trainerHubDiscoverList');
+            if (!list) return;
+            list.innerHTML = '<div class="dashboard-placeholder">Lade Trainer…</div>';
+            const liga = document.getElementById('hubDiscoverLiga')?.value?.trim() || '';
+            const altersklasse = document.getElementById('hubDiscoverAge')?.value?.trim() || '';
+            const region = document.getElementById('hubDiscoverRegion')?.value?.trim() || '';
+            const params = new URLSearchParams({ liga, altersklasse, region });
+            const response = await fetch(`/api/trainer-hub/discover?${params.toString()}`);
+            if (!response.ok) {
+                list.innerHTML = '<div class="dashboard-placeholder">Trainer nicht verfügbar</div>';
+                return;
+            }
+            const data = await response.json();
+            const trainers = data.trainers || [];
+            if (!trainers.length) {
+                list.innerHTML = '<div class="dashboard-placeholder">Keine Treffer</div>';
+                return;
+            }
+            list.innerHTML = trainers.map(trainer => `
+                <div style="border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+                    <div style="font-weight: 600;">${escapeHtml(trainer.vorname || '')} ${escapeHtml(trainer.nachname || '')}</div>
+                    <div style="font-size: 12px; opacity: 0.7;">${escapeHtml(trainer.verein || '')} ${escapeHtml(trainer.mannschaft || '')}</div>
+                    <div style="margin-top: 6px; font-size: 13px;">${escapeHtml(trainer.kurzbeschreibung || '')}</div>
+                    <div style="margin-top: 8px; display: flex; gap: 8px;">
+                        <button onclick="openTrainerChat(${trainer.id})"
+                            style="padding: 8px 12px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            Kontakt aufnehmen
+                        </button>
+                        <button onclick="reportTrainerHubContent('profile', ${trainer.id})"
+                            style="padding: 8px 12px; background: #f97316; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            Melden
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openTrainerChat(userId) {
+            switchApp('messenger');
+            if (typeof selectChat === 'function') {
+                selectChat('direct', String(userId), true);
+            }
+        }
+
+        async function reportTrainerHubContent(targetType, targetId) {
+            const reason = prompt('Warum möchtest du den Inhalt melden?');
+            if (!reason) return;
+            const response = await fetch('/api/trainer-hub/report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target_type: targetType, target_id: targetId, reason })
+            });
+            if (response.ok) {
+                showToast('Danke, wir prüfen den Hinweis.', 'success');
+            } else {
+                showToast('Meldung fehlgeschlagen', 'error');
             }
         }
 

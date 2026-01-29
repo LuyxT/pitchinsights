@@ -718,6 +718,109 @@ def init_db():
             ON kasse_transactions(team_id) WHERE deleted_at IS NULL
         """)
 
+        # ============================================
+        # Trainer Hub (vereinsuebergreifend)
+        # ============================================
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trainer_hub_profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL UNIQUE,
+                vorname TEXT DEFAULT '' CHECK(length(vorname) <= 100),
+                nachname TEXT DEFAULT '' CHECK(length(nachname) <= 100),
+                verein TEXT DEFAULT '' CHECK(length(verein) <= 200),
+                mannschaft TEXT DEFAULT '' CHECK(length(mannschaft) <= 200),
+                liga TEXT DEFAULT '' CHECK(length(liga) <= 100),
+                trainerrolle TEXT DEFAULT '' CHECK(length(trainerrolle) <= 100),
+                kurzbeschreibung TEXT DEFAULT '' CHECK(length(kurzbeschreibung) <= 1000),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trainer_hub_posts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                content TEXT NOT NULL CHECK(length(content) >= 1 AND length(content) <= 4000),
+                media_url TEXT CHECK(length(media_url) <= 500),
+                media_type TEXT DEFAULT '' CHECK(length(media_type) <= 20),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trainer_hub_comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                post_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                content TEXT NOT NULL CHECK(length(content) >= 1 AND length(content) <= 2000),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                FOREIGN KEY (post_id) REFERENCES trainer_hub_posts(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trainer_hub_test_matches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                mannschaft TEXT NOT NULL CHECK(length(mannschaft) <= 200),
+                altersklasse TEXT NOT NULL CHECK(length(altersklasse) <= 50),
+                zeitraum_von DATE NOT NULL,
+                zeitraum_bis DATE NOT NULL,
+                ort_typ TEXT NOT NULL CHECK(ort_typ IN ('heim', 'auswaerts', 'neutral')),
+                ort_details TEXT DEFAULT '' CHECK(length(ort_details) <= 200),
+                zusatzinfos TEXT DEFAULT '' CHECK(length(zusatzinfos) <= 1000),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trainer_hub_test_match_interest (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                match_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                message TEXT DEFAULT '' CHECK(length(message) <= 1000),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                UNIQUE(match_id, user_id),
+                FOREIGN KEY (match_id) REFERENCES trainer_hub_test_matches(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trainer_hub_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                reporter_id INTEGER NOT NULL,
+                target_type TEXT NOT NULL CHECK(target_type IN ('post', 'comment', 'test_match', 'profile')),
+                target_id INTEGER NOT NULL,
+                reason TEXT NOT NULL CHECK(length(reason) >= 3 AND length(reason) <= 500),
+                status TEXT DEFAULT 'open' CHECK(status IN ('open', 'reviewed')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_trainer_hub_posts_created
+            ON trainer_hub_posts(created_at DESC)
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_trainer_hub_comments_post
+            ON trainer_hub_comments(post_id, created_at)
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_trainer_hub_test_matches_created
+            ON trainer_hub_test_matches(created_at DESC)
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_trainer_hub_test_matches_filters
+            ON trainer_hub_test_matches(altersklasse, ort_typ, zeitraum_von)
+        """)
+
         conn.commit()
 
         # Migrations für bestehende Datenbanken

@@ -10,7 +10,7 @@ import uuid
 import shutil
 import secrets
 import hashlib
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Request, Form, HTTPException, Depends, UploadFile, File, BackgroundTasks, Header
@@ -376,6 +376,24 @@ def apply_active_membership(request: Request, db_user: Optional[Dict[str, Any]])
     db_user["role_id"] = None
     db_user["role_name"] = ""
     db_user["is_admin"] = False
+    return db_user
+
+
+def require_trainer_user(request: Request) -> Dict[str, Any]:
+    """
+    SECURITY: Trainer Hub ist ausschließlich für Trainer/Staff (serverseitig geprüft).
+    """
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Nicht authentifiziert")
+    db_user = get_user_by_id(user["id"])
+    db_user = apply_active_membership(request, db_user)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+
+    role = get_user_role_name(db_user)
+    if not (role in ["trainer", "co-trainer"] or db_user.get("is_admin") or is_staff_user(db_user)):
+        raise HTTPException(status_code=403, detail="Nur für Trainer")
     return db_user
 
 
@@ -5880,3 +5898,367 @@ async def get_2fa_status(request: Request):
     return JSONResponse({
         "enabled": False
     })
+
+
+# ============================================
+# TRAINER HUB (Trainer-only)
+# ============================================
+
+@router.get("/api/trainer-hub/profile")
+async def trainer_hub_get_profile(request: Request):
+    user = require_trainer_user(request)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT * FROM trainer_hub_profiles WHERE user_id = ?
+        """, (user["id"],))
+        profile = cursor.fetchone()
+
+        if not profile:
+            cursor.execute("""
+                INSERT INTO trainer_hub_profiles (user_id, vorname, nachname, verein, mannschaft)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                user["id"],
+                user.get("vorname", ""),
+                user.get("nachname", ""),
+                user.get("verein", ""),
+                user.get("mannschaft", "")
+            ))
+            db.commit()
+            cursor.execute("SELECT * FROM trainer_hub_profiles WHERE user_id = ?", (user["id"],))
+            profile = cursor.fetchone()
+
+    return JSONResponse({"profile": dict(profile)})
+
+
+@router.put("/api/trainer-hub/profile")
+async def trainer_hub_update_profile(request: Request):
+    user = require_trainer_user(request)
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
+
+    fields = {
+        "verein": str(data.get("verein", "")).strip()[:200],
+        "mannschaft": str(data.get("mannschaft", "")).strip()[:200],
+        "liga": str(data.get("liga", "")).strip()[:100],
+        "trainerrolle": str(data.get("trainerrolle", "")).strip()[:100],
+        "kurzbeschreibung": str(data.get("kurzbeschreibung", "")).strip()[:1000],
+    }
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            UPDATE trainer_hub_profiles
+            SET verein = ?, mannschaft = ?, liga = ?, trainerrolle = ?, kurzbeschreibung = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        """, (
+            fields["verein"], fields["mannschaft"], fields["liga"],
+            fields["trainerrolle"], fields["kurzbeschreibung"], user["id"]
+        ))
+        if cursor.rowcount == 0:
+            cursor.execute("""
+                INSERT INTO trainer_hub_profiles
+                (user_id, vorname, nachname, verein, mannschaft, liga, trainerrolle, kurzbeschreibung)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                user["id"],
+                user.get("vorname", ""),
+                user.get("nachname", ""),
+                fields["verein"], fields["mannschaft"], fields["liga"],
+                fields["trainerrolle"], fields["kurzbeschreibung"]
+            ))
+        db.commit()
+
+    return JSONResponse({"success": True})
+
+
+@router.get("/api/trainer-hub/feed")
+async def trainer_hub_feed(request: Request, limit: int = 20, offset: int = 0):
+    require_trainer_user(request)
+    limit = max(1, min(int(limit), 50))
+    offset = max(0, int(offset))
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT p.*, u.vorname, u.nachname, u.verein, u.mannschaft
+            FROM trainer_hub_posts p
+            JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+            LIMIT ? OFFSET ?
+        """, (limit, offset))
+        posts = []
+        for row in cursor.fetchall():
+            cursor.execute("""
+                SELECT COUNT(*) as count FROM trainer_hub_comments WHERE post_id = ?
+            """, (row["id"],))
+            comment_count = cursor.fetchone()["count"]
+            posts.append({
+                "id": row["id"],
+                "content": row["content"],
+                "media_url": row["media_url"],
+                "media_type": row["media_type"],
+                "created_at": row["created_at"],
+                "comment_count": comment_count,
+                "author": {
+                    "user_id": row["user_id"],
+                    "vorname": row["vorname"],
+                    "nachname": row["nachname"],
+                    "verein": row["verein"],
+                    "mannschaft": row["mannschaft"],
+                }
+            })
+    return JSONResponse({"posts": posts})
+
+
+@router.post("/api/trainer-hub/feed")
+async def trainer_hub_create_post(request: Request):
+    user = require_trainer_user(request)
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
+
+    content = str(data.get("content", "")).strip()
+    if not content:
+        return JSONResponse({"error": "Inhalt fehlt"}, status_code=400)
+    if len(content) > 4000:
+        return JSONResponse({"error": "Inhalt zu lang"}, status_code=400)
+    media_url = str(data.get("media_url", "")).strip()[:500]
+    media_type = str(data.get("media_type", "")).strip()[:20]
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO trainer_hub_posts (user_id, content, media_url, media_type)
+            VALUES (?, ?, ?, ?)
+        """, (user["id"], content, media_url, media_type))
+        db.commit()
+
+    return JSONResponse({"success": True})
+
+
+@router.get("/api/trainer-hub/feed/{post_id}/comments")
+async def trainer_hub_post_comments(request: Request, post_id: int):
+    require_trainer_user(request)
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT c.*, u.vorname, u.nachname
+            FROM trainer_hub_comments c
+            JOIN users u ON c.user_id = u.id
+            WHERE c.post_id = ?
+            ORDER BY c.created_at ASC
+        """, (post_id,))
+        comments = [{
+            "id": row["id"],
+            "content": row["content"],
+            "created_at": row["created_at"],
+            "author": {
+                "user_id": row["user_id"],
+                "vorname": row["vorname"],
+                "nachname": row["nachname"],
+            }
+        } for row in cursor.fetchall()]
+    return JSONResponse({"comments": comments})
+
+
+@router.post("/api/trainer-hub/feed/{post_id}/comments")
+async def trainer_hub_add_comment(request: Request, post_id: int):
+    user = require_trainer_user(request)
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
+    content = str(data.get("content", "")).strip()
+    if not content:
+        return JSONResponse({"error": "Kommentar fehlt"}, status_code=400)
+    if len(content) > 2000:
+        return JSONResponse({"error": "Kommentar zu lang"}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO trainer_hub_comments (post_id, user_id, content)
+            VALUES (?, ?, ?)
+        """, (post_id, user["id"], content))
+        db.commit()
+    return JSONResponse({"success": True})
+
+
+@router.get("/api/trainer-hub/test-matches")
+async def trainer_hub_test_matches(request: Request, limit: int = 20, offset: int = 0,
+                                   altersklasse: str = "", ort_typ: str = ""):
+    require_trainer_user(request)
+    limit = max(1, min(int(limit), 50))
+    offset = max(0, int(offset))
+    altersklasse = altersklasse.strip()
+    ort_typ = ort_typ.strip()
+
+    query = """
+        SELECT m.*, u.vorname, u.nachname, u.verein
+        FROM trainer_hub_test_matches m
+        JOIN users u ON m.user_id = u.id
+        WHERE 1=1
+    """
+    params: List[Any] = []
+    if altersklasse:
+        query += " AND LOWER(m.altersklasse) = LOWER(?)"
+        params.append(altersklasse)
+    if ort_typ in ["heim", "auswaerts", "neutral"]:
+        query += " AND m.ort_typ = ?"
+        params.append(ort_typ)
+    query += " ORDER BY m.created_at DESC LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute(query, tuple(params))
+        matches = [{
+            "id": row["id"],
+            "mannschaft": row["mannschaft"],
+            "altersklasse": row["altersklasse"],
+            "zeitraum_von": row["zeitraum_von"],
+            "zeitraum_bis": row["zeitraum_bis"],
+            "ort_typ": row["ort_typ"],
+            "ort_details": row["ort_details"],
+            "zusatzinfos": row["zusatzinfos"],
+            "created_at": row["created_at"],
+            "author": {
+                "user_id": row["user_id"],
+                "vorname": row["vorname"],
+                "nachname": row["nachname"],
+                "verein": row["verein"],
+            }
+        } for row in cursor.fetchall()]
+    return JSONResponse({"matches": matches})
+
+
+@router.post("/api/trainer-hub/test-matches")
+async def trainer_hub_create_test_match(request: Request):
+    user = require_trainer_user(request)
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
+
+    mannschaft = str(data.get("mannschaft", "")).strip()[:200]
+    altersklasse = str(data.get("altersklasse", "")).strip()[:50]
+    zeitraum_von = str(data.get("zeitraum_von", "")).strip()
+    zeitraum_bis = str(data.get("zeitraum_bis", "")).strip()
+    ort_typ = str(data.get("ort_typ", "")).strip().lower()
+    ort_details = str(data.get("ort_details", "")).strip()[:200]
+    zusatzinfos = str(data.get("zusatzinfos", "")).strip()[:1000]
+
+    if not (mannschaft and altersklasse and zeitraum_von and zeitraum_bis and ort_typ):
+        return JSONResponse({"error": "Pflichtfelder fehlen"}, status_code=400)
+    if ort_typ not in ["heim", "auswaerts", "neutral"]:
+        return JSONResponse({"error": "Ungültiger Ort-Typ"}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO trainer_hub_test_matches
+            (user_id, mannschaft, altersklasse, zeitraum_von, zeitraum_bis, ort_typ, ort_details, zusatzinfos)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            user["id"], mannschaft, altersklasse, zeitraum_von, zeitraum_bis,
+            ort_typ, ort_details, zusatzinfos
+        ))
+        db.commit()
+    return JSONResponse({"success": True})
+
+
+@router.post("/api/trainer-hub/test-matches/{match_id}/interest")
+async def trainer_hub_interest(request: Request, match_id: int):
+    user = require_trainer_user(request)
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    message = str(data.get("message", "")).strip()[:1000]
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT OR IGNORE INTO trainer_hub_test_match_interest (match_id, user_id, message)
+            VALUES (?, ?, ?)
+        """, (match_id, user["id"], message))
+        db.commit()
+    return JSONResponse({"success": True})
+
+
+@router.get("/api/trainer-hub/discover")
+async def trainer_hub_discover(request: Request, liga: str = "", altersklasse: str = "", region: str = ""):
+    require_trainer_user(request)
+    liga = liga.strip()
+    altersklasse = altersklasse.strip()
+    region = region.strip()
+
+    query = """
+        SELECT p.*, u.vorname, u.nachname
+        FROM trainer_hub_profiles p
+        JOIN users u ON p.user_id = u.id
+        WHERE 1=1
+    """
+    params: List[Any] = []
+    if liga:
+        query += " AND LOWER(p.liga) = LOWER(?)"
+        params.append(liga)
+    if altersklasse:
+        query += " AND LOWER(p.mannschaft) LIKE LOWER(?)"
+        params.append(f"%{altersklasse}%")
+    if region:
+        query += " AND LOWER(p.verein) LIKE LOWER(?)"
+        params.append(f"%{region}%")
+    query += " ORDER BY p.updated_at DESC LIMIT 50"
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute(query, tuple(params))
+        trainers = [{
+            "id": row["user_id"],
+            "vorname": row["vorname"],
+            "nachname": row["nachname"],
+            "verein": row["verein"],
+            "mannschaft": row["mannschaft"],
+            "liga": row["liga"],
+            "trainerrolle": row["trainerrolle"],
+            "kurzbeschreibung": row["kurzbeschreibung"],
+        } for row in cursor.fetchall()]
+    return JSONResponse({"trainers": trainers})
+
+
+@router.post("/api/trainer-hub/report")
+async def trainer_hub_report(request: Request):
+    user = require_trainer_user(request)
+    try:
+        data = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage"}, status_code=400)
+    target_type = str(data.get("target_type", "")).strip()
+    target_id = data.get("target_id")
+    reason = str(data.get("reason", "")).strip()
+
+    if target_type not in ["post", "comment", "test_match", "profile"]:
+        return JSONResponse({"error": "Ungültiger Typ"}, status_code=400)
+    try:
+        target_id = int(target_id)
+    except (TypeError, ValueError):
+        return JSONResponse({"error": "Ungültige ID"}, status_code=400)
+    if len(reason) < 3:
+        return JSONResponse({"error": "Begründung zu kurz"}, status_code=400)
+
+    with get_db_connection() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO trainer_hub_reports (reporter_id, target_type, target_id, reason)
+            VALUES (?, ?, ?, ?)
+        """, (user["id"], target_type, target_id, reason[:500]))
+        db.commit()
+    return JSONResponse({"success": True})
