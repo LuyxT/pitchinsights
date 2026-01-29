@@ -5879,6 +5879,30 @@
                     isTeamStaff = true;
                 }
 
+                try {
+                    const profileResponse = await fetch('/api/profile');
+                    if (profileResponse.ok) {
+                        const profile = await profileResponse.json();
+                        const roleValue = (profile.rolle || '').toLowerCase();
+                        if (roleValue) {
+                            window.currentUserRolle = roleValue;
+                        } else if (data?.is_admin) {
+                            window.currentUserRolle = 'admin';
+                        } else if (data?.role_name) {
+                            window.currentUserRolle = String(data.role_name).toLowerCase();
+                        }
+                        window.currentAdminSecondaryRole = profile.admin_secondary_role || '';
+                    }
+                } catch (e) {
+                    if (!window.currentUserRolle) {
+                        if (data?.is_admin) {
+                            window.currentUserRolle = 'admin';
+                        } else if (data?.role_name) {
+                            window.currentUserRolle = String(data.role_name).toLowerCase();
+                        }
+                    }
+                }
+
                 console.log('User permissions loaded:', userPermissions, 'isAdmin:', isTeamAdmin, 'isStaff:', isTeamStaff);
             } catch (error) {
                 console.error('Fehler beim Laden der Berechtigungen:', error);
@@ -10241,6 +10265,10 @@
 
                 if (response.ok) {
                     showToast('Profil erfolgreich gespeichert!', 'success');
+                    if (isAdmin) {
+                        window.currentAdminSecondaryRole = adminSecondaryRole;
+                        renderSidebar();
+                    }
                     // Avatar aktualisieren
                     const initials = (data.vorname?.charAt(0) || '') + (data.nachname?.charAt(0) || '');
                     if (initials && document.getElementById('profilAvatar')) {
