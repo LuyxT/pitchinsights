@@ -5524,7 +5524,7 @@
                 const preserved = {};
                 for (let i = 0; i < window.localStorage.length; i += 1) {
                     const key = window.localStorage.key(i);
-                    if (key && key.startsWith('kasseTransactions_user_')) {
+                    if (key && (key.startsWith('kasseTransactions_user_') || key === 'language')) {
                         preserved[key] = window.localStorage.getItem(key);
                     }
                 }
@@ -6745,7 +6745,11 @@
         }
 
         function setLanguage(lang) {
-            appStorage.setItem('language', lang);
+            try {
+                window.localStorage.setItem('language', lang);
+            } catch (e) {
+                // ignore storage errors
+            }
             applyLanguage(lang);
             const select = document.getElementById('languageSelect');
             if (select) select.value = lang;
@@ -6769,7 +6773,12 @@
         });
 
         function initLanguage() {
-            const saved = appStorage.getItem('language') || 'de';
+            let saved = 'de';
+            try {
+                saved = window.localStorage.getItem('language') || 'de';
+            } catch (e) {
+                saved = 'de';
+            }
             const select = document.getElementById('languageSelect');
             if (select) select.value = saved;
             applyLanguage(saved);
