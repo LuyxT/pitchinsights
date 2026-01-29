@@ -4423,6 +4423,16 @@
 
                 <!-- TAB: Meine Videos -->
                 <div id="tabContentMeineVideos" class="video-tab-content">
+                    <div id="videoStorageUsage"
+                        style="background: var(--card-light); border: 1px solid var(--border-light); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 13px; font-weight: 600; color: var(--text-light);">Speicherlimit</span>
+                            <span id="videoStorageText" style="font-size: 12px; color: var(--text-light); opacity: 0.7;">0 GB / 5 GB</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.1); border-radius: 6px; overflow: hidden;">
+                            <div id="videoStorageBar" style="width: 0%; height: 100%; background: linear-gradient(135deg, #10b981, #22c55e);"></div>
+                        </div>
+                    </div>
                     <div id="videoListUploadProgress"
                         style="display: none; background: var(--card-light); border: 1px solid var(--border-light); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -7832,6 +7842,8 @@
         function renderVideoList() {
             const emptyEl = document.getElementById('videoListEmpty');
             const gridEl = document.getElementById('videoListGrid');
+            const totalBytes = teamVideos.reduce((sum, v) => sum + (v.file_size || 0), 0);
+            updateVideoStorageUsage(totalBytes);
 
             if (teamVideos.length === 0) {
                 emptyEl.style.display = 'block';
@@ -7857,6 +7869,15 @@
                         </div>
                     </div>
                 `).join('');
+        }
+
+        function updateVideoStorageUsage(totalBytes) {
+            const limitBytes = 5 * 1024 * 1024 * 1024;
+            const percent = Math.min(100, Math.round((totalBytes / limitBytes) * 100));
+            const bar = document.getElementById('videoStorageBar');
+            const text = document.getElementById('videoStorageText');
+            if (bar) bar.style.width = percent + '%';
+            if (text) text.textContent = `${formatFileSize(totalBytes)} / 5 GB`;
         }
 
         // Video-Player öffnen
