@@ -6683,6 +6683,11 @@
             const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
             let node = walker.nextNode();
             while (node) {
+                const parentTag = node.parentElement ? node.parentElement.tagName : '';
+                if (parentTag === 'STYLE' || parentTag === 'SCRIPT') {
+                    node = walker.nextNode();
+                    continue;
+                }
                 const original = i18nState.textNodeOriginals.get(node) ?? node.nodeValue;
                 if (!i18nState.textNodeOriginals.has(node)) {
                     i18nState.textNodeOriginals.set(node, original);
@@ -6741,9 +6746,12 @@
             mutations.forEach(mutation => {
                 mutation.addedNodes.forEach(node => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node.tagName === 'STYLE' || node.tagName === 'SCRIPT') return;
                         translateTextNodes(node, 'en');
                         translatePlaceholders(node, 'en');
                     } else if (node.nodeType === Node.TEXT_NODE) {
+                        const parentTag = node.parentElement ? node.parentElement.tagName : '';
+                        if (parentTag === 'STYLE' || parentTag === 'SCRIPT') return;
                         translateTextNodes(node.parentNode || document.body, 'en');
                     }
                 });
