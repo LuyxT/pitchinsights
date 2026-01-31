@@ -3794,7 +3794,7 @@
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px;">
                                 </div>
-                                <span>Training: <strong id="stat-training">0</strong></span>
+                                <span>Teiltraining: <strong id="stat-training">0</strong></span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="width: 12px; height: 12px; background: #06b6d4; border-radius: 3px;">
@@ -3915,7 +3915,7 @@
                         <select id="playerStatus"
                             style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box;">
                             <option value="Fit">Fit</option>
-                            <option value="Training">Training</option>
+                            <option value="Training">Teiltraining</option>
                             <option value="Reha">Reha</option>
                             <option value="Ausfall">Ausfall</option>
                         </select>
@@ -4071,7 +4071,7 @@
                         <select id="editPlayerStatus"
                             style="padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card-light); color: var(--text-light); box-sizing: border-box;">
                             <option value="Fit">Fit</option>
-                            <option value="Training">Training</option>
+                            <option value="Training">Teiltraining</option>
                             <option value="Reha">Reha</option>
                             <option value="Ausfall">Ausfall</option>
                         </select>
@@ -9465,7 +9465,7 @@
                         <span class="widget-stat-value widget-kader-fit">-</span>
                     </div>
                     <div class="widget-stat">
-                        <span class="widget-stat-label"><span class="status-dot training"></span>Training</span>
+                        <span class="widget-stat-label"><span class="status-dot training"></span>Teiltraining</span>
                         <span class="widget-stat-value widget-kader-training">-</span>
                     </div>
                     <div class="widget-stat">
@@ -12378,7 +12378,7 @@
                 statusChart = new Chart(statusEl.getContext('2d'), {
                     type: 'doughnut',
                     data: {
-                        labels: ['Fit', 'Training', 'Reha', 'Ausfall'],
+                        labels: ['Fit', 'Teiltraining', 'Reha', 'Ausfall'],
                         datasets: [{
                             data: [stat.fit, stat.training, stat.reha, stat.ausfall],
                             backgroundColor: ['#22c55e', '#f59e0b', '#06b6d4', '#ef4444'],
